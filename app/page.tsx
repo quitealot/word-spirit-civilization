@@ -56,7 +56,6 @@ export default function Home() {
 
   function openBattle(mode:'stage'|'arena', title:string) {
     setBattleMode(mode); setBattleTitle(title); setModal('battle');
-    window.setTimeout(() => setModal('result'), 1500);
   }
 
   function upgradeSpirit() {
@@ -77,7 +76,7 @@ export default function Home() {
       <BottomNav view={view} onChange={setView} />
 
       {modal === 'learn' && <LearnModal item={words[wordIndex]} index={wordIndex} onAnswer={answer} onClose={() => setModal(null)} />}
-      {modal === 'battle' && <BattleModal title={battleTitle} mode={battleMode} />}
+      {modal === 'battle' && <BattleModal title={battleTitle} mode={battleMode} onWin={() => setModal('result')} />}
       {modal === 'result' && <ResultModal mode={battleMode} title={battleTitle} onClose={() => { setModal(null); showToast(battleMode === 'arena' ? '竞技积分 +18' : '遗迹净化度 +12%'); }} />}
       {toast && <div className="toast">{toast}</div>}
     </main>
@@ -152,8 +151,44 @@ function LearnModal({item,index,onAnswer,onClose}:{item:typeof words[0];index:nu
   return <div className="modal-backdrop"><section className="modal learn-modal"><button className="close" onClick={onClose}>×</button><span className="modal-kicker">记忆唤醒 · {index+1} / 3</span><div className="word-orb">✦</div><h2>{item.word}</h2><p className="phonetic">{item.phonetic}</p><p>选择它在这段文明残页中的含义</p><div className="choice-list">{item.choices.map(c=><button key={c} onClick={()=>onAnswer(c)}>{c}</button>)}</div></section></div>;
 }
 
-function BattleModal({title,mode}:{title:string;mode:'stage'|'arena'}) {
-  return <div className="modal-backdrop"><section className="modal battle-modal"><span className="modal-kicker">{mode==='arena'?'回响竞技':'遗迹战斗'}</span><h2>{title}</h2><div className="battle-field"><div className="battle-team ally"><i>芽</i><i>焰</i><i>澜</i></div><div className="battle-clash">VS<span>知识加成 +14%</span></div><div className="battle-team enemy"><i>?</i><i>雾</i><i>影</i></div></div><div className="battle-loading"><i /></div><p>语灵正在根据阵容与记忆质量自动作战…</p></section></div>;
+function BattleModal({title,mode,onWin}:{title:string;mode:'stage'|'arena';onWin:()=>void}) {
+  const [enemyHp,setEnemyHp]=useState(100);
+  const [allyHp,setAllyHp]=useState(100);
+  const [round,setRound]=useState(1);
+  const [busy,setBusy]=useState(false);
+  const [action,setAction]=useState('选择一只语灵释放技能');
+  const [attacker,setAttacker]=useState('');
+  const [damage,setDamage]=useState(0);
+  const skills=[
+    {id:'芽',name:'森罗重击',detail:'破甲 · 稳定',damage:32},
+    {id:'焰',name:'余烬连击',detail:'高伤 · 强攻',damage:42},
+    {id:'澜',name:'潮汐回响',detail:'治疗 · 辅助',damage:26},
+  ];
+
+  function cast(skill:typeof skills[0]) {
+    if(busy) return;
+    setBusy(true); setAttacker(skill.id); setDamage(skill.damage); setAction(`${skill.name}命中，造成 ${skill.damage} 点伤害`);
+    const nextEnemy=Math.max(0,enemyHp-skill.damage);
+    window.setTimeout(()=>setEnemyHp(nextEnemy),260);
+    if(skill.id==='澜') window.setTimeout(()=>setAllyHp(h=>Math.min(100,h+12)),320);
+    if(nextEnemy===0){ window.setTimeout(()=>{setAction('敌方回响消散，遗迹重新发出声音');setBusy(false)},720); return; }
+    window.setTimeout(()=>{ setAttacker('enemy'); setDamage(12+round*2); setAction(`敌方反击，队伍承受 ${12+round*2} 点伤害`); setAllyHp(h=>Math.max(0,h-(12+round*2))); },820);
+    window.setTimeout(()=>{ setRound(r=>r+1); setAttacker(''); setDamage(0); setAction('轮到你了，选择下一次行动'); setBusy(false); },1450);
+  }
+
+  return <div className="modal-backdrop"><section className="modal battle-modal interactive-battle">
+    <div className="battle-head"><div><span className="modal-kicker">{mode==='arena'?'回响竞技':'遗迹战斗'} · 第 {round} 回合</span><h2>{title}</h2></div><span className="knowledge-bonus">知识加成 +14%</span></div>
+    <div className="hp-row enemy-hp"><span>敌方回响</span><div><i style={{width:`${enemyHp}%`}} /></div><b>{enemyHp} / 100</b></div>
+    <div className={`battle-stage ${attacker?'is-acting':''}`}>
+      <div className={`combat-line ally-line ${attacker&&attacker!=='enemy'?'attacking':''}`}><div className="combatant spirit-a"><i>芽</i><small>芽语</small></div><div className="combatant spirit-b"><i>焰</i><small>烬尾</small></div><div className="combatant spirit-c"><i>澜</i><small>澜歌</small></div></div>
+      <div className="turn-core"><span>{busy?'交战':'你的回合'}</span>{damage>0&&<b className="damage-pop">-{damage}</b>}</div>
+      <div className={`combat-line enemy-line ${attacker==='enemy'?'attacking':''}`}><div className="combatant foe-a"><i>雾</i><small>蚀影</small></div><div className="combatant foe-b"><i>魇</i><small>守门人</small></div></div>
+      {busy&&<div className="battle-flash" />}
+    </div>
+    <div className="hp-row ally-hp"><span>我方小队</span><div><i style={{width:`${allyHp}%`}} /></div><b>{allyHp} / 100</b></div>
+    <div className="battle-log"><span>{action}</span></div>
+    {enemyHp>0?<div className="skill-bar">{skills.map(skill=><button key={skill.id} onClick={()=>cast(skill)} disabled={busy}><i>{skill.id}</i><span><b>{skill.name}</b><small>{skill.detail}</small></span></button>)}</div>:<button className="claim-victory" onClick={onWin}>完成战斗 · 查看结算</button>}
+  </section></div>;
 }
 
 function ResultModal({mode,title,onClose}:{mode:'stage'|'arena';title:string;onClose:()=>void}) {

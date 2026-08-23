@@ -18,13 +18,13 @@ export const metadata: Metadata = {
   openGraph: {
     title: '语灵文明',
     description: '记住一个词，唤醒一个世界。',
-    images: [{ url: '/og.png', width: 1200, height: 630 }],
+    images: [{ url: 'https://word-spirit-civilization-demo.eeevan137.chatgpt.site/og.png', width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
     title: '语灵文明',
     description: '记住一个词，唤醒一个世界。',
-    images: ['/og.png'],
+    images: ['https://word-spirit-civilization-demo.eeevan137.chatgpt.site/og.png'],
   },
 };
 
