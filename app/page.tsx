@@ -1,9 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 type View = 'city' | 'explore' | 'learn' | 'arena' | 'spirits';
 type Spirit = { name:string; title:string; role:string; level:number; stars:number; tone:string; glyph:string; power:number; progress:number; locked?:boolean };
+type BattleSkill = { id:string; spirit:string; name:string; detail:string; damage:number; prompt:string; choices:string[]; answer:string };
 
 const initialSpirits: Spirit[] = [
   { name:'芽语', title:'森语守望者', role:'守护', level:12, stars:3, tone:'emerald', glyph:'芽', power:1180, progress:72 },
@@ -76,7 +77,7 @@ export default function Home() {
       <BottomNav view={view} onChange={setView} />
 
       {modal === 'learn' && <LearnModal item={words[wordIndex]} index={wordIndex} onAnswer={answer} onClose={() => setModal(null)} />}
-      {modal === 'battle' && <BattleModal title={battleTitle} mode={battleMode} onWin={() => setModal('result')} />}
+      {modal === 'battle' && <BattleModal title={battleTitle} mode={battleMode} onWin={() => setModal('result')} onLose={() => { setModal(null); showToast('战斗失败 · 再接再厉'); }} />}
       {modal === 'result' && <ResultModal mode={battleMode} title={battleTitle} onClose={() => { setModal(null); showToast(battleMode === 'arena' ? '竞技积分 +18' : '遗迹净化度 +12%'); }} />}
       {toast && <div className="toast">{toast}</div>}
     </main>
@@ -107,7 +108,7 @@ function CityView({ learned, spirits, onLearn, onView }:{learned:number; spirits
 }
 
 function SpiritMini({ spirit, index }:{spirit:Spirit;index:number}) {
-  return <article className={`spirit ${spirit.tone}`}><span className="position">{index+1}</span><div className="spirit-portrait"><i>{spirit.glyph}</i></div><div className="spirit-info"><span>{spirit.role}</span><h3>{spirit.name}</h3><Stars count={spirit.stars}/></div><b>Lv.{spirit.level}</b></article>;
+  return <article className={`spirit ${spirit.tone}`}><span className="position">{index+1}</span><div className="spirit-portrait"><SpiritArtwork spirit={spirit}/></div><div className="spirit-info"><span>{spirit.role}</span><h3>{spirit.name}</h3><Stars count={spirit.stars}/></div><b>Lv.{spirit.level}</b></article>;
 }
 
 function ExploreView({onBattle}:{onBattle:(title:string)=>void}) {
@@ -132,8 +133,15 @@ function ArenaView({onBattle}:{onBattle:(title:string)=>void}) {
 
 function SpiritsView({spirits,selected,onSelect,active,onUpgrade}:{spirits:Spirit[];selected:string;onSelect:(s:string)=>void;active:Spirit;onUpgrade:()=>void}) {
   return <PageFrame eyebrow="收集与养成" title="语灵图鉴" copy="不靠抽卡。完成词组即可相遇，真正记住才能升星与觉醒。">
-    <div className="collection-layout"><div className="collection-grid">{spirits.map(s=><button key={s.name} className={`collection-card ${s.tone} ${selected===s.name?'selected':''}`} onClick={()=>onSelect(s.name)}><div className="collection-glyph">{s.glyph}</div><span>{s.role}</span><h3>{s.name}</h3><Stars count={s.stars}/>{s.locked&&<em>尚未苏醒</em>}</button>)}</div><aside className={`detail-card ${active.tone}`}><span>{active.title}</span><div className="detail-glyph">{active.glyph}</div><h2>{active.name}</h2>{active.locked?<p>完成“探索与远行”主题词组后，这枚语灵之卵将回应你的声音。</p>:<><Stars count={active.stars}/><div className="stat-row"><span>等级 <b>{active.level}</b></span><span>战力 <b>{active.power}</b></span></div><p>下次升星将强化核心技能，并解锁一段来自旧文明的记忆。</p><div className="detail-progress"><i style={{width:`${active.progress}%`}} /></div><small>有效复习进度 {active.progress}% / 70%</small><button className="primary-dark" onClick={onUpgrade}>尝试升星</button></>}</aside></div>
+    <div className="collection-layout"><div className="collection-grid">{spirits.map(s=><button key={s.name} className={`collection-card ${s.tone} ${selected===s.name?'selected':''}`} onClick={()=>onSelect(s.name)}><div className={`collection-glyph ${['芽语','烬尾','澜歌'].includes(s.name)?'has-art':''}`}><SpiritArtwork spirit={s}/></div><span>{s.role}</span><h3>{s.name}</h3><Stars count={s.stars}/>{s.locked&&<em>尚未苏醒</em>}</button>)}</div><aside className={`detail-card ${active.tone}`}><span>{active.title}</span><div className={`detail-glyph ${['芽语','烬尾','澜歌'].includes(active.name)?'has-art':''}`}><SpiritArtwork spirit={active}/></div><h2>{active.name}</h2>{active.locked?<p>完成“探索与远行”主题词组后，这枚语灵之卵将回应你的声音。</p>:<><Stars count={active.stars}/><div className="stat-row"><span>等级 <b>{active.level}</b></span><span>战力 <b>{active.power}</b></span></div><p>下次升星将强化核心技能，并解锁一段来自旧文明的记忆。</p><div className="detail-progress"><i style={{width:`${active.progress}%`}} /></div><small>有效复习进度 {active.progress}% / 70%</small><button className="primary-dark" onClick={onUpgrade}>尝试升星</button></>}</aside></div>
   </PageFrame>;
+}
+
+function SpiritArtwork({spirit}:{spirit:Spirit}) {
+  if(spirit.name==='芽语') return <img className="spirit-art yayu-art" src="/spirit-yayu-card.png" alt="芽语立绘" />;
+  if(spirit.name==='烬尾') return <img className="spirit-art jinwei-art" src="/spirit-jinwei-card.png" alt="烬尾立绘" />;
+  if(spirit.name==='澜歌') return <span className="spirit-art lange-art" role="img" aria-label="澜歌立绘" />;
+  return <i className="fallback-glyph">{spirit.glyph}</i>;
 }
 
 function PageFrame({eyebrow,title,copy,children}:{eyebrow:string;title:string;copy:string;children:React.ReactNode}) {
@@ -151,43 +159,81 @@ function LearnModal({item,index,onAnswer,onClose}:{item:typeof words[0];index:nu
   return <div className="modal-backdrop"><section className="modal learn-modal"><button className="close" onClick={onClose}>×</button><span className="modal-kicker">记忆唤醒 · {index+1} / 3</span><div className="word-orb">✦</div><h2>{item.word}</h2><p className="phonetic">{item.phonetic}</p><p>选择它在这段文明残页中的含义</p><div className="choice-list">{item.choices.map(c=><button key={c} onClick={()=>onAnswer(c)}>{c}</button>)}</div></section></div>;
 }
 
-function BattleModal({title,mode,onWin}:{title:string;mode:'stage'|'arena';onWin:()=>void}) {
+function BattleModal({title,mode,onWin,onLose}:{title:string;mode:'stage'|'arena';onWin:()=>void;onLose:()=>void}) {
   const [enemyHp,setEnemyHp]=useState(100);
   const [allyHp,setAllyHp]=useState(100);
   const [round,setRound]=useState(1);
   const [busy,setBusy]=useState(false);
-  const [action,setAction]=useState('选择一只语灵释放技能');
+  const [action,setAction]=useState('选择语灵，完成对应的英文挑战');
   const [attacker,setAttacker]=useState('');
   const [damage,setDamage]=useState(0);
-  const skills=[
-    {id:'芽',name:'森罗重击',detail:'破甲 · 稳定',damage:32},
-    {id:'焰',name:'余烬连击',detail:'高伤 · 强攻',damage:42},
-    {id:'澜',name:'潮汐回响',detail:'治疗 · 辅助',damage:26},
+  const [challenge,setChallenge]=useState<BattleSkill|null>(null);
+  const [phase,setPhase]=useState<'choose'|'question'|'enemy'|'won'|'lost'>('choose');
+  const allyHpRef = useRef(allyHp);
+  useEffect(() => { allyHpRef.current = allyHp; }, [allyHp]);
+  const phaseRef = useRef(phase);
+  useEffect(() => { phaseRef.current = phase; }, [phase]);
+  const skills:BattleSkill[]=[
+    {id:'芽',spirit:'芽语',name:'词根护盾',detail:'辨析词根 · 防御',damage:28,prompt:'reconstruct 中的前缀 re- 表示？',choices:['再次','否定','共同'],answer:'再次'},
+    {id:'焰',spirit:'烬尾',name:'极速释义',detail:'快速翻译 · 高伤',damage:42,prompt:'revive 的正确含义是？',choices:['使复苏','使分裂','使拒绝'],answer:'使复苏'},
+    {id:'澜',spirit:'澜歌',name:'语境回响',detail:'语境选词 · 治疗',damage:30,prompt:'The city began to ___ after the silence.',choices:['revive','divide','refuse'],answer:'revive'},
   ];
 
-  function cast(skill:typeof skills[0]) {
-    if(busy) return;
-    setBusy(true); setAttacker(skill.id); setDamage(skill.damage); setAction(`${skill.name}命中，造成 ${skill.damage} 点伤害`);
-    const nextEnemy=Math.max(0,enemyHp-skill.damage);
-    window.setTimeout(()=>setEnemyHp(nextEnemy),260);
-    if(skill.id==='澜') window.setTimeout(()=>setAllyHp(h=>Math.min(100,h+12)),320);
-    if(nextEnemy===0){ window.setTimeout(()=>{setAction('敌方回响消散，遗迹重新发出声音');setBusy(false)},720); return; }
-    window.setTimeout(()=>{ setAttacker('enemy'); setDamage(12+round*2); setAction(`敌方反击，队伍承受 ${12+round*2} 点伤害`); setAllyHp(h=>Math.max(0,h-(12+round*2))); },820);
-    window.setTimeout(()=>{ setRound(r=>r+1); setAttacker(''); setDamage(0); setAction('轮到你了，选择下一次行动'); setBusy(false); },1450);
+  function chooseSkill(skill:BattleSkill) {
+    if(busy||phase!=='choose') return;
+    setChallenge(skill); setPhase('question'); setAction(`${skill.spirit}正在凝聚「${skill.name}」`);
+  }
+
+  function resolveAnswer(choice:string) {
+    if(!challenge||busy) return;
+    setBusy(true);
+    if(choice!==challenge.answer){
+      setAction(`翻译错误：正确答案是「${challenge.answer}」，技能未能发动`);
+      window.setTimeout(()=>enemyTurn(),900);
+      return;
+    }
+    setAttacker(challenge.id); setDamage(challenge.damage); setAction(`回答正确！${challenge.name}造成 ${challenge.damage} 点伤害`);
+    const nextEnemyFixed=Math.max(0,enemyHp-challenge.damage);
+    window.setTimeout(()=>setEnemyHp(nextEnemyFixed),260);
+    if(challenge.id==='芽') window.setTimeout(()=>setAllyHp(h=>Math.min(100,h+6)),320);
+    if(challenge.id==='澜') window.setTimeout(()=>setAllyHp(h=>Math.min(100,h+14)),320);
+    if(nextEnemyFixed===0){ window.setTimeout(()=>{setAction('敌方回响消散，遗迹重新发出声音');setPhase('won');setBusy(false)},760); return; }
+    window.setTimeout(()=>enemyTurn(),930);
+  }
+
+  function enemyTurn(){
+    setPhase('enemy');setChallenge(null);setAttacker('');setDamage(0);setAction('对手正在翻译：recover = ?');
+    const hit=12+round*2;
+    const nextAllyHp = Math.max(0, allyHpRef.current - hit);
+    const allyDefeated = nextAllyHp === 0;
+    window.setTimeout(()=>{ setAttacker('enemy');setDamage(hit);setAction(`对手译出 recover「恢复」，发动逆译冲击，造成 ${hit} 点伤害`);setAllyHp(nextAllyHp); },850);
+    window.setTimeout(()=>{
+      if(allyDefeated||phaseRef.current==='lost'){
+        setAction('我方语灵全部倒下，回响消散于雾中');
+        setPhase('lost');
+        setBusy(false);
+        return;
+      }
+      setRound(r=>r+1);setAttacker('');setDamage(0);setAction('轮到你了：选择语灵并完成英文挑战');setPhase('choose');setBusy(false);
+    },1650);
+  }
+
+  function retryBattle(){
+    setEnemyHp(100);setAllyHp(100);setRound(1);setBusy(false);setAction('选择语灵，完成对应的英文挑战');setAttacker('');setDamage(0);setChallenge(null);setPhase('choose');
   }
 
   return <div className="modal-backdrop"><section className="modal battle-modal interactive-battle">
     <div className="battle-head"><div><span className="modal-kicker">{mode==='arena'?'回响竞技':'遗迹战斗'} · 第 {round} 回合</span><h2>{title}</h2></div><span className="knowledge-bonus">知识加成 +14%</span></div>
     <div className="hp-row enemy-hp"><span>敌方回响</span><div><i style={{width:`${enemyHp}%`}} /></div><b>{enemyHp} / 100</b></div>
     <div className={`battle-stage ${attacker?'is-acting':''}`}>
-      <div className={`combat-line ally-line ${attacker&&attacker!=='enemy'?'attacking':''}`}><div className="combatant spirit-a"><i>芽</i><small>芽语</small></div><div className="combatant spirit-b"><i>焰</i><small>烬尾</small></div><div className="combatant spirit-c"><i>澜</i><small>澜歌</small></div></div>
-      <div className="turn-core"><span>{busy?'交战':'你的回合'}</span>{damage>0&&<b className="damage-pop">-{damage}</b>}</div>
+      <div className={`combat-line ally-line ${attacker&&attacker!=='enemy'?'attacking':''}`}><div className="combatant spirit-a"><SpiritArtwork spirit={initialSpirits[0]}/><small>芽语</small></div><div className="combatant spirit-b"><SpiritArtwork spirit={initialSpirits[1]}/><small>烬尾</small></div><div className="combatant spirit-c"><SpiritArtwork spirit={initialSpirits[2]}/><small>澜歌</small></div></div>
+      <div className="turn-core"><span>{phase==='enemy'?'对手回合':phase==='question'?'翻译中':'你的回合'}</span>{damage>0&&<b className="damage-pop">-{damage}</b>}</div>
       <div className={`combat-line enemy-line ${attacker==='enemy'?'attacking':''}`}><div className="combatant foe-a"><i>雾</i><small>蚀影</small></div><div className="combatant foe-b"><i>魇</i><small>守门人</small></div></div>
       {busy&&<div className="battle-flash" />}
     </div>
     <div className="hp-row ally-hp"><span>我方小队</span><div><i style={{width:`${allyHp}%`}} /></div><b>{allyHp} / 100</b></div>
     <div className="battle-log"><span>{action}</span></div>
-    {enemyHp>0?<div className="skill-bar">{skills.map(skill=><button key={skill.id} onClick={()=>cast(skill)} disabled={busy}><i>{skill.id}</i><span><b>{skill.name}</b><small>{skill.detail}</small></span></button>)}</div>:<button className="claim-victory" onClick={onWin}>完成战斗 · 查看结算</button>}
+    {phase==='question'&&challenge?<div className="translation-panel"><div><span>{challenge.spirit} · {challenge.name}</span><b>{challenge.prompt}</b></div><div className="translation-choices">{challenge.choices.map(choice=><button key={choice} onClick={()=>resolveAnswer(choice)} disabled={busy}>{choice}</button>)}</div></div>:phase==='enemy'?<div className="opponent-translating"><i>EN</i><span><b>对手翻译中</b><small>系统依据对方近期真实答题记录结算</small></span><em>•••</em></div>:phase==='won'?<button className="claim-victory" onClick={onWin}>完成战斗 · 查看结算</button>:phase==='lost'?<div className="defeat-panel"><div className="defeat-mark">败</div><p className="defeat-msg">{action}</p><div className="defeat-actions"><button className="claim-victory" onClick={retryBattle}>重新挑战</button><button className="retreat-btn" onClick={onLose}>撤退</button></div></div>:<div className="skill-bar">{skills.map(skill=><button key={skill.id} onClick={()=>chooseSkill(skill)} disabled={busy}><i>{skill.id}</i><span><b>{skill.name}</b><small>{skill.detail}</small></span></button>)}</div>}
   </section></div>;
 }
 
