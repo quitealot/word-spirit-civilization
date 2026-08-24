@@ -42,7 +42,22 @@ export const TUNING = {
   ENEMY_HIT_BASE: 12,
   /** 敌方每回合伤害递增：制造回合压力，逼玩家在治疗与爆发间做决策 */
   ENEMY_HIT_RAMP: 2,
+  /**
+   * 错词回炉：抽题时若错词本中有同题型词，按此概率优先重现。
+   * 0.45 的意图：错词出现频率约两倍于普通题，但不淹没新词——
+   * 复习与新学大致 1:1.2，符合「学习循环里复习占一半」的预期。
+   */
+  WRONG_REDRAW_CHANCE: 0.45,
+  /** 连续答对 N 次即「毕业」移出错词本（轻量间隔重复的掌握判据） */
+  MASTERY_STREAK: 2,
 } as const;
+
+export type WrongWordEntry = {
+  word: string;
+  prompt: string;
+  answer: string;
+  type: QuestionType;
+};
 
 export type BattleReport = {
   /** 可分享的短 ID，小程序分享卡片直接复用 */
@@ -59,7 +74,54 @@ export type BattleReport = {
   allyHp: number;
   enemyHp: number;
   skillsUsed: { root: number; meaning: number; context: number };
+  /** 本场答错的词（去重），结算时生成复习卡 */
+  wrongWords: WrongWordEntry[];
 };
+
+// ------------------------------------------------------------
+// 错词本（SRS-lite）：localStorage 持久化，跨战斗记忆
+// 答错 → 入本；连续答对 MASTERY_STREAK 次 → 毕业（移出）
+// ------------------------------------------------------------
+const BOOK_KEY = 'word-spirit-wrong-book-v1';
+
+type WrongRecord = { streak: number; wrongCount: number };
+
+function loadBook(): Record<string, WrongRecord> {
+  if (typeof window === 'undefined') return {};
+  try {
+    return JSON.parse(window.localStorage.getItem(BOOK_KEY) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function saveBook(book: Record<string, WrongRecord>) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(BOOK_KEY, JSON.stringify(book));
+  } catch {
+    /* 存储满或被禁用时静默降级：本局内仍生效（内存态） */
+  }
+}
+
+/** 该题是否在错词本中（用于 UI 显示「错词回响」标记） */
+export function isInWrongBook(id: string): boolean {
+  return Boolean(loadBook()[id]);
+}
+
+/** 结算一次答题：答错入本并清空连对，答对连对+1，达 MASTERY_STREAK 毕业 */
+export function recordAnswer(q: WordQuestion, correct: boolean): void {
+  const book = loadBook();
+  const rec = book[q.id];
+  if (!correct) {
+    book[q.id] = { streak: 0, wrongCount: (rec?.wrongCount ?? 0) + 1 };
+  } else if (rec) {
+    rec.streak += 1;
+    if (rec.streak >= TUNING.MASTERY_STREAK) delete book[q.id];
+    else book[q.id] = rec;
+  }
+  saveBook(book);
+}
 
 // ------------------------------------------------------------
 // 题库：三类题型 × 24 题，考研核心词汇
@@ -152,12 +214,25 @@ export const WORD_BANK: WordQuestion[] = [
 // ------------------------------------------------------------
 const lastDrawn: Record<QuestionType, string | null> = { root: null, meaning: null, context: null };
 
-/** 从指定题型池抽题，避免连续两题重复 */
+/**
+ * 从指定题型池抽题：
+ * 1) 若错词本中有同题型词，按 WRONG_REDRAW_CHANCE 概率优先重现（复习优先）
+ * 2) 否则普通抽题
+ * 3) 无论走哪条路，都避免与上一题重复
+ */
 export function drawQuestion(type: QuestionType): WordQuestion {
   const pool = WORD_BANK.filter(q => q.type === type);
-  let pick = pool[Math.floor(Math.random() * pool.length)];
+  const book = loadBook();
+  const wrongPool = pool.filter(q => book[q.id]);
+  let pick: WordQuestion;
+  if (wrongPool.length > 0 && Math.random() < TUNING.WRONG_REDRAW_CHANCE) {
+    pick = wrongPool[Math.floor(Math.random() * wrongPool.length)];
+  } else {
+    pick = pool[Math.floor(Math.random() * pool.length)];
+  }
   if (pool.length > 1 && lastDrawn[type] === pick.id) {
-    pick = pool[(pool.indexOf(pick) + 1) % pool.length];
+    const others = pool.filter(q => q.id !== pick.id);
+    pick = others[Math.floor(Math.random() * others.length)];
   }
   lastDrawn[type] = pick.id;
   return pick;
@@ -186,6 +261,7 @@ export function buildReportPayload(
   allyHp: number,
   enemyHp: number,
   skillsUsed: { root: number; meaning: number; context: number },
+  wrongWords: WrongWordEntry[] = [],
 ): BattleReport {
   const report: BattleReport = {
     id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
@@ -199,6 +275,7 @@ export function buildReportPayload(
     allyHp,
     enemyHp,
     skillsUsed,
+    wrongWords,
   };
   // 调试通道：分享卡片联调时直接观察序列化 payload
   console.log('[BattleReport]', JSON.stringify(report));

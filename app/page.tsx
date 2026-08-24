@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { TUNING, buildReportPayload, computeDamage, damageRange, drawQuestion } from './word-bank';
-import type { BattleReport, QuestionType, WordQuestion } from './word-bank';
+import { TUNING, buildReportPayload, computeDamage, damageRange, drawQuestion, isInWrongBook, recordAnswer } from './word-bank';
+import type { BattleReport, QuestionType, WordQuestion, WrongWordEntry } from './word-bank';
 
 type View = 'city' | 'explore' | 'learn' | 'arena' | 'spirits';
 type Spirit = { name:string; title:string; role:string; level:number; stars:number; tone:string; glyph:string; power:number; progress:number; locked?:boolean };
@@ -80,7 +80,7 @@ export default function Home() {
       <BottomNav view={view} onChange={setView} />
 
       {modal === 'learn' && <LearnModal item={words[wordIndex]} index={wordIndex} onAnswer={answer} onClose={() => setModal(null)} />}
-      {modal === 'battle' && <BattleModal title={battleTitle} mode={battleMode} onWin={(report) => { setLastReport(report); setModal('result'); }} onLose={(report) => { setLastReport(report); setModal(null); showToast(`战斗失败 · 答题正确率 ${report.accuracy}%`); }} />}
+      {modal === 'battle' && <BattleModal title={battleTitle} mode={battleMode} onWin={(report) => { setLastReport(report); setModal('result'); }} onLose={(report) => { setLastReport(report); setModal(null); showToast(`战斗失败 · 正确率 ${report.accuracy}% · ${report.wrongWords.length} 个错词已加入回炉`); }} />}
       {modal === 'result' && <ResultModal mode={battleMode} title={battleTitle} report={lastReport} onClose={() => { setModal(null); showToast(battleMode === 'arena' ? '竞技积分 +18' : '遗迹净化度 +12%'); }} />}
       {toast && <div className="toast">{toast}</div>}
     </main>
@@ -182,6 +182,8 @@ function BattleModal({title,mode,onWin,onLose}:{title:string;mode:'stage'|'arena
   const roundRef = useRef(round);
   useEffect(() => { roundRef.current = round; }, [round]);
   const statsRef = useRef({ total:0, correct:0, skills:{root:0,meaning:0,context:0} });
+  const wrongWordsRef = useRef<WrongWordEntry[]>([]);
+  const echoRef = useRef(false);
 
   const ranges = useMemo(()=>({ root:damageRange('root'), meaning:damageRange('meaning'), context:damageRange('context') }),[]);
   const skills:BattleSkill[]=[
@@ -192,12 +194,14 @@ function BattleModal({title,mode,onWin,onLose}:{title:string;mode:'stage'|'arena
 
   function chooseSkill(skill:BattleSkill) {
     if(busy||phase!=='choose') return;
-    setChallenge(drawQuestion(skill.questionType)); setActiveSkill(skill); setPhase('question');
+    const q = drawQuestion(skill.questionType);
+    setChallenge(q); setActiveSkill(skill); setPhase('question');
+    echoRef.current = isInWrongBook(q.id);
     setAction(`${skill.spirit}正在凝聚「${skill.name}」`);
   }
 
   function report(result:'win'|'lose'):BattleReport {
-    return buildReportPayload(mode,title,result,roundRef.current,{...statsRef.current},allyHpRef.current,enemyHpRef.current,{...statsRef.current.skills});
+    return buildReportPayload(mode,title,result,roundRef.current,{...statsRef.current},allyHpRef.current,enemyHpRef.current,{...statsRef.current.skills},[...wrongWordsRef.current]);
   }
 
   function resolveAnswer(choice:string) {
@@ -206,10 +210,15 @@ function BattleModal({title,mode,onWin,onLose}:{title:string;mode:'stage'|'arena
     statsRef.current.total += 1;
     statsRef.current.skills[activeSkill.questionType] += 1;
     if(choice!==challenge.answer){
-      setAction(`翻译错误：正确答案是「${challenge.answer}」，技能未能发动`);
+      recordAnswer(challenge,false);
+      if(!wrongWordsRef.current.some(w => w.word === challenge.word && w.type === challenge.type)) {
+        wrongWordsRef.current.push({ word:challenge.word, prompt:challenge.prompt, answer:challenge.answer, type:challenge.type });
+      }
+      setAction(`翻译错误：「${challenge.word}」已加入错词本，将在后续战斗中重现`);
       window.setTimeout(()=>enemyTurn(),900);
       return;
     }
+    recordAnswer(challenge,true);
     statsRef.current.correct += 1;
     const dmg = computeDamage(challenge);
     setAttacker(activeSkill.id); setDamage(dmg); setAction(`回答正确！${activeSkill.name}（难度 ${challenge.difficulty}）造成 ${dmg} 点伤害`);
@@ -241,6 +250,7 @@ function BattleModal({title,mode,onWin,onLose}:{title:string;mode:'stage'|'arena
   function retryBattle(){
     setEnemyHp(TUNING.HP_MAX);setAllyHp(TUNING.HP_MAX);setRound(1);setBusy(false);setAction('选择语灵，完成对应的英文挑战');setAttacker('');setDamage(0);setChallenge(null);setActiveSkill(null);setPhase('choose');
     statsRef.current = { total:0, correct:0, skills:{root:0,meaning:0,context:0} };
+    wrongWordsRef.current = [];
   }
 
   const statsView = statsRef.current;
@@ -256,10 +266,10 @@ function BattleModal({title,mode,onWin,onLose}:{title:string;mode:'stage'|'arena
     </div>
     <div className="hp-row ally-hp"><span>我方小队</span><div><i style={{width:`${allyHp}%`}} /></div><b>{allyHp} / {TUNING.HP_MAX}</b></div>
     <div className="battle-log"><span>{action}</span></div>
-    {phase==='question'&&challenge&&activeSkill?<div className="translation-panel"><div><span>{activeSkill.spirit} · {activeSkill.name} · 难度 {challenge.difficulty}</span><b>{challenge.prompt}</b></div><div className="translation-choices">{challenge.choices.map(choice=><button key={choice} onClick={()=>resolveAnswer(choice)} disabled={busy}>{choice}</button>)}</div></div>:phase==='enemy'?<div className="opponent-translating"><i>EN</i><span><b>对手翻译中</b><small>系统依据对方近期真实答题记录结算</small></span><em>•••</em></div>:phase==='won'?<button className="claim-victory" onClick={()=>onWin(report('win'))}>完成战斗 · 查看结算</button>:phase==='lost'?<div className="defeat-panel"><div className="defeat-mark">败</div><p className="defeat-msg">{action}</p><p className="defeat-stats">答题 {statsView.correct} / {statsView.total} · 正确率 {statsView.total?Math.round(statsView.correct/statsView.total*100):0}%</p><div className="defeat-actions"><button className="claim-victory" onClick={retryBattle}>重新挑战</button><button className="retreat-btn" onClick={()=>onLose(report('lose'))}>撤退</button></div></div>:<div className="skill-bar">{skills.map(skill=><button key={skill.id} onClick={()=>chooseSkill(skill)} disabled={busy}><i>{skill.id}</i><span><b>{skill.name}</b><small>{skill.detail}</small></span></button>)}</div>}
+    {phase==='question'&&challenge&&activeSkill?<div className="translation-panel"><div><span>{activeSkill.spirit} · {activeSkill.name} · 难度 {challenge.difficulty}{echoRef.current&&<em className="echo-tag">错词回响 · 复习</em>}</span><b>{challenge.prompt}</b></div><div className="translation-choices">{challenge.choices.map(choice=><button key={choice} onClick={()=>resolveAnswer(choice)} disabled={busy}>{choice}</button>)}</div></div>:phase==='enemy'?<div className="opponent-translating"><i>EN</i><span><b>对手翻译中</b><small>系统依据对方近期真实答题记录结算</small></span><em>•••</em></div>:phase==='won'?<button className="claim-victory" onClick={()=>onWin(report('win'))}>完成战斗 · 查看结算</button>:phase==='lost'?<div className="defeat-panel"><div className="defeat-mark">败</div><p className="defeat-msg">{action}</p><p className="defeat-stats">答题 {statsView.correct} / {statsView.total} · 正确率 {statsView.total?Math.round(statsView.correct/statsView.total*100):0}%</p><div className="defeat-actions"><button className="claim-victory" onClick={retryBattle}>重新挑战</button><button className="retreat-btn" onClick={()=>onLose(report('lose'))}>撤退</button></div></div>:<div className="skill-bar">{skills.map(skill=><button key={skill.id} onClick={()=>chooseSkill(skill)} disabled={busy}><i>{skill.id}</i><span><b>{skill.name}</b><small>{skill.detail}</small></span></button>)}</div>}
   </section></div>;
 }
 
 function ResultModal({mode,title,report,onClose}:{mode:'stage'|'arena';title:string;report:BattleReport|null;onClose:()=>void}) {
-  return <div className="modal-backdrop"><section className="modal result-modal"><div className="victory-mark">胜</div><span className="modal-kicker">战斗胜利</span><h2>{mode==='arena'?'击败 '+title:'遗迹已被净化'}</h2><p>{mode==='arena'?'阵容克制生效，知识加成为本场战斗提供了关键优势。':'失落的文字正在返回城市，新的区域即将苏醒。'}</p>{report&&<div className="result-stats"><span><b>{report.rounds}</b>回合</span><span><b>{report.accuracy}%</b>答题正确率</span><span><b>{report.allyHp}</b>队伍剩余血量</span></div>}<div className="result-rewards"><span><b>{mode==='arena'?'+18':'+120'}</b>{mode==='arena'?'竞技积分':'记忆能量'}</span><span><b>+6</b>芽语经验</span></div><button className="primary-dark" onClick={onClose}>收下奖励</button></section></div>;
+  return <div className="modal-backdrop"><section className="modal result-modal"><div className="victory-mark">胜</div><span className="modal-kicker">战斗胜利</span><h2>{mode==='arena'?'击败 '+title:'遗迹已被净化'}</h2><p>{mode==='arena'?'阵容克制生效，知识加成为本场战斗提供了关键优势。':'失落的文字正在返回城市，新的区域即将苏醒。'}</p>{report&&<div className="result-stats"><span><b>{report.rounds}</b>回合</span><span><b>{report.accuracy}%</b>答题正确率</span><span><b>{report.allyHp}</b>队伍剩余血量</span></div>}{report&&report.wrongWords.length>0&&<div className="review-panel"><span className="review-title">错词回炉 · 这些词将在后续战斗中重现</span>{report.wrongWords.map(w=><div className="review-word" key={w.word+w.type}><b>{w.word}</b><span>{w.answer}</span></div>)}</div>}<div className="result-rewards"><span><b>{mode==='arena'?'+18':'+120'}</b>{mode==='arena'?'竞技积分':'记忆能量'}</span><span><b>+6</b>芽语经验</span></div><button className="primary-dark" onClick={onClose}>收下奖励</button></section></div>;
 }
