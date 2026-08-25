@@ -8,19 +8,41 @@ import {bootstrapAnalytics,track} from './analytics';
 
 type Starter='芽语'|'烬尾'|'澜歌'; type Episode=1|2|3|4|5|6|7|8|9|10;
 type Spirit={name:Starter;role:string;tone:string;image:string;moment:string;skills:{name:string;effect:string}[]};
-type Save={starter:Starter|null;completed:Episode[];exploration:number;sightings:number;companion:boolean;arenaDone:boolean;rareSeen:boolean;checkpoint:'ep1_intro'|'ep1_lesson'|'ep1_outro'|null;ep1TutorialIndex:number};
+type OpeningCheckpoint='harbor'|'station'|null;
+type Save={starter:Starter|null;completed:Episode[];exploration:number;sightings:number;companion:boolean;arenaDone:boolean;rareSeen:boolean;checkpoint:'ep1_intro'|'ep1_lesson'|'ep1_outro'|null;ep1TutorialIndex:number;openingCheckpoint:OpeningCheckpoint;openingIndex:number};
 type Line=readonly [speaker:string,text:string];
 const SAVE_KEY='word-spirit-p1-save-v2',LEGACY_SAVE_KEY='word-spirit-p0-save-v1';
 const EXPLORATION={correctNew:3,correctReview:2,ep2:3,ep3:6,ep4:12,ep5:22,ep7:34,ep8:45,ep9:58,ep10:72} as const;
-const EMPTY_SAVE:Save={starter:null,completed:[],exploration:0,sightings:0,companion:false,arenaDone:false,rareSeen:false,checkpoint:null,ep1TutorialIndex:0};
+const EMPTY_SAVE:Save={starter:null,completed:[],exploration:0,sightings:0,companion:false,arenaDone:false,rareSeen:false,checkpoint:null,ep1TutorialIndex:0,openingCheckpoint:'harbor',openingIndex:0};
 const SPIRITS:Spirit[]=[
  {name:'芽语',role:'守护',tone:'emerald',image:'/spirit-yayu-card.png',moment:'它把刚长出的叶片递到你手边。',skills:[{name:'叶拍',effect:'造成伤害'},{name:'护芽',effect:'攻击并获得护盾'},{name:'扎根',effect:'降低下一次伤害'}]},
  {name:'烬尾',role:'强攻',tone:'amber',image:'/spirit-jinwei-card.png',moment:'它绕回来闻了闻你，尾巴擦过鞋边。',skills:[{name:'火星',effect:'稳定攻击'},{name:'焰尾',effect:'高额伤害'},{name:'蓄火',effect:'强化下一次攻击'}]},
  {name:'澜歌',role:'恢复',tone:'blue',image:'/spirit-lange-card.png',moment:'它安静看了很久，才慢慢靠近池边。',skills:[{name:'水音',effect:'造成伤害'},{name:'回潮',effect:'攻击并恢复生命'},{name:'静波',effect:'降低下一次伤害'}]},
 ];
 const BONDING:Record<Starter,string>={芽语:'芽语先碰了碰你的手指，又把刚长出的叶片轻轻放进你掌心。',烬尾:'烬尾绕着你走了一圈，最后用温热的尾巴擦过你的鞋边。',澜歌:'澜歌隔着水光看了你很久，随后游到池边，把额头轻轻贴上你的手。'};
+const OPENING_PROLOGUE:Line[]=[
+ ['雾港','早潮退得比往常快。码头木板还在滴水，北边的雾已经薄到能看见仓房的轮廓。'],
+ ['阿洛','你就是今天来语灵站报到的？行李先放左边，右边那块板子别踩。'],
+ ['玩家','为什么？'],
+ ['阿洛','昨晚还好好的，今早就翘起来了。老何说是潮气，我觉得是木头先不服。'],
+ ['岑婆','阿洛，别在门口拦客。'],
+ ['阿洛','我是在提醒他。北边旧渡口的牌子露出来了，昨晚还什么都看不见。'],
+ ['玩家','那条路一直在？'],
+ ['岑婆','路在。只是雾散的时候，才看得见入口。今天先别顺着它查。'],
+ ['阿洛','可牌子后面有一串湿脚印，往没人走的方向去了。'],
+ ['岑婆','先把访客的事办完。脚印等白天再看，别把港务和好奇心混在一起。'],
+ ['阿洛','好吧，我只带你进站，不往旧路里钻。'],
+ ['岑婆','欢迎来雾港。语灵站就在前面，它们有时比人更早发现天气变了。'],
+ ['玩家','那我先进去看看。'],
+ ['阿洛','这边。门槛低，别学我第一次来时撞上去。'],
+];
+const STARTER_BEHAVIORS:{spirit:Spirit;text:string;detail:string}[]=[
+ {spirit:SPIRITS[0],text:'屋檐落下一滴水。芽语没有躲，抬起刚长出的叶片把水接住，又把叶尖甩了甩。',detail:'它先照顾身边的小事，再回头看你。'},
+ {spirit:SPIRITS[1],text:'烬尾蹲在水壶和一篮热馒头旁边，把尾巴圈成一圈。它没有碰食物，只把自己烘得暖暖的。',detail:'它对热气很敏感，也很会把舒服的位置留给自己。'},
+ {spirit:SPIRITS[2],text:'池水一直没有动。直到门外传来你的脚步，澜歌才从水面下浮起来，停在离岸边不远的地方。',detail:'它先听，再决定要不要靠近。'},
+];
 const EP1_INTRO:Line[]=[['初伴',''],['玩家','好。那就一起走。'],['岑婆','听见了？你呢？'],['岑婆','先别急着往外跑。名字叫得顺，不等于真懂它。']];
-const EP1_OUTRO:Line[]=[['玩家','这算认识了？'],['岑婆','算打过招呼。认识得久一点，得靠以后。'],['阿洛','岑婆！北边那条路露出来了！'],['岑婆','哪条？'],['阿洛','石门那条。昨晚还全是雾，今天早上能看见门了。'],['岑婆','有人过去了？'],['阿洛','老何看了一眼，没敢进。'],['岑婆','算他这回长脑子了。'],['阿洛','等等，你选好了？那正好，走，看看去。'],['岑婆','正好什么正好？'],['阿洛','就在港外，我又不往里钻。'],['岑婆','你上次也是这么说的。'],['岑婆','去看看可以。真碰见蚀影，别逞能。尤其是你，阿洛。'],['阿洛','怎么又是我？']];
+const EP1_OUTRO:Line[]=[['玩家','这算认识了？'],['岑婆','算打过招呼。认识得久一点，得靠以后。'],['阿洛','岑婆，北边旧渡口的记号要不要先记到港务册上？'],['岑婆','先不用。你们刚才在港口看见的，就是那块歪牌。等雾再薄一点，到路口看看，别过石门。'],['阿洛','我只带路，不往里钻。'],['岑婆','你上次也是这么说的。'],['阿洛','那我这次先把绳桩拴好，免得有人顺着旧路走丢。'],['岑婆','去看看可以。真碰见蚀影，别逞能。尤其是你，阿洛。'],['阿洛','怎么又是我？']];
 const EPISODES:{ep:Episode;title:string;place:string;threshold:number}[]=[
  {ep:1,title:'第一伙伴',place:'语灵站',threshold:0},{ep:2,title:'雾散以后',place:'港外旧路',threshold:EXPLORATION.ep2},{ep:3,title:'苏醒之门',place:'石门',threshold:EXPLORATION.ep3},{ep:4,title:'回廊里的尾巴',place:'残页回廊',threshold:EXPLORATION.ep4},{ep:5,title:'寂静广场',place:'寂静广场',threshold:EXPLORATION.ep5},{ep:6,title:'它还在跟着',place:'回廊出口',threshold:0},{ep:7,title:'第一次并肩',place:'广场北路',threshold:EXPLORATION.ep7},{ep:8,title:'被抹掉的名字',place:'无名碑',threshold:EXPLORATION.ep8},{ep:9,title:'雾里的稀客',place:'雾坡',threshold:EXPLORATION.ep9},{ep:10,title:'雾中的回声',place:'守门人门前',threshold:EXPLORATION.ep10},
 ];
@@ -44,7 +66,7 @@ const POST_STORIES:Partial<Record<Episode,Line[]>>={
  10:[['阿洛','现在能过去了？'],['守门人','今天不能。'],['阿洛','那我们刚才——'],['守门人','证明你们不是路过看一眼。'],['玩家','那块碑到底写过什么？'],['守门人','不知道。我来的时候，它已经是那样。'],['阿洛','那你为什么拦着路？'],['守门人','以前有人从这里过去。回来的比过去的少。'],['玩家','里面有什么？'],['守门人','我没进去。知道的就这些。'],['守门人','要往前走，就把今天见到的带回去。'],['守门人','至少别再把它们忘掉。'],['玩家','我们会回来。'],['守门人','先把明天记住再说。']],
 };
 
-function load():Save{try{const raw=localStorage.getItem(SAVE_KEY)||localStorage.getItem(LEGACY_SAVE_KEY);if(raw){const s=JSON.parse(raw) as Partial<Save>;return{...EMPTY_SAVE,...s,completed:(s.completed??[]) as Episode[]}}const starter=localStorage.getItem('word-spirit-starter-v1') as Starter|null;return{...EMPTY_SAVE,starter}}catch{return EMPTY_SAVE}}
+function load():Save{try{const starter=localStorage.getItem('word-spirit-starter-v1') as Starter|null,raw=localStorage.getItem(SAVE_KEY)||localStorage.getItem(LEGACY_SAVE_KEY);if(raw){const s=JSON.parse(raw) as Partial<Save>;return{...EMPTY_SAVE,...s,starter:(s.starter??starter) as Starter|null,completed:(s.completed??[]) as Episode[]}}return{...EMPTY_SAVE,starter}}catch{return EMPTY_SAVE}}
 function previousDone(save:Save,ep:Episode){return ep===1||save.completed.includes((ep-1) as Episode)}
 function unlocked(save:Save,ep:Episode,threshold:number){if(save.completed.includes(ep))return true;if(!previousDone(save,ep))return false;if(ep===6)return save.sightings>=3;return save.exploration>=threshold}
 
@@ -52,9 +74,12 @@ export default function Home(){
  const[ready,setReady]=useState(false),[save,setSave]=useState<Save>(EMPTY_SAVE),[story,setStory]=useState<Episode|null>(null),[postStory,setPostStory]=useState<Episode|null>(null),[learning,setLearning]=useState(false),[battle,setBattle]=useState<Episode|null>(null),[arena,setArena]=useState(false),[codex,setCodex]=useState(false),[toast,setToast]=useState(''),[,refresh]=useState(0);
  useEffect(()=>{assertVocabularyIntegrity();const timer=window.setTimeout(()=>{bootstrapAnalytics();setSave(load());setReady(true)},0);return()=>window.clearTimeout(timer)},[]);useEffect(()=>{if(ready)localStorage.setItem(SAVE_KEY,JSON.stringify(save))},[save,ready]);
  const spirit=useMemo(()=>SPIRITS.find(s=>s.name===save.starter)??null,[save.starter]);const learned=ready?learnedWordCount():0,due=ready?dueCount():0,pack=ready?getCurrentLearningPack():null;
- function choose(name:Starter){track('starter_selected',{starter:name});localStorage.setItem('word-spirit-starter-v1',name);setSave({...EMPTY_SAVE,starter:name,checkpoint:'ep1_intro'})}
+ function finishOpening(){track('opening_prologue_completed');setSave(s=>({...s,openingCheckpoint:'station',openingIndex:0}))}
+ function advanceOpening(index:number){setSave(s=>({...s,openingIndex:index}))}
+ function advanceStarterPreview(index:number){const beat=STARTER_BEHAVIORS[index-1];if(beat)track('starter_behavior_viewed',{starter:beat.spirit.name,step:index});setSave(s=>({...s,openingCheckpoint:'station',openingIndex:index}))}
+ function choose(name:Starter){track('starter_selected',{starter:name});localStorage.setItem('word-spirit-starter-v1',name);setSave({...EMPTY_SAVE,starter:name,checkpoint:'ep1_intro',openingCheckpoint:null})}
  function complete(ep:Episode){setSave(s=>{const next={...s,completed:[...new Set([...s.completed,ep])] as Episode[]};if(ep===1){next.checkpoint=null;next.ep1TutorialIndex=3}if(ep===4)next.sightings=Math.max(next.sightings,2);if(ep===5)next.sightings=3;if(ep===6)next.companion=true;if(ep===9)next.rareSeen=true;return next})}
- function startEpisode(ep:Episode){track('episode_started',{episode:ep});if(ep===1)setSave(s=>({...s,checkpoint:'ep1_intro',ep1TutorialIndex:0}));else setStory(ep)}
+ function startEpisode(ep:Episode){track('episode_started',{episode:ep});if(ep===1)setSave(s=>({...s,checkpoint:'ep1_intro',ep1TutorialIndex:0,openingCheckpoint:null}));else setStory(ep)}
  function reward(ep:Episode){const m:Partial<Record<Episode,string>>={1:'港外旧路已在地图亮起',4:'发现绒岚 · 未共鸣 · 目击2/3',6:'与绒岚共鸣成立 · 队伍现可容纳2只伙伴',8:'旧擂台已开放 · 竞技不影响主线'};if(m[ep]){setToast(m[ep]!);setTimeout(()=>setToast(''),2600)}}
  function finishStory(ep:Episode){track('episode_dialogue_completed',{episode:ep});setStory(null);if(ep===6)setSave(s=>({...s,companion:true}));if([3,5,6,7,9,10].includes(ep)){track(ep===10?'boss_started':'battle_started',{episode:ep});setBattle(ep)}else{complete(ep);track('episode_completed',{episode:ep});reward(ep)}}
  function win(ep:Episode){track(ep===10?'boss_completed':'battle_completed',{episode:ep});setBattle(null);if(POST_STORIES[ep])setPostStory(ep);else{complete(ep);track('episode_completed',{episode:ep});reward(ep)}}
@@ -62,7 +87,7 @@ export default function Home(){
  function finishEp1(){complete(1);track('episode_completed',{episode:1});reward(1)}
  function learningResult(correct:boolean,seen:boolean){if(correct)setSave(s=>({...s,exploration:s.exploration+(seen?EXPLORATION.correctReview:EXPLORATION.correctNew)}));refresh(v=>v+1)}
  function restart(){resetLearningStore();localStorage.removeItem('word-spirit-starter-v1');localStorage.removeItem(SAVE_KEY);localStorage.removeItem(LEGACY_SAVE_KEY);setSave(EMPTY_SAVE);setStory(null);setBattle(null);refresh(v=>v+1)}
- if(!ready)return <main/>;if(!spirit)return <StarterGate onChoose={choose}/>;
+ if(!ready)return <main/>;if(!spirit){if(save.openingCheckpoint==='station')return <StarterStationGate stage={save.openingIndex} onProgress={advanceStarterPreview} onChoose={choose}/>;return <OpeningPrologueModal index={save.openingIndex} onProgress={advanceOpening} onFinish={finishOpening}/>;}
  return <main className="p0-shell"><header className="p0-header"><div><span>《词灵》十关试玩</span><h1>雾中的回声</h1></div><div className="p0-header-actions"><div className="p0-stats"><b>{save.exploration}</b><span>探索力</span><b>{due}</b><span>到期复习</span></div><button onClick={restart}>重新开始</button></div></header>
  <section className="partner-panel"><div className={`partner-art ${spirit.tone}`}><img src={spirit.image} alt={spirit.name}/></div><div><span>我的初伴 · {spirit.role}</span><h2>{spirit.name}</h2><p>{save.companion?'它不时回头确认绒岚有没有跟上。':'它今天一直在看港外的方向。'}</p><div className="evolution-hint">下一形态　<strong>？？？</strong><small>{save.completed.includes(10)?'共鸣出现了新的变化。':save.companion?'叶片 / 尾焰 / 鳍光与昨天不同。':'共鸣正在形成……'}</small></div>{save.companion&&<div className="team-strip"><div className="unknown-mini">?</div><span><b>绒岚</b><small>MIST_PORT_SPIRIT_01 · 已共鸣</small></span></div>}</div></section>
  <nav className="home-tabs"><button onClick={()=>setLearning(true)}>今日学习</button><button onClick={()=>setCodex(true)}>图鉴</button><button disabled={!save.completed.includes(8)} onClick={()=>setArena(true)}>竞技场</button></nav>
@@ -71,7 +96,9 @@ export default function Home(){
  {save.checkpoint==='ep1_intro'&&<LinearStoryModal label="EP01 · 共鸣成立" lines={EP1_INTRO} spirit={spirit} bonding onFinish={()=>setSave(s=>({...s,checkpoint:'ep1_lesson'}))}/>} {save.checkpoint==='ep1_lesson'&&<Ep1TutorialModal index={save.ep1TutorialIndex} onAnswer={learningResult} onProgress={index=>setSave(s=>({...s,ep1TutorialIndex:index,checkpoint:index>=3?'ep1_outro':'ep1_lesson'}))}/>} {save.checkpoint==='ep1_outro'&&<LinearStoryModal label="EP01 · 门外的消息" lines={EP1_OUTRO} spirit={spirit} onFinish={finishEp1}/>} {story&&<StoryModal episode={story} spirit={spirit} onClose={()=>setStory(null)} onFinish={()=>finishStory(story)}/>} {postStory&&<PostStoryModal episode={postStory} spirit={spirit} onFinish={()=>finishPost(postStory)}/>} {learning&&pack&&<LearningModal pack={pack} onClose={()=>setLearning(false)} onAnswer={learningResult}/>} {battle&&<BattleModal episode={battle} spirit={spirit} hasCompanion={save.companion} onClose={()=>setBattle(null)} onWin={()=>win(battle)}/>} {arena&&<ArenaModal onClose={()=>setArena(false)} onComplete={()=>{track('arena_match_completed',{source:'test_snapshot'});setSave(s=>({...s,arenaDone:true,exploration:s.exploration+4}));setArena(false);setToast('测试守擂记录 · 首场完成');setTimeout(()=>setToast(''),2200)}}/>} {codex&&<CodexModal save={save} spirit={spirit} onClose={()=>setCodex(false)}/>} {toast&&<div className="toast">{toast}</div>}</main>
 }
 
-function StarterGate({onChoose}:{onChoose:(s:Starter)=>void}){return <main className="starter-screen"><section className="starter-dialogue"><span>EP01 · 第一伙伴</span><h1>岑婆的语灵站</h1><p>“就它们三个。你可以选，不过它们不点头，你选了也白选。”</p></section><section className="starter-grid">{SPIRITS.map(s=><article className={`starter-card ${s.tone}`} key={s.name}><div className="starter-art"><img className="spirit-art" src={s.image} alt={s.name}/></div><span>{s.role}</span><h2>{s.name}</h2><p>{s.moment}</p><button onClick={()=>onChoose(s.name)}>我想和{s.name}一起走</button></article>)}</section><small className="starter-note">选择后只获得这一只伙伴；另外两只不会自动加入队伍。</small></main>}
+function OpeningPrologueModal({index,onProgress,onFinish}:{index:number;onProgress:(index:number)=>void;onFinish:()=>void}){const safeIndex=Math.min(index,OPENING_PROLOGUE.length-1),line=OPENING_PROLOGUE[safeIndex],phase=safeIndex<5?'码头':safeIndex<10?'旧渡口':'语灵站';useEffect(()=>{track('opening_prologue_started')},[]);function next(){if(safeIndex<OPENING_PROLOGUE.length-1)onProgress(safeIndex+1);else onFinish()}return <main className="starter-screen opening-screen"><section className="story-modal opening-modal"><span>序章 · 雾港</span><div className="story-stage"><div className={`scene-symbol opening-scene opening-${safeIndex<5?'harbor':safeIndex<10?'road':'station'}`}>{phase}</div><div><b>{line[0]}</b><p>{line[1]}</p></div></div><button className="story-next" onClick={next}>{safeIndex<OPENING_PROLOGUE.length-1?'继续':'进入语灵站'}</button><small className="opening-progress">雾港清晨 · {safeIndex+1}/{OPENING_PROLOGUE.length}</small></section></main>}
+function StarterStationGate({stage,onProgress,onChoose}:{stage:number;onProgress:(stage:number)=>void;onChoose:(s:Starter)=>void}){const beat=STARTER_BEHAVIORS[Math.min(stage,STARTER_BEHAVIORS.length-1)];if(stage<STARTER_BEHAVIORS.length)return <main className="starter-screen station-screen"><section className="story-modal station-modal"><span>序章 · 语灵站　观察 {stage+1}/3</span><div className={`story-stage station-behavior ${beat.spirit.tone}`}><div className="starter-art"><img className="spirit-art" src={beat.spirit.image} alt={beat.spirit.name}/></div><div><b>{beat.spirit.name}</b><p>{beat.text}</p><small>{beat.detail}</small></div></div><button className="story-next" onClick={()=>onProgress(stage+1)}>{stage<STARTER_BEHAVIORS.length-1?'继续观察':'看看它们愿不愿意跟你走'}</button></section></main>;return <StarterGate onChoose={onChoose}/>}
+function StarterGate({onChoose}:{onChoose:(s:Starter)=>void}){return <main className="starter-screen"><section className="starter-dialogue"><span>序章 · 语灵站</span><h1>现在，选一只一起走</h1><p>“它们都看见你了。选一只，剩下的先留在站里。”</p></section><section className="starter-grid">{SPIRITS.map(s=><article className={`starter-card ${s.tone}`} key={s.name}><div className="starter-art"><img className="spirit-art" src={s.image} alt={s.name}/></div><span>{s.role}</span><h2>{s.name}</h2><p>{s.moment}</p><button onClick={()=>onChoose(s.name)}>我想和{s.name}一起走</button></article>)}</section><small className="starter-note">选择后只获得这一只伙伴；另外两只会留在语灵站里。</small></main>}
 function EpisodeButton({node,unlocked:open,done,onClick}:{node:(typeof EPISODES)[number];unlocked:boolean;done:boolean;onClick:()=>void}){return <button className={done?'done':''} disabled={!open||done} onClick={onClick}><i>{done?'✓':node.ep}</i><span>EP{String(node.ep).padStart(2,'0')} · {node.place}<b>{node.title}</b></span><em>{done?'已完成':open?'进入':'未解锁'}</em></button>}
 function StoryModal({episode,spirit,onClose,onFinish}:{episode:Episode;spirit:Spirit;onClose:()=>void;onFinish:()=>void}){const[index,setIndex]=useState(0),line=STORIES[episode][index],bonding=episode===1&&index===0;const visual=episode===4?'尾':episode===8?'碑':episode===9?'稀':episode===10?'守':null;return <div className={`modal-backdrop ${episode===1?'intro-backdrop':''}`}><section className="story-modal"><button className="close" onClick={onClose}>×</button><span>EP{String(episode).padStart(2,'0')} · {EPISODES[episode-1].place}</span><div className="story-stage">{visual?<div className={`scene-symbol scene-${episode}`}>{visual}</div>:<img src={spirit.image} alt={spirit.name}/>}<div><b>{bonding?spirit.name:line[0]}</b><p>{bonding?BONDING[spirit.name]:line[1]}</p></div></div><button className="story-next" onClick={()=>index<STORIES[episode].length-1?setIndex(index+1):onFinish()}>{index<STORIES[episode].length-1?'继续':episode===10?'接受考验':([3,5,7,9].includes(episode)?'进入战斗':'完成剧情')}</button></section></div>}
 function LinearStoryModal({label,lines,spirit,bonding=false,onFinish}:{label:string;lines:Line[];spirit:Spirit;bonding?:boolean;onFinish:()=>void}){const[index,setIndex]=useState(0),line=lines[index],isBonding=bonding&&index===0;return <div className="modal-backdrop intro-backdrop"><section className="story-modal"><span>{label}</span><div className="story-stage"><img src={spirit.image} alt={spirit.name}/><div><b>{isBonding?spirit.name:line[0]}</b><p>{isBonding?BONDING[spirit.name]:line[1]}</p></div></div><button className="story-next" onClick={()=>index<lines.length-1?setIndex(index+1):onFinish()}>{index<lines.length-1?'继续':bonding?'先认识它':'前往港外旧路'}</button></section></div>}
