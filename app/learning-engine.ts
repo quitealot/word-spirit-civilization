@@ -152,4 +152,4 @@ export function dueCount(): number {
   return Object.values(store.progress).filter(value => new Date(value.card.due).getTime() <= now).length;
 }
 
-export const CONTENT_REVIEW_GATES = { L1: 80, L2: 36, L3: 24 } as const;
+export const CONTENT_REVIEW_GATES = { L1: 80, L2: 27, L3: 23 } as const;

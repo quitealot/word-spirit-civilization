@@ -17,6 +17,6 @@
 
 1. Excel的`wordId`及源字段是词汇唯一真源。
 2. v1.1策划是当前冻结基线，但实现状态必须以代码与本目录审计为准。
-3. `MIST_PORT_SPIRIT_01`、`MIST_PORT_RARE_01`、`SKY_LEGEND_01`等仍是占位ID，不得擅自命名。
+3. `MIST_PORT_SPIRIT_01`的正式名已冻结为“绒岚”；`MIST_PORT_RARE_01`、`SKY_LEGEND_01`仍是占位ID，不得擅自命名。
 4. L2/L3正式题目、探索力数值、成长阈值和竞技匹配参数必须Review后冻结。
 5. 不把本地测试快照、CSS剪影或按钮推进包装成真实后端、正式美术或完整玩法。
