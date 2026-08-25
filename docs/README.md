@@ -4,6 +4,7 @@
 
 ## 当前文档
 
+- [Content Production Sprint 01](./content-production-sprint-01/README.md)：Sol对`a547f36` Review后的内容生产包，含制作稿、语言Review表、第二伙伴候选与Boss稿。
 - [当前真实项目状态](./current-project-status.md)：实现、placeholder、风险与验证证据。
 - [10关试玩内容方案](./ten-episode-demo-plan.md)：冻结的EP01–EP10结构与当前落地差距。
 - [10关试玩完整执行方案 v1.1](./ten-episode-demo-spec-v1.1.md)：正式PASS的完整对白、规则、实施顺序和验收指标。
