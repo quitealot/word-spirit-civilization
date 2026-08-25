@@ -1,275 +1,77 @@
 'use client';
+/* eslint-disable react-hooks/purity -- response timing is sampled only for answer events */
+/* eslint-disable @next/next/no-img-element -- local transparent character PNGs */
+import {useEffect,useMemo,useRef,useState} from 'react';
+import {assertVocabularyIntegrity} from './vocabulary';
+import {dueCount,getCurrentLearningPack,getDueQuestion,learnedWordCount,recordLearningAnswer,resetLearningStore,type LearningQuestion} from './learning-engine';
+import {bootstrapAnalytics,track} from './analytics';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { TUNING, buildReportPayload, computeDamage, damageRange, drawQuestion, isInWrongBook, recordAnswer } from './word-bank';
-import type { BattleReport, QuestionType, WordQuestion, WrongWordEntry } from './word-bank';
-
-type View = 'city' | 'explore' | 'learn' | 'arena' | 'spirits';
-type Spirit = { name:string; title:string; role:string; level:number; stars:number; tone:string; glyph:string; power:number; progress:number; locked?:boolean };
-type BattleSkill = { id:string; spirit:string; name:string; detail:string; questionType:QuestionType };
-
-const initialSpirits: Spirit[] = [
-  { name:'芽语', title:'森语守望者', role:'守护', level:12, stars:3, tone:'emerald', glyph:'芽', power:1180, progress:72 },
-  { name:'烬尾', title:'余烬追猎者', role:'强攻', level:10, stars:2, tone:'amber', glyph:'焰', power:1060, progress:48 },
-  { name:'澜歌', title:'潮汐吟游者', role:'治愈', level:9, stars:2, tone:'blue', glyph:'澜', power:970, progress:63 },
-  { name:'砾山', title:'古城铸壁者', role:'守护', level:7, stars:1, tone:'stone', glyph:'岩', power:720, progress:31 },
-  { name:'星织', title:'夜空抄写员', role:'辅助', level:6, stars:1, tone:'violet', glyph:'星', power:690, progress:26 },
-  { name:'未名之卵', title:'掌握探索词组后苏醒', role:'未知', level:0, stars:0, tone:'locked', glyph:'?', power:0, progress:0, locked:true },
+type Starter='芽语'|'烬尾'|'澜歌'; type Episode=1|2|3|4|5|6|7|8|9|10;
+type Spirit={name:Starter;role:string;tone:string;image:string;moment:string;skills:{name:string;effect:string}[]};
+type Save={starter:Starter|null;completed:Episode[];exploration:number;sightings:number;companion:boolean;arenaDone:boolean;rareSeen:boolean};
+type Line=readonly [speaker:string,text:string];
+const SAVE_KEY='word-spirit-p1-save-v2',LEGACY_SAVE_KEY='word-spirit-p0-save-v1';
+const EXPLORATION={correctNew:3,correctReview:2,ep2:3,ep3:6,ep4:12,ep5:22,ep7:34,ep8:45,ep9:58,ep10:72} as const;
+const EMPTY_SAVE:Save={starter:null,completed:[],exploration:0,sightings:0,companion:false,arenaDone:false,rareSeen:false};
+const SPIRITS:Spirit[]=[
+ {name:'芽语',role:'守护',tone:'emerald',image:'/spirit-yayu-card.png',moment:'它把刚长出的叶片递到你手边。',skills:[{name:'叶拍',effect:'造成伤害'},{name:'护芽',effect:'攻击并获得护盾'},{name:'扎根',effect:'降低下一次伤害'}]},
+ {name:'烬尾',role:'强攻',tone:'amber',image:'/spirit-jinwei-card.png',moment:'它绕回来闻了闻你，尾巴擦过鞋边。',skills:[{name:'火星',effect:'稳定攻击'},{name:'焰尾',effect:'高额伤害'},{name:'蓄火',effect:'强化下一次攻击'}]},
+ {name:'澜歌',role:'恢复',tone:'blue',image:'/spirit-lange-card.png',moment:'它安静看了很久，才慢慢靠近池边。',skills:[{name:'水音',effect:'造成伤害'},{name:'回潮',effect:'攻击并恢复生命'},{name:'静波',effect:'降低下一次伤害'}]},
 ];
-
-const words = [
-  { word:'revive', phonetic:'/rɪˈvaɪv/', meaning:'使复苏；使重新活跃', choices:['使复苏','使消散','使停留'] },
-  { word:'inherit', phonetic:'/ɪnˈherɪt/', meaning:'继承；经遗传获得', choices:['观察','继承','抵抗'] },
-  { word:'fragment', phonetic:'/ˈfræɡmənt/', meaning:'碎片；片段', choices:['遗迹','边界','碎片'] },
+const BONDING:Record<Starter,string>={芽语:'芽语先碰了碰你的手指，又把刚长出的叶片轻轻放进你掌心。',烬尾:'烬尾绕着你走了一圈，最后用温热的尾巴擦过你的鞋边。',澜歌:'澜歌隔着水光看了你很久，随后游到池边，把额头轻轻贴上你的手。'};
+const EPISODES:{ep:Episode;title:string;place:string;threshold:number}[]=[
+ {ep:1,title:'第一伙伴',place:'语灵站',threshold:0},{ep:2,title:'雾散以后',place:'港外旧路',threshold:EXPLORATION.ep2},{ep:3,title:'苏醒之门',place:'石门',threshold:EXPLORATION.ep3},{ep:4,title:'回廊里的尾巴',place:'残页回廊',threshold:EXPLORATION.ep4},{ep:5,title:'寂静广场',place:'寂静广场',threshold:EXPLORATION.ep5},{ep:6,title:'它还在跟着',place:'回廊出口',threshold:0},{ep:7,title:'第一次并肩',place:'广场北路',threshold:EXPLORATION.ep7},{ep:8,title:'被抹掉的名字',place:'无名碑',threshold:EXPLORATION.ep8},{ep:9,title:'雾里的稀客',place:'雾坡',threshold:EXPLORATION.ep9},{ep:10,title:'雾中的回声',place:'守门人门前',threshold:EXPLORATION.ep10},
 ];
+const STORIES:Record<Episode,Line[]>={
+ 1:[['初伴',''],['玩家','好。那就一起走。'],['岑婆','它肯跟你走，这才算选定。先记住，名字叫得顺，不等于真懂它。'],['玩家','这算认识了？'],['岑婆','算打过招呼。认识得久一点，得靠以后。'],['阿洛','岑婆！北边那条路露出来了！'],['岑婆','哪条？'],['阿洛','石门那条。昨晚还全是雾，今天早上能看见门了。'],['岑婆','有人过去了？'],['阿洛','老何看了一眼，没敢进。'],['岑婆','算他这回长脑子了。去看看可以。真碰见蚀影，别逞能。尤其是你，阿洛。']],
+ 2:[['阿洛','我小时候来过这边。'],['玩家','石门里面？'],['阿洛','想什么呢。到前面那个坡就回去了。再往前全是雾，站两步远都看不见人。'],['玩家','一直这样？'],['阿洛','反正我出生时就这样。我爹说他小时候也这样。所以今天才怪。'],['阿洛','你看，路边那根系船桩还在。'],['玩家','这里以前有船？'],['阿洛','雾港嘛。老一辈说这条河以前能通到北边。后来水浅了，路也没人走了。'],['阿洛','地上有新脚印。'],['玩家','老何的？'],['阿洛','老何鞋底缺一块，这双没有。脚印到前面就断了。'],['玩家','那还往前？'],['阿洛','都走到这了……先看一眼。只看一眼。']],
+ 3:[['阿洛','门比我想的高。'],['玩家','你不是来过？'],['阿洛','我说到坡就回去了。谁没事跟一堵门较劲。'],['阿洛','……我收回刚才那句“只看一眼”。']],
+ 4:[['阿洛','这里居然没塌。'],['玩家','你小声点。'],['阿洛','我已经很小声——'],['阿洛','你看见了？'],['玩家','一条尾巴。'],['阿洛','至少不是石头掉下来追我们。'],['玩家','像书页。'],['阿洛','一碰就碎。别抠。'],['玩家','刚才是谁想把门推到底？'],['阿洛','那是门，门本来就该推。'],['阿洛','它没跑远。'],['玩家','也没打算过来。'],['阿洛','可能在看你的伙伴。'],['玩家','别追。'],['阿洛','这话听着有点像岑婆。前面不止一只。']],
+ 5:[['阿洛','这地方叫广场？草都快到膝盖了。'],['玩家','柱子后面有碗。'],['阿洛','还有晾绳。以前有人住过。'],['阿洛','它们怕我们。'],['玩家','不，它们怕后面。']],
+ 6:[['阿洛','你有没有觉得……'],['玩家','什么？'],['阿洛','后面一直有东西。'],['阿洛','这回我可没追。'],['玩家','停一下。'],['阿洛','这回不跑了？'],['阿洛','真跟你走了。'],['阿洛','你不会吃醋吧？'],['玩家','它还不知道该站哪。'],['阿洛','你第一天也不知道。'],['玩家','你呢？'],['阿洛','我现在也不知道。所以我们很合适。']],
+ 7:[['阿洛','正好。'],['玩家','什么正好？'],['阿洛','你不是刚多了个帮手？'],['玩家','刚才是谁说别逞能？'],['阿洛','岑婆说的是我。'],['阿洛','……好吧，也包括你。']],
+ 8:[['阿洛','这块怎么坏成这样？'],['玩家','不是坏的。边上是风化，中间是人凿的。'],['阿洛','谁会专门爬到这里凿一行字？'],['玩家','不想让后来的人看见的人。'],['阿洛','雾港？'],['玩家','也可能只是一个“港”字。'],['阿洛','你就不能让我猜对一次？'],['玩家','等有证据再说。'],['阿洛','背面还有刻痕，像很多名字排在一起。'],['玩家','只有这一行被抹了。'],['阿洛','所以不是不让人知道这里有人，是不让人知道某个人。'],['阿洛','那边有人？'],['玩家','不像。声音每隔一会儿就响一次。'],['阿洛','先把这块拓下来，回去给岑婆看。'],['玩家','你带纸了？'],['阿洛','……我带了吃的。'],['玩家','那就先记住位置。']],
+ 9:[['阿洛','地上这些亮点，昨晚还没有。'],['玩家','不是石头。像鳞粉。'],['阿洛','广场那几只身上没有这个。'],['玩家','脚印往雾里去了。'],['阿洛','这次我不说“只看一眼”。'],['玩家','有进步。'],['阿洛','就是它。'],['玩家','别围过去。']],
+ 10:[['守门人','回去。'],['阿洛','你会说话？'],['守门人','会。也记得路那边有什么。'],['玩家','石碑上的字是谁凿掉的？'],['守门人','不知道。'],['阿洛','那你守着这里做什么？'],['守门人','不让只想看热闹的人过去。'],['阿洛','它是不是在说我？'],['玩家','大概。'],['守门人','你们带回了什么？'],['玩家','一只愿意跟我们走的语灵，一块被抹掉名字的碑，还有雾里的脚印。'],['守门人','看见被抹掉的地方，比随便补一个名字强。让我看看你们记住了多少。']],
+};
+const POST_STORIES:Partial<Record<Episode,Line[]>>={
+ 3:[['阿洛','第一天？'],['玩家','什么？'],['阿洛','你俩认识第一天？'],['玩家','嗯。'],['阿洛','……当我没问。'],['阿洛','等等，这门以前有这些纹路吗？'],['玩家','你又没见过门。'],['阿洛','对。那我换个问法——它刚才亮了吗？'],['玩家','现在亮了。'],['阿洛','回去叫人？'],['玩家','你会回去吗？'],['阿洛','……先看看门后有没有路。']],
+ 5:[['阿洛','都没事吧？'],['玩家','这里像它们的家。'],['阿洛','那团东西不是第一次来。草里有好几道拖痕。'],['玩家','先别碰它们的东西。'],['阿洛','我只想把那个碗翻过来，里面全是雨水。'],['阿洛','行了。至少今晚少喂一窝蚊子。'],['阿洛','它又来了。'],['玩家','假装没看见。'],['阿洛','你们怎么都爱教我这句。']],
+ 7:[['阿洛','刚才那一下配得不错。'],['玩家','你指哪一下？'],['阿洛','它挡住前面，你的初伴从旁边上。不是你安排的？'],['玩家','我只让它们别撞在一起。'],['阿洛','那也算进步。'],['玩家','这里有字。'],['阿洛','中间怎么全是凿痕？'],['玩家','别碰，先看四周。'],['阿洛','你确实越来越像岑婆了。']],
+ 9:[['阿洛','它输了还不走。'],['玩家','它不是来抢地盘的，像是在确认什么。'],['阿洛','刚才……云后面是什么？'],['玩家','不知道。'],['阿洛','你看见翅膀了吗？'],['玩家','只看见影子。'],['阿洛','它还会回来吗？'],['玩家','这里留着它的脚印。至少来过不止一次。']],
+ 10:[['阿洛','现在能过去了？'],['守门人','今天不能。'],['阿洛','那我们刚才——'],['守门人','证明你们不是路过看一眼。'],['玩家','那块碑到底写过什么？'],['守门人','不知道。我来的时候，它已经是那样。'],['阿洛','那你为什么拦着路？'],['守门人','以前有人从这里过去。回来的比过去的少。'],['玩家','里面有什么？'],['守门人','我没进去。知道的就这些。'],['守门人','要往前走，就把今天见到的带回去。'],['守门人','至少别再把它们忘掉。'],['玩家','我们会回来。'],['守门人','先把明天记住再说。']],
+};
 
-const opponents = [
-  { name:'北境旅人', rank:17, power:3240, form:'芽语 · 星织 · 烬尾', bonus:'记忆加成 12%' },
-  { name:'拾光者', rank:16, power:3380, form:'砾山 · 澜歌 · 烬尾', bonus:'记忆加成 9%' },
-  { name:'雾海航员', rank:14, power:3560, form:'芽语 · 澜歌 · 星织', bonus:'记忆加成 15%' },
-];
+function load():Save{try{const raw=localStorage.getItem(SAVE_KEY)||localStorage.getItem(LEGACY_SAVE_KEY);if(raw){const s=JSON.parse(raw) as Partial<Save>;return{...EMPTY_SAVE,...s,completed:(s.completed??[]) as Episode[]}}const starter=localStorage.getItem('word-spirit-starter-v1') as Starter|null;return{...EMPTY_SAVE,starter}}catch{return EMPTY_SAVE}}
+function previousDone(save:Save,ep:Episode){return ep===1||save.completed.includes((ep-1) as Episode)}
+function unlocked(save:Save,ep:Episode,threshold:number){if(save.completed.includes(ep))return true;if(!previousDone(save,ep))return false;if(ep===6)return save.sightings>=3;return save.exploration>=threshold}
 
-export default function Home() {
-  const [view, setView] = useState<View>('city');
-  const [energy, setEnergy] = useState(268);
-  const [learned, setLearned] = useState(18);
-  const [wordIndex, setWordIndex] = useState(0);
-  const [selected, setSelected] = useState('芽语');
-  const [spirits, setSpirits] = useState(initialSpirits);
-  const [modal, setModal] = useState<'learn'|'battle'|'result'|null>(null);
-  const [battleMode, setBattleMode] = useState<'stage'|'arena'>('stage');
-  const [battleTitle, setBattleTitle] = useState('雾港守门人');
-  const [lastReport, setLastReport] = useState<BattleReport|null>(null);
-  const [toast, setToast] = useState('');
-  const activeSpirit = useMemo(() => spirits.find(s => s.name === selected) ?? spirits[0], [spirits, selected]);
-
-  function showToast(message:string) {
-    setToast(message);
-    window.setTimeout(() => setToast(''), 2200);
-  }
-
-  function answer(choice:string) {
-    const correct = choice === words[wordIndex].meaning.split('；')[0] || choice === words[wordIndex].meaning;
-    if (!correct) { showToast('再想一想：答案藏在词根的回声里'); return; }
-    setEnergy(v => v + 12);
-    setLearned(v => v + 1);
-    setSpirits(list => list.map(s => s.name === '芽语' ? { ...s, progress: Math.min(100, s.progress + 6) } : s));
-    if (wordIndex < words.length - 1) { setWordIndex(v => v + 1); showToast('记忆成功 · 芽语获得 12 点能量'); }
-    else { setModal(null); setWordIndex(0); showToast('本轮完成 · 获得 1 枚升星碎片'); }
-  }
-
-  function openBattle(mode:'stage'|'arena', title:string) {
-    setBattleMode(mode); setBattleTitle(title); setModal('battle');
-  }
-
-  function upgradeSpirit() {
-    if (activeSpirit.locked) return;
-    if (activeSpirit.progress < 70) { showToast(`还需完成 ${Math.ceil((70-activeSpirit.progress)/6)} 次有效复习`); return; }
-    setSpirits(list => list.map(s => s.name === activeSpirit.name ? { ...s, stars:Math.min(5,s.stars+1), power:s.power+180, progress:8 } : s));
-    showToast(`${activeSpirit.name}完成升星，解锁新的战斗天赋`);
-  }
-
-  return (
-    <main className="game-shell">
-      <Header energy={energy} />
-      {view === 'city' && <CityView learned={learned} spirits={spirits.slice(0,3)} onLearn={() => setModal('learn')} onView={setView} />}
-      {view === 'explore' && <ExploreView onBattle={(title) => openBattle('stage',title)} />}
-      {view === 'learn' && <LearnView learned={learned} onStart={() => setModal('learn')} />}
-      {view === 'arena' && <ArenaView onBattle={(title) => openBattle('arena',title)} />}
-      {view === 'spirits' && <SpiritsView spirits={spirits} selected={selected} onSelect={setSelected} active={activeSpirit} onUpgrade={upgradeSpirit} />}
-      <BottomNav view={view} onChange={setView} />
-
-      {modal === 'learn' && <LearnModal item={words[wordIndex]} index={wordIndex} onAnswer={answer} onClose={() => setModal(null)} />}
-      {modal === 'battle' && <BattleModal title={battleTitle} mode={battleMode} onWin={(report) => { setLastReport(report); setModal('result'); }} onLose={(report) => { setLastReport(report); setModal(null); showToast(`战斗失败 · 正确率 ${report.accuracy}% · ${report.wrongWords.length} 个错词已加入回炉`); }} />}
-      {modal === 'result' && <ResultModal mode={battleMode} title={battleTitle} report={lastReport} onClose={() => { setModal(null); showToast(battleMode === 'arena' ? '竞技积分 +18' : '遗迹净化度 +12%'); }} />}
-      {toast && <div className="toast">{toast}</div>}
-    </main>
-  );
+export default function Home(){
+ const[ready,setReady]=useState(false),[save,setSave]=useState<Save>(EMPTY_SAVE),[story,setStory]=useState<Episode|null>(null),[postStory,setPostStory]=useState<Episode|null>(null),[learning,setLearning]=useState(false),[battle,setBattle]=useState<Episode|null>(null),[arena,setArena]=useState(false),[codex,setCodex]=useState(false),[toast,setToast]=useState(''),[,refresh]=useState(0);
+ useEffect(()=>{assertVocabularyIntegrity();const timer=window.setTimeout(()=>{bootstrapAnalytics();setSave(load());setReady(true)},0);return()=>window.clearTimeout(timer)},[]);useEffect(()=>{if(ready)localStorage.setItem(SAVE_KEY,JSON.stringify(save))},[save,ready]);
+ const spirit=useMemo(()=>SPIRITS.find(s=>s.name===save.starter)??null,[save.starter]);const learned=ready?learnedWordCount():0,due=ready?dueCount():0,pack=ready?getCurrentLearningPack():null;
+ function choose(name:Starter){track('starter_selected',{starter:name});localStorage.setItem('word-spirit-starter-v1',name);setSave({...EMPTY_SAVE,starter:name});setStory(1)}
+ function complete(ep:Episode){setSave(s=>{const next={...s,completed:[...new Set([...s.completed,ep])] as Episode[]};if(ep===4)next.sightings=Math.max(next.sightings,2);if(ep===5)next.sightings=3;if(ep===6)next.companion=true;if(ep===9)next.rareSeen=true;return next})}
+ function reward(ep:Episode){const m:Partial<Record<Episode,string>>={1:'港外旧路已在地图亮起',4:'发现未记录语灵 · 目击2/3',6:'共鸣成立 · 队伍现可容纳2只伙伴',8:'旧擂台已开放 · 竞技不影响主线'};if(m[ep]){setToast(m[ep]!);setTimeout(()=>setToast(''),2600)}}
+ function finishStory(ep:Episode){track('episode_dialogue_completed',{episode:ep});setStory(null);if(ep===6)setSave(s=>({...s,companion:true}));if([3,5,6,7,9,10].includes(ep)){track(ep===10?'boss_started':'battle_started',{episode:ep});setBattle(ep)}else{complete(ep);track('episode_completed',{episode:ep});reward(ep)}}
+ function win(ep:Episode){track(ep===10?'boss_completed':'battle_completed',{episode:ep});setBattle(null);if(POST_STORIES[ep])setPostStory(ep);else{complete(ep);track('episode_completed',{episode:ep});reward(ep)}}
+ function finishPost(ep:Episode){setPostStory(null);complete(ep);track('episode_completed',{episode:ep});if(ep===9)track('rare_seen',{state:'tracked',clues:1});setToast(ep===10?'第一季序章完成 · 至少别再把它们忘掉':ep===9?'稀有图鉴已记录 · 未共鸣 · 线索1/3':`EP${String(ep).padStart(2,'0')} 已完成`);setTimeout(()=>setToast(''),3000)}
+ function learningResult(correct:boolean,seen:boolean){if(correct)setSave(s=>({...s,exploration:s.exploration+(seen?EXPLORATION.correctReview:EXPLORATION.correctNew)}));refresh(v=>v+1)}
+ function restart(){resetLearningStore();localStorage.removeItem('word-spirit-starter-v1');localStorage.removeItem(SAVE_KEY);localStorage.removeItem(LEGACY_SAVE_KEY);setSave(EMPTY_SAVE);setStory(null);setBattle(null);refresh(v=>v+1)}
+ if(!ready)return <main/>;if(!spirit)return <StarterGate onChoose={choose}/>;
+ return <main className="p0-shell"><header className="p0-header"><div><span>《词灵》十关试玩</span><h1>雾中的回声</h1></div><div className="p0-header-actions"><div className="p0-stats"><b>{save.exploration}</b><span>探索力</span><b>{due}</b><span>到期复习</span></div><button onClick={restart}>重新开始</button></div></header>
+ <section className="partner-panel"><div className={`partner-art ${spirit.tone}`}><img src={spirit.image} alt={spirit.name}/></div><div><span>我的初伴 · {spirit.role}</span><h2>{spirit.name}</h2><p>{save.companion?'它不时回头确认新伙伴有没有跟上。':'它今天一直在看港外的方向。'}</p><div className="evolution-hint">下一形态　<strong>？？？</strong><small>{save.completed.includes(10)?'共鸣出现了新的变化。':save.companion?'叶片 / 尾焰 / 鳍光与昨天不同。':'共鸣正在形成……'}</small></div>{save.companion&&<div className="team-strip"><div className="unknown-mini">?</div><span><b>同行伙伴</b><small>MIST_PORT_SPIRIT_01 · 已共鸣</small></span></div>}</div></section>
+ <nav className="home-tabs"><button onClick={()=>setLearning(true)}>今日学习</button><button onClick={()=>setCodex(true)}>图鉴</button><button disabled={!save.completed.includes(8)} onClick={()=>setArena(true)}>竞技场</button></nav>
+ {save.completed.includes(10)&&<section className="chapter-map"><span>第一季序章完成</span><h2>雾港只占地图的一角</h2><div><i>雾港</i><i>未命名轮廓</i><i>未命名轮廓</i></div><ul><li>初伴的下一形态仍未公开，共鸣出现新变化</li><li>MIST_PORT_RARE_01 · 线索1/3</li><li>无名碑拓片待岑婆查看</li></ul></section>}
+ <section className="p0-grid"><article className="p0-card learning-card"><span>今日学习</span><h2>{pack?.id} · 正式L1</h2><p>已接触 {learned}/80 词，本包 {pack?.learned}/{pack?.questions.length}。FSRS决定再次出现时间。</p><button onClick={()=>setLearning(true)}>{pack&&pack.learned<pack.questions.length?'继续学习':'复习到期词'}</button></article><article className="p0-card map-card"><span>探索地图</span><h2>雾港旧路</h2><div className="episode-list long-map">{EPISODES.map(node=><EpisodeButton key={node.ep} node={node} unlocked={unlocked(save,node.ep,node.threshold)} done={save.completed.includes(node.ep)} onClick={()=>setStory(node.ep)}/>)}</div><small>剧情只检查探索力、前置事件和必要互动，不读取固定学习包。</small></article></section>
+ {story&&<StoryModal episode={story} spirit={spirit} onClose={()=>setStory(null)} onFinish={()=>finishStory(story)}/>} {postStory&&<PostStoryModal episode={postStory} spirit={spirit} onFinish={()=>finishPost(postStory)}/>} {learning&&pack&&<LearningModal pack={pack} onClose={()=>setLearning(false)} onAnswer={learningResult}/>} {battle&&<BattleModal episode={battle} spirit={spirit} hasCompanion={save.companion} onClose={()=>setBattle(null)} onWin={()=>win(battle)}/>} {arena&&<ArenaModal onClose={()=>setArena(false)} onComplete={()=>{track('arena_match_completed',{source:'test_snapshot'});setSave(s=>({...s,arenaDone:true,exploration:s.exploration+4}));setArena(false);setToast('测试守擂记录 · 首场完成');setTimeout(()=>setToast(''),2200)}}/>} {codex&&<CodexModal save={save} spirit={spirit} onClose={()=>setCodex(false)}/>} {toast&&<div className="toast">{toast}</div>}</main>
 }
 
-function Header({ energy }:{energy:number}) {
-  return <header className="topbar">
-    <div className="brand"><div className="brand-mark">言</div><div><strong>语灵文明</strong><span>失落纪元 · 第 7 日</span></div></div>
-    <div className="resources"><span><i className="memory-dot" />记忆能量 <b>{energy}</b></span><span><i className="streak-dot" />连续学习 <b>7天</b></span><button className="profile" aria-label="玩家资料">旅</button></div>
-  </header>;
-}
-
-function CityView({ learned, spirits, onLearn, onView }:{learned:number; spirits:Spirit[]; onLearn:()=>void; onView:(view:View)=>void}) {
-  return <>
-    <section className="world-panel with-art">
-      <div className="world-copy"><span className="eyebrow">文明复苏进度 · 23%</span><h1>让沉睡的词语，<br />再次拥有名字。</h1><p>今日掌握 {learned} 个新词，三座遗迹正在等待唤醒。</p><button className="primary-action" onClick={onLearn}>开始今日学习 <span>→</span></button></div>
-      <div className="chapter-badge"><span>当前章节</span><b>01 · 雾中的回声</b></div>
-    </section>
-    <section className="content-grid">
-      <div className="card squad-card"><div className="section-title"><div><span>出战小队</span><h2>我的语灵</h2></div><button onClick={() => onView('spirits')}>调整阵容</button></div><div className="spirit-list">{spirits.map((s,i)=><SpiritMini spirit={s} index={i} key={s.name}/>)}</div></div>
-      <div className="side-stack">
-        <article className="card mission-card"><div className="mission-icon">{30-learned}</div><div><span>今日记忆任务</span><h3>再掌握 {30-learned} 词即可获得升星碎片</h3></div><div className="progress"><i style={{width:`${learned/30*100}%`}} /></div><b>{learned} / 30</b></article>
-        <article className="card arena-card"><div className="arena-copy"><span>回响竞技场</span><h3>白银 III</h3><p>本周排名 18 · 防守成功 3 次</p></div><button onClick={() => onView('arena')}>前往挑战</button></article>
-      </div>
-    </section>
-  </>;
-}
-
-function SpiritMini({ spirit, index }:{spirit:Spirit;index:number}) {
-  return <article className={`spirit ${spirit.tone}`}><span className="position">{index+1}</span><div className="spirit-portrait"><SpiritArtwork spirit={spirit}/></div><div className="spirit-info"><span>{spirit.role}</span><h3>{spirit.name}</h3><Stars count={spirit.stars}/></div><b>Lv.{spirit.level}</b></article>;
-}
-
-function ExploreView({onBattle}:{onBattle:(title:string)=>void}) {
-  const stages = ['苏醒之门','残页回廊','寂静广场','雾港守门人','未开放','未开放'];
-  return <PageFrame eyebrow="剧情闯关" title="雾中的回声" copy="每场战斗都在找回文明遗失的词语。阵容决定战术，真实记忆决定力量。">
-    <div className="map-panel"><div className="map-road" />{stages.map((stage,i)=><button key={stage+i} className={`stage stage-${i+1} ${i<3?'done':''} ${i>3?'locked':''}`} onClick={()=>i===3&&onBattle(stage)} disabled={i!==3}><span>{i<3?'✓':i+1}</span><b>{stage}</b>{i===3&&<em>首领</em>}</button>)}<div className="map-note"><span>本章加成</span><b>近7日复习正确率 91%</b><p>全队生命与攻击 +14%</p></div></div>
-  </PageFrame>;
-}
-
-function LearnView({learned,onStart}:{learned:number;onStart:()=>void}) {
-  return <PageFrame eyebrow="今日学习" title="给知识留下能够返回的路" copy="这里展示学习到养成的转化。正式版本将接入真实词库与间隔复习算法。">
-    <div className="learn-dashboard"><div className="learn-ring" style={{'--p':`${learned/30*360}deg`} as React.CSSProperties}><div><b>{learned}</b><span>/ 30 词</span></div></div><div className="learn-details"><span>今日记忆计划</span><h2>探索词组 · 文明与传承</h2><p>完成新词学习后，芽语将获得经验；在明日、7日后仍能正确回忆，才能获得升星碎片。</p><div className="reward-row"><i>+144</i><span>记忆能量</span><i>+1</i><span>升星碎片</span></div><button className="primary-dark" onClick={onStart}>继续学习</button></div></div>
-  </PageFrame>;
-}
-
-function ArenaView({onBattle}:{onBattle:(title:string)=>void}) {
-  return <PageFrame eyebrow="异步玩家对战" title="回响竞技场" copy="不要求同时在线。学习质量形成知识加成，阵容搭配决定能否以弱胜强。">
-    <div className="rank-banner"><div><span>本周段位</span><h2>白银 III</h2><p>排名 18 · 距离晋级还需 42 分</p></div><div className="rank-score"><b>1,358</b><span>竞技积分</span></div></div>
-    <div className="opponent-list">{opponents.map(o=><article className="opponent" key={o.name}><div className="opponent-rank">#{o.rank}</div><div><h3>{o.name}</h3><p>{o.form}</p></div><div className="opponent-power"><span>{o.bonus}</span><b>战力 {o.power}</b></div><button onClick={()=>onBattle(o.name)}>挑战</button></article>)}</div>
-  </PageFrame>;
-}
-
-function SpiritsView({spirits,selected,onSelect,active,onUpgrade}:{spirits:Spirit[];selected:string;onSelect:(s:string)=>void;active:Spirit;onUpgrade:()=>void}) {
-  return <PageFrame eyebrow="收集与养成" title="语灵图鉴" copy="不靠抽卡。完成词组即可相遇，真正记住才能升星与觉醒。">
-    <div className="collection-layout"><div className="collection-grid">{spirits.map(s=><button key={s.name} className={`collection-card ${s.tone} ${selected===s.name?'selected':''}`} onClick={()=>onSelect(s.name)}><div className={`collection-glyph ${['芽语','烬尾','澜歌'].includes(s.name)?'has-art':''}`}><SpiritArtwork spirit={s}/></div><span>{s.role}</span><h3>{s.name}</h3><Stars count={s.stars}/>{s.locked&&<em>尚未苏醒</em>}</button>)}</div><aside className={`detail-card ${active.tone}`}><span>{active.title}</span><div className={`detail-glyph ${['芽语','烬尾','澜歌'].includes(active.name)?'has-art':''}`}><SpiritArtwork spirit={active}/></div><h2>{active.name}</h2>{active.locked?<p>完成“探索与远行”主题词组后，这枚语灵之卵将回应你的声音。</p>:<><Stars count={active.stars}/><div className="stat-row"><span>等级 <b>{active.level}</b></span><span>战力 <b>{active.power}</b></span></div><p>下次升星将强化核心技能，并解锁一段来自旧文明的记忆。</p><div className="detail-progress"><i style={{width:`${active.progress}%`}} /></div><small>有效复习进度 {active.progress}% / 70%</small><button className="primary-dark" onClick={onUpgrade}>尝试升星</button></>}</aside></div>
-  </PageFrame>;
-}
-
-function SpiritArtwork({spirit}:{spirit:Spirit}) {
-  if(spirit.name==='芽语') return <img className="spirit-art yayu-art" src="/spirit-yayu-card.png" alt="芽语立绘" />;
-  if(spirit.name==='烬尾') return <img className="spirit-art jinwei-art" src="/spirit-jinwei-card.png" alt="烬尾立绘" />;
-  if(spirit.name==='澜歌') return <span className="spirit-art lange-art" role="img" aria-label="澜歌立绘" />;
-  return <i className="fallback-glyph">{spirit.glyph}</i>;
-}
-
-function PageFrame({eyebrow,title,copy,children}:{eyebrow:string;title:string;copy:string;children:React.ReactNode}) {
-  return <section className="page-frame"><div className="page-heading"><span>{eyebrow}</span><h1>{title}</h1><p>{copy}</p></div>{children}</section>;
-}
-
-function Stars({count}:{count:number}) { return <div className="stars">{'★'.repeat(count)}<i>{'★'.repeat(5-count)}</i></div>; }
-
-function BottomNav({view,onChange}:{view:View;onChange:(v:View)=>void}) {
-  const nav:{id:View;icon:string;label:string}[]=[{id:'city',icon:'⌂',label:'文明'},{id:'explore',icon:'◇',label:'探索'},{id:'learn',icon:'✦',label:'学习'},{id:'arena',icon:'♜',label:'竞技'},{id:'spirits',icon:'▦',label:'语灵'}];
-  return <nav className="bottom-nav" aria-label="主导航">{nav.map(n=><button key={n.id} className={`${view===n.id?'active':''} ${n.id==='learn'?'learn-button':''}`} onClick={()=>onChange(n.id)}><span>{n.icon}</span>{n.label}</button>)}</nav>;
-}
-
-function LearnModal({item,index,onAnswer,onClose}:{item:typeof words[0];index:number;onAnswer:(c:string)=>void;onClose:()=>void}) {
-  return <div className="modal-backdrop"><section className="modal learn-modal"><button className="close" onClick={onClose}>×</button><span className="modal-kicker">记忆唤醒 · {index+1} / 3</span><div className="word-orb">✦</div><h2>{item.word}</h2><p className="phonetic">{item.phonetic}</p><p>选择它在这段文明残页中的含义</p><div className="choice-list">{item.choices.map(c=><button key={c} onClick={()=>onAnswer(c)}>{c}</button>)}</div></section></div>;
-}
-
-function BattleModal({title,mode,onWin,onLose}:{title:string;mode:'stage'|'arena';onWin:(report:BattleReport)=>void;onLose:(report:BattleReport)=>void}) {
-  const [enemyHp,setEnemyHp]=useState(TUNING.HP_MAX);
-  const [allyHp,setAllyHp]=useState(TUNING.HP_MAX);
-  const [round,setRound]=useState(1);
-  const [busy,setBusy]=useState(false);
-  const [action,setAction]=useState('选择语灵，完成对应的英文挑战');
-  const [attacker,setAttacker]=useState('');
-  const [damage,setDamage]=useState(0);
-  const [challenge,setChallenge]=useState<WordQuestion|null>(null);
-  const [activeSkill,setActiveSkill]=useState<BattleSkill|null>(null);
-  const [phase,setPhase]=useState<'choose'|'question'|'enemy'|'won'|'lost'>('choose');
-  const allyHpRef = useRef(allyHp);
-  useEffect(() => { allyHpRef.current = allyHp; }, [allyHp]);
-  const enemyHpRef = useRef(enemyHp);
-  useEffect(() => { enemyHpRef.current = enemyHp; }, [enemyHp]);
-  const phaseRef = useRef(phase);
-  useEffect(() => { phaseRef.current = phase; }, [phase]);
-  const roundRef = useRef(round);
-  useEffect(() => { roundRef.current = round; }, [round]);
-  const statsRef = useRef({ total:0, correct:0, skills:{root:0,meaning:0,context:0} });
-  const wrongWordsRef = useRef<WrongWordEntry[]>([]);
-  const echoRef = useRef(false);
-
-  const ranges = useMemo(()=>({ root:damageRange('root'), meaning:damageRange('meaning'), context:damageRange('context') }),[]);
-  const skills:BattleSkill[]=[
-    {id:'芽',spirit:'芽语',name:'词根护盾',detail:`辨析词根 · 伤害 ${ranges.root.min}~${ranges.root.max} · 护盾+${TUNING.SHIELD_HEAL}`,questionType:'root'},
-    {id:'焰',spirit:'烬尾',name:'极速释义',detail:`词义速记 · 伤害 ${ranges.meaning.min}~${ranges.meaning.max}`,questionType:'meaning'},
-    {id:'澜',spirit:'澜歌',name:'语境回响',detail:`语境选词 · 伤害 ${ranges.context.min}~${ranges.context.max} · 回响+${TUNING.CONTEXT_HEAL}`,questionType:'context'},
-  ];
-
-  function chooseSkill(skill:BattleSkill) {
-    if(busy||phase!=='choose') return;
-    const q = drawQuestion(skill.questionType);
-    setChallenge(q); setActiveSkill(skill); setPhase('question');
-    echoRef.current = isInWrongBook(q.id);
-    setAction(`${skill.spirit}正在凝聚「${skill.name}」`);
-  }
-
-  function report(result:'win'|'lose'):BattleReport {
-    return buildReportPayload(mode,title,result,roundRef.current,{...statsRef.current},allyHpRef.current,enemyHpRef.current,{...statsRef.current.skills},[...wrongWordsRef.current]);
-  }
-
-  function resolveAnswer(choice:string) {
-    if(!challenge||!activeSkill||busy) return;
-    setBusy(true);
-    statsRef.current.total += 1;
-    statsRef.current.skills[activeSkill.questionType] += 1;
-    if(choice!==challenge.answer){
-      recordAnswer(challenge,false);
-      if(!wrongWordsRef.current.some(w => w.word === challenge.word && w.type === challenge.type)) {
-        wrongWordsRef.current.push({ word:challenge.word, prompt:challenge.prompt, answer:challenge.answer, type:challenge.type });
-      }
-      setAction(`翻译错误：「${challenge.word}」已加入错词本，将在后续战斗中重现`);
-      window.setTimeout(()=>enemyTurn(),900);
-      return;
-    }
-    recordAnswer(challenge,true);
-    statsRef.current.correct += 1;
-    const dmg = computeDamage(challenge);
-    setAttacker(activeSkill.id); setDamage(dmg); setAction(`回答正确！${activeSkill.name}（难度 ${challenge.difficulty}）造成 ${dmg} 点伤害`);
-    const nextEnemyFixed=Math.max(0,enemyHpRef.current-dmg);
-    window.setTimeout(()=>setEnemyHp(nextEnemyFixed),260);
-    if(activeSkill.id==='芽') window.setTimeout(()=>setAllyHp(h=>Math.min(TUNING.HP_MAX,h+TUNING.SHIELD_HEAL)),320);
-    if(activeSkill.id==='澜') window.setTimeout(()=>setAllyHp(h=>Math.min(TUNING.HP_MAX,h+TUNING.CONTEXT_HEAL)),320);
-    if(nextEnemyFixed===0){ window.setTimeout(()=>{setAction('敌方回响消散，遗迹重新发出声音');setPhase('won');setBusy(false)},760); return; }
-    window.setTimeout(()=>enemyTurn(),930);
-  }
-
-  function enemyTurn(){
-    setPhase('enemy');setChallenge(null);setActiveSkill(null);setAttacker('');setDamage(0);setAction('对手正在翻译：recover = ?');
-    const hit=TUNING.ENEMY_HIT_BASE+roundRef.current*TUNING.ENEMY_HIT_RAMP;
-    const nextAllyHp = Math.max(0, allyHpRef.current - hit);
-    const allyDefeated = nextAllyHp === 0;
-    window.setTimeout(()=>{ setAttacker('enemy');setDamage(hit);setAction(`对手译出 recover「恢复」，发动逆译冲击，造成 ${hit} 点伤害`);setAllyHp(nextAllyHp); },850);
-    window.setTimeout(()=>{
-      if(allyDefeated||phaseRef.current==='lost'){
-        setAction('我方语灵全部倒下，回响消散于雾中');
-        setPhase('lost');
-        setBusy(false);
-        return;
-      }
-      setRound(r=>r+1);setAttacker('');setDamage(0);setAction('轮到你了：选择语灵并完成英文挑战');setPhase('choose');setBusy(false);
-    },1650);
-  }
-
-  function retryBattle(){
-    setEnemyHp(TUNING.HP_MAX);setAllyHp(TUNING.HP_MAX);setRound(1);setBusy(false);setAction('选择语灵，完成对应的英文挑战');setAttacker('');setDamage(0);setChallenge(null);setActiveSkill(null);setPhase('choose');
-    statsRef.current = { total:0, correct:0, skills:{root:0,meaning:0,context:0} };
-    wrongWordsRef.current = [];
-  }
-
-  const statsView = statsRef.current;
-
-  return <div className="modal-backdrop"><section className="modal battle-modal interactive-battle">
-    <div className="battle-head"><div><span className="modal-kicker">{mode==='arena'?'回响竞技':'遗迹战斗'} · 第 {round} 回合</span><h2>{title}</h2></div><span className="knowledge-bonus">知识加成 +14%</span></div>
-    <div className="hp-row enemy-hp"><span>敌方回响</span><div><i style={{width:`${enemyHp}%`}} /></div><b>{enemyHp} / {TUNING.HP_MAX}</b></div>
-    <div className={`battle-stage ${attacker?'is-acting':''}`}>
-      <div className={`combat-line ally-line ${attacker&&attacker!=='enemy'?'attacking':''}`}><div className="combatant spirit-a"><SpiritArtwork spirit={initialSpirits[0]}/><small>芽语</small></div><div className="combatant spirit-b"><SpiritArtwork spirit={initialSpirits[1]}/><small>烬尾</small></div><div className="combatant spirit-c"><SpiritArtwork spirit={initialSpirits[2]}/><small>澜歌</small></div></div>
-      <div className="turn-core"><span>{phase==='enemy'?'对手回合':phase==='question'?'翻译中':'你的回合'}</span>{damage>0&&<b className="damage-pop">-{damage}</b>}</div>
-      <div className={`combat-line enemy-line ${attacker==='enemy'?'attacking':''}`}><div className="combatant foe-a"><i>雾</i><small>蚀影</small></div><div className="combatant foe-b"><i>魇</i><small>守门人</small></div></div>
-      {busy&&<div className="battle-flash" />}
-    </div>
-    <div className="hp-row ally-hp"><span>我方小队</span><div><i style={{width:`${allyHp}%`}} /></div><b>{allyHp} / {TUNING.HP_MAX}</b></div>
-    <div className="battle-log"><span>{action}</span></div>
-    {phase==='question'&&challenge&&activeSkill?<div className="translation-panel"><div><span>{activeSkill.spirit} · {activeSkill.name} · 难度 {challenge.difficulty}{echoRef.current&&<em className="echo-tag">错词回响 · 复习</em>}</span><b>{challenge.prompt}</b></div><div className="translation-choices">{challenge.choices.map(choice=><button key={choice} onClick={()=>resolveAnswer(choice)} disabled={busy}>{choice}</button>)}</div></div>:phase==='enemy'?<div className="opponent-translating"><i>EN</i><span><b>对手翻译中</b><small>系统依据对方近期真实答题记录结算</small></span><em>•••</em></div>:phase==='won'?<button className="claim-victory" onClick={()=>onWin(report('win'))}>完成战斗 · 查看结算</button>:phase==='lost'?<div className="defeat-panel"><div className="defeat-mark">败</div><p className="defeat-msg">{action}</p><p className="defeat-stats">答题 {statsView.correct} / {statsView.total} · 正确率 {statsView.total?Math.round(statsView.correct/statsView.total*100):0}%</p><div className="defeat-actions"><button className="claim-victory" onClick={retryBattle}>重新挑战</button><button className="retreat-btn" onClick={()=>onLose(report('lose'))}>撤退</button></div></div>:<div className="skill-bar">{skills.map(skill=><button key={skill.id} onClick={()=>chooseSkill(skill)} disabled={busy}><i>{skill.id}</i><span><b>{skill.name}</b><small>{skill.detail}</small></span></button>)}</div>}
-  </section></div>;
-}
-
-function ResultModal({mode,title,report,onClose}:{mode:'stage'|'arena';title:string;report:BattleReport|null;onClose:()=>void}) {
-  return <div className="modal-backdrop"><section className="modal result-modal"><div className="victory-mark">胜</div><span className="modal-kicker">战斗胜利</span><h2>{mode==='arena'?'击败 '+title:'遗迹已被净化'}</h2><p>{mode==='arena'?'阵容克制生效，知识加成为本场战斗提供了关键优势。':'失落的文字正在返回城市，新的区域即将苏醒。'}</p>{report&&<div className="result-stats"><span><b>{report.rounds}</b>回合</span><span><b>{report.accuracy}%</b>答题正确率</span><span><b>{report.allyHp}</b>队伍剩余血量</span></div>}{report&&report.wrongWords.length>0&&<div className="review-panel"><span className="review-title">错词回炉 · 这些词将在后续战斗中重现</span>{report.wrongWords.map(w=><div className="review-word" key={w.word+w.type}><b>{w.word}</b><span>{w.answer}</span></div>)}</div>}<div className="result-rewards"><span><b>{mode==='arena'?'+18':'+120'}</b>{mode==='arena'?'竞技积分':'记忆能量'}</span><span><b>+6</b>芽语经验</span></div><button className="primary-dark" onClick={onClose}>收下奖励</button></section></div>;
-}
+function StarterGate({onChoose}:{onChoose:(s:Starter)=>void}){return <main className="starter-screen"><section className="starter-dialogue"><span>EP01 · 第一伙伴</span><h1>岑婆的语灵站</h1><p>“就它们三个。你可以选，不过它们不点头，你选了也白选。”</p></section><section className="starter-grid">{SPIRITS.map(s=><article className={`starter-card ${s.tone}`} key={s.name}><div className="starter-art"><img className="spirit-art" src={s.image} alt={s.name}/></div><span>{s.role}</span><h2>{s.name}</h2><p>{s.moment}</p><button onClick={()=>onChoose(s.name)}>我想和{s.name}一起走</button></article>)}</section><small className="starter-note">选择后只获得这一只伙伴；另外两只不会自动加入队伍。</small></main>}
+function EpisodeButton({node,unlocked:open,done,onClick}:{node:(typeof EPISODES)[number];unlocked:boolean;done:boolean;onClick:()=>void}){return <button className={done?'done':''} disabled={!open||done} onClick={onClick}><i>{done?'✓':node.ep}</i><span>EP{String(node.ep).padStart(2,'0')} · {node.place}<b>{node.title}</b></span><em>{done?'已完成':open?'进入':'未解锁'}</em></button>}
+function StoryModal({episode,spirit,onClose,onFinish}:{episode:Episode;spirit:Spirit;onClose:()=>void;onFinish:()=>void}){const[index,setIndex]=useState(0),line=STORIES[episode][index],bonding=episode===1&&index===0;const visual=episode===4?'尾':episode===8?'碑':episode===9?'稀':episode===10?'守':null;return <div className={`modal-backdrop ${episode===1?'intro-backdrop':''}`}><section className="story-modal"><button className="close" onClick={onClose}>×</button><span>EP{String(episode).padStart(2,'0')} · {EPISODES[episode-1].place}</span><div className="story-stage">{visual?<div className={`scene-symbol scene-${episode}`}>{visual}</div>:<img src={spirit.image} alt={spirit.name}/>}<div><b>{bonding?spirit.name:line[0]}</b><p>{bonding?BONDING[spirit.name]:line[1]}</p></div></div><button className="story-next" onClick={()=>index<STORIES[episode].length-1?setIndex(index+1):onFinish()}>{index<STORIES[episode].length-1?'继续':episode===10?'接受考验':([3,5,7,9].includes(episode)?'进入战斗':'完成剧情')}</button></section></div>}
+function PostStoryModal({episode,spirit,onFinish}:{episode:Episode;spirit:Spirit;onFinish:()=>void}){const lines=POST_STORIES[episode]!,[index,setIndex]=useState(0),line=lines[index];return <div className="modal-backdrop"><section className="story-modal"><span>EP{String(episode).padStart(2,'0')} · 战后</span><div className="story-stage">{episode===10?<div className="scene-symbol scene-10">守</div>:<img src={spirit.image} alt={spirit.name}/>}<div><b>{line[0]}</b><p>{line[1]}</p></div></div><button className="story-next" onClick={()=>index<lines.length-1?setIndex(index+1):onFinish()}>{index<lines.length-1?'继续':episode===10?'展开章末地图':'完成剧情'}</button></section></div>}
+function LearningModal({pack,onClose,onAnswer}:{pack:ReturnType<typeof getCurrentLearningPack>;onClose:()=>void;onAnswer:(c:boolean,s:boolean)=>void}){const[index,setIndex]=useState(Math.min(pack.learned,pack.questions.length-1)),[feedback,setFeedback]=useState('');const started=useRef(0),q=pack.questions[index];useEffect(()=>{track('lesson_started',{packId:pack.id});started.current=Date.now()},[pack.id]);function answer(choice:string){const seen=index<pack.learned,correct=choice===q.answer,now=Date.now(),latency=started.current?now-started.current:0;recordLearningAnswer(q,correct,latency);track('question_answered',{wordId:q.wordId,layer:q.layer,correct,latency,source:'lesson'});onAnswer(correct,seen);setFeedback(correct?'记住了。探索力正在汇聚。':`正确义项：${q.answer}`);setTimeout(()=>{setFeedback('');if(index<pack.questions.length-1){setIndex(index+1);started.current=Date.now()}else{track('lesson_completed',{packId:pack.id});onClose()}},700)}return <div className="modal-backdrop"><section className="learn-sheet"><button className="close" onClick={onClose}>×</button><span>{pack.id} · L1　{index+1}/{pack.questions.length}</span><h2>{q.word}</h2><i>{q.phonetic}</i><p>{q.prompt}</p><div>{q.choices.map(c=><button key={c} disabled={!!feedback} onClick={()=>answer(c)}>{c}</button>)}</div>{feedback&&<strong>{feedback}</strong>}</section></div>}
+function BattleModal({episode,spirit,hasCompanion,onClose,onWin}:{episode:Episode;spirit:Spirit;hasCompanion:boolean;onClose:()=>void;onWin:()=>void}){const boss=episode===10;const[enemy,setEnemy]=useState(boss?180:episode===9?130:100),[ally,setAlly]=useState(100),[q,setQ]=useState<LearningQuestion|null>(null),[skill,setSkill]=useState(spirit.skills[0]),[msg,setMsg]=useState(episode===9?'稀有语灵保持着距离。它在试探你。':boss?'守门人：让我看看你们记住了多少。':'选择语灵技能。题目由学习状态决定。'),[wrong,setWrong]=useState<string>(),[swapped,setSwapped]=useState(false);const started=useRef(0);function choose(s:typeof skill){setSkill(s);setQ(getDueQuestion(wrong));started.current=Date.now();setMsg(`${spirit.name}准备使用「${s.name}」`)}function swap(){setSwapped(true);setMsg('两只语灵交换前后位。换人不出题。')}function answer(c:string){if(!q)return;const ok=c===q.answer;recordLearningAnswer(q,ok,Date.now()-started.current);if(ok){const hit=skill.name==='焰尾'?42:30,next=Math.max(0,enemy-hit);setEnemy(next);if(skill.name==='护芽'||skill.name==='回潮')setAlly(h=>Math.min(100,h+10));setMsg(`回答正确，「${skill.name}」完整发动。`);setWrong(undefined);setQ(null);if(!next)setTimeout(onWin,500)}else{setWrong(q.wordId);setAlly(h=>Math.max(0,h-(boss?22:16)));setMsg(`回答错误：${q.word} 已由FSRS重新调度，并进入优先复现。`);setQ(null)}}return <div className="modal-backdrop"><section className="p0-battle"><button className="close" onClick={onClose}>×</button><span>EP{String(episode).padStart(2,'0')} · {boss?'守门人Boss':episode===9?'稀有语灵试探战':'探索战斗'}</span><h2>{boss?'雾中的回声':episode===7?'第一次并肩':'语灵战斗'}</h2><div className="battle-health"><b>{spirit.name} {ally}</b><b>{boss?'守门人':episode===9?'未记录语灵':'蚀影'} {enemy}</b></div><div className="battle-figures"><div className="battle-team-visual"><img src={spirit.image} alt={spirit.name}/>{hasCompanion&&<div className="unknown-fighter">?</div>}</div><strong>VS</strong><div className={`shadow-foe ${boss?'gatekeeper':''}`}>{boss?'守':episode===9?'稀':'蚀'}</div></div><p>{msg}</p>{q?<div className="battle-question"><h3>{q.word}</h3><small>{q.phonetic} · {q.layer}</small>{q.choices.map(c=><button key={c} onClick={()=>answer(c)}>{c}</button>)}</div>:<div className="battle-skills">{spirit.skills.map(s=><button key={s.name} onClick={()=>choose(s)}><b>{s.name}</b><small>{s.effect}</small></button>)}{hasCompanion&&<button className={swapped?'used':''} onClick={swap}><b>换位</b><small>{swapped?'已完成配合':'不触发英语题'}</small></button>}</div>}<small className="battle-rule">技能效果与L1/L2/L3永久解绑；未审校高层内容不会临时生成。</small></section></div>}
+function ArenaModal({onClose,onComplete}:{onClose:()=>void;onComplete:()=>void}){const[round,setRound]=useState(0);return <div className="modal-backdrop"><section className="story-modal arena-modal"><button className="close" onClick={onClose}>×</button><span>旧擂台 · 可选玩法</span><h2>测试守擂记录</h2><p>匿名守擂者“港口学员07”的历史学习快照：L1保持率78%，近期遗忘词3个。它不是实时真人。</p><div className="arena-snapshot"><b>你的攻击</b><span>取决于当前作答</span><b>对方防守/反击</b><span>取决于其真实历史掌握</span></div><button className="story-next" onClick={()=>round<2?setRound(round+1):onComplete()}>{round<2?`完成模拟回合 ${round+1}/3`:'结束首场竞技'}</button></section></div>}
+function CodexModal({save,spirit,onClose}:{save:Save;spirit:Spirit;onClose:()=>void}){return <div className="modal-backdrop"><section className="story-modal codex-modal"><button className="close" onClick={onClose}>×</button><span>雾港图鉴</span><h2>见过的语灵</h2><div className="codex-list"><article><img src={spirit.image} alt={spirit.name}/><b>{spirit.name}</b><small>初伴 · 已共鸣 · 下一形态？？？</small></article><article><div className="unknown-mini">?</div><b>名称未知</b><small>MIST_PORT_SPIRIT_01 · {save.companion?'已共鸣':`目击 ${save.sightings}/3`}</small></article><article><div className="rare-mini">稀</div><b>{save.rareSeen?'未记录稀客':'？？？'}</b><small>{save.rareSeen?'未共鸣 · 线索1/3':'尚未见过'}</small></article><article><div className="sky-mini">翼</div><b>天空剪影</b><small>{save.rareSeen?'SKY_LEGEND_01 · 仅记录轮廓':'尚未记录'}</small></article></div></section></div>}
