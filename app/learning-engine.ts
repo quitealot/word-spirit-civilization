@@ -118,6 +118,41 @@ export function getDueQuestion(preferredWordId?: string): LearningQuestion {
   return buildL1Question(entry);
 }
 
+export type AdventurePreparationPlan = {
+  questions: LearningQuestion[];
+  newWordIds: string[];
+  reviewWordIds: string[];
+};
+
+export function buildAdventurePreparationPlan(episode: number, newLimit = 3, reviewLimit = 2): AdventurePreparationPlan {
+  const store = loadLearningStore();
+  const now = Date.now();
+  const packId = `LP${String(Math.min(10, Math.max(1, episode))).padStart(2, '0')}`;
+  const packEntries = VOCABULARY.filter(entry => entry.learningPack === packId);
+  const newWordIds = packEntries
+    .filter(entry => !store.progress[entry.wordId])
+    .slice(0, newLimit)
+    .map(entry => entry.wordId);
+  const reviewWordIds = Object.entries(store.progress)
+    .filter(([wordId, progress]) => !newWordIds.includes(wordId) && new Date(progress.card.due).getTime() <= now)
+    .sort((left, right) => new Date(left[1].card.due).getTime() - new Date(right[1].card.due).getTime())
+    .slice(0, reviewLimit)
+    .map(([wordId]) => wordId);
+  const questions = [...newWordIds, ...reviewWordIds]
+    .map(wordId => VOCABULARY_BY_ID.get(wordId))
+    .filter((entry): entry is VocabularyEntry => Boolean(entry))
+    .map(buildL1Question);
+  return { questions, newWordIds, reviewWordIds };
+}
+
+export function getAdventureQuestion(wordIds: string[], alreadyCalledWordIds: string[], preferredWordId?: string): LearningQuestion {
+  if (preferredWordId && wordIds.includes(preferredWordId)) return getDueQuestion(preferredWordId);
+  const unusedPrepared = wordIds.find(wordId => !alreadyCalledWordIds.includes(wordId));
+  if (unusedPrepared) return getDueQuestion(unusedPrepared);
+  if (wordIds[0]) return getDueQuestion(wordIds[0]);
+  return getDueQuestion(preferredWordId);
+}
+
 export function recordLearningAnswer(question: LearningQuestion, correct: boolean, latencyMs: number): WordProgress {
   const store = loadLearningStore();
   const previous = store.progress[question.wordId];

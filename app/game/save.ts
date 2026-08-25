@@ -1,10 +1,11 @@
 import { EPISODE_CONFIG, type EpisodeId } from './episode-config.ts';
 import type { GrowthState, SpiritGrowth } from './growth.ts';
+import { createEmptyAdventureLearning, migrateAdventureLearning, type AdventureLearningByEpisode } from './learning-adventure.ts';
 
 export const SAVE_KEY = 'word-spirit-p1-save-v2';
 export const LEGACY_SAVE_KEY = 'word-spirit-p0-save-v1';
 export const STARTER_KEY = 'word-spirit-starter-v1';
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 export type StarterId = '芽语' | '烬尾' | '澜歌';
 export type OpeningCheckpoint = 'harbor' | 'station' | null;
@@ -83,6 +84,7 @@ export type GameSave = {
   openingInteraction: OpeningInteraction;
   episodeState: EpisodePersistentState;
   growth: GrowthState;
+  adventureLearning: AdventureLearningByEpisode;
 };
 
 const EMPTY_TRACKING: Record<TrackingSlotId, TrackingSlotState> = {
@@ -107,6 +109,7 @@ export function createEmptySave(): GameSave {
     openingIndex: 0,
     openingInteraction: null,
     growth: { spirits: {}, claimedEvidenceIds: [], claimedMilestoneIds: [] },
+    adventureLearning: createEmptyAdventureLearning(),
     episodeState: {
       ep05: { sightings: 0, battleCompleted: false },
       ep06: {
@@ -314,6 +317,7 @@ export function migrateSave(raw: unknown, starterFallback: StarterId | null = nu
     openingIndex: Math.max(0, Math.floor(numberOr(source.openingIndex, 0))),
     openingInteraction,
     growth: migrateGrowth(source.growth),
+    adventureLearning: migrateAdventureLearning(source.adventureLearning),
     episodeState: migrateEpisodeState(source.episodeState, source),
   };
   base.sightings = Math.max(base.sightings, base.episodeState.ep05.sightings);

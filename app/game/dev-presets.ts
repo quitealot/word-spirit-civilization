@@ -270,7 +270,7 @@ export function createDevEntryPreset(
  */
 export function validateDevSave(save: GameSave): DevPresetValidation {
   const errors: string[] = [];
-  if (save.saveVersion !== 4) errors.push(`saveVersion must be 4, got ${save.saveVersion}`);
+  if (save.saveVersion !== 5) errors.push(`saveVersion must be 5, got ${save.saveVersion}`);
   if (!save.starter) errors.push('starter must be selected');
   if (save.exploration < minExplorationForCompleted(save.completed)) {
     errors.push('exploration is below a completed episode unlock threshold');
