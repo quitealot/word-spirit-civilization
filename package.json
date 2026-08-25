@@ -11,7 +11,8 @@
     "start": "vinext start",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "validate:narrative": "node --experimental-strip-types scripts/validate-narrative.ts",
-    "validate:gameplay": "node --experimental-strip-types scripts/validate-gameplay.ts"
+    "validate:gameplay": "node --experimental-strip-types scripts/validate-gameplay.ts",
+    "validate:dev-presets": "node --experimental-strip-types scripts/validate-dev-presets.ts"
   },
   "dependencies": {
     "next": "16.2.6",
