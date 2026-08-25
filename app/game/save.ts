@@ -1,9 +1,10 @@
-import { EPISODE_CONFIG, type EpisodeId } from './episode-config';
+import { EPISODE_CONFIG, type EpisodeId } from './episode-config.ts';
+import type { GrowthState, SpiritGrowth } from './growth.ts';
 
 export const SAVE_KEY = 'word-spirit-p1-save-v2';
 export const LEGACY_SAVE_KEY = 'word-spirit-p0-save-v1';
 export const STARTER_KEY = 'word-spirit-starter-v1';
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 export type StarterId = '芽语' | '烬尾' | '澜歌';
 export type OpeningCheckpoint = 'harbor' | 'station' | null;
@@ -38,6 +39,8 @@ export type EpisodePersistentState = {
   };
   ep08: {
     monumentFace: MonumentFace;
+    frontViewed: boolean;
+    backViewed: boolean;
     residueRecorded: boolean;
     positionRecorded: boolean;
     arenaUnlocked: boolean;
@@ -79,6 +82,7 @@ export type GameSave = {
   openingIndex: number;
   openingInteraction: OpeningInteraction;
   episodeState: EpisodePersistentState;
+  growth: GrowthState;
 };
 
 const EMPTY_TRACKING: Record<TrackingSlotId, TrackingSlotState> = {
@@ -102,6 +106,7 @@ export function createEmptySave(): GameSave {
     openingCheckpoint: 'harbor',
     openingIndex: 0,
     openingInteraction: null,
+    growth: { spirits: {}, claimedEvidenceIds: [], claimedMilestoneIds: [] },
     episodeState: {
       ep05: { sightings: 0, battleCompleted: false },
       ep06: {
@@ -114,6 +119,8 @@ export function createEmptySave(): GameSave {
       ep07: { swapUsed: false, swapCooldownRemaining: 0, battleCompleted: false },
       ep08: {
         monumentFace: null,
+        frontViewed: false,
+        backViewed: false,
         residueRecorded: false,
         positionRecorded: false,
         arenaUnlocked: false,
@@ -170,6 +177,30 @@ function stringOrNull(value: unknown): string | null {
   return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
+function migrateGrowth(value: unknown): GrowthState {
+  const input = value && typeof value === 'object' ? value as Partial<GrowthState> : {};
+  const rawSpirits = input.spirits && typeof input.spirits === 'object' ? input.spirits : {};
+  const spirits: Record<string, SpiritGrowth> = {};
+  for (const [id, raw] of Object.entries(rawSpirits)) {
+    if (!raw || typeof raw !== 'object') continue;
+    const item = raw as Partial<SpiritGrowth>;
+    spirits[id] = {
+      level: Math.min(8, Math.max(1, Math.floor(numberOr(item.level, 1, 1)))),
+      xp: Math.floor(numberOr(item.xp, 0)),
+      resonance: Math.floor(numberOr(item.resonance, 0)),
+    };
+  }
+  return {
+    spirits,
+    claimedEvidenceIds: Array.isArray(input.claimedEvidenceIds)
+      ? Array.from(new Set(input.claimedEvidenceIds.filter((id): id is string => typeof id === 'string')))
+      : [],
+    claimedMilestoneIds: Array.isArray(input.claimedMilestoneIds)
+      ? Array.from(new Set(input.claimedMilestoneIds.filter((id): id is string => typeof id === 'string')))
+      : [],
+  };
+}
+
 function migrateTracking(value: unknown): Record<TrackingSlotId, TrackingSlotState> {
   const input = value && typeof value === 'object' ? value as Partial<Record<TrackingSlotId, Partial<TrackingSlotState>>> : {};
   const result = cloneTracking();
@@ -187,12 +218,12 @@ function migrateTracking(value: unknown): Record<TrackingSlotId, TrackingSlotSta
 
 function migrateEpisodeState(value: unknown, legacy: Record<string, unknown>): EpisodePersistentState {
   const input = value && typeof value === 'object' ? value as Partial<EpisodePersistentState> : {};
-  const ep05Input = input.ep05 ?? {};
-  const ep06Input = input.ep06 ?? {};
-  const ep07Input = input.ep07 ?? {};
-  const ep08Input = input.ep08 ?? {};
-  const ep09Input = input.ep09 ?? {};
-  const ep10Input = input.ep10 ?? {};
+  const ep05Input: Partial<EpisodePersistentState['ep05']> = input.ep05 ?? {};
+  const ep06Input: Partial<EpisodePersistentState['ep06']> = input.ep06 ?? {};
+  const ep07Input: Partial<EpisodePersistentState['ep07']> = input.ep07 ?? {};
+  const ep08Input: Partial<EpisodePersistentState['ep08']> = input.ep08 ?? {};
+  const ep09Input: Partial<EpisodePersistentState['ep09']> = input.ep09 ?? {};
+  const ep10Input: Partial<EpisodePersistentState['ep10']> = input.ep10 ?? {};
   const legacyCompanion = booleanOr(legacy.companion, false);
   const legacySightings = Math.min(3, Math.floor(numberOr(legacy.sightings, 0)));
   const companionId = stringOrNull(ep06Input.companionId) ?? (legacyCompanion ? 'MIST_PORT_SPIRIT_01' : null);
@@ -225,6 +256,8 @@ function migrateEpisodeState(value: unknown, legacy: Record<string, unknown>): E
     },
     ep08: {
       monumentFace: ep08Input.monumentFace === 'front' || ep08Input.monumentFace === 'back' ? ep08Input.monumentFace : null,
+      frontViewed: booleanOr(ep08Input.frontViewed, ep08Input.monumentFace === 'front'),
+      backViewed: booleanOr(ep08Input.backViewed, ep08Input.monumentFace === 'back'),
       residueRecorded: booleanOr(ep08Input.residueRecorded, false),
       positionRecorded: booleanOr(ep08Input.positionRecorded, false),
       arenaUnlocked: booleanOr(ep08Input.arenaUnlocked, booleanOr(legacy.arenaDone, false)),
@@ -280,6 +313,7 @@ export function migrateSave(raw: unknown, starterFallback: StarterId | null = nu
     openingCheckpoint,
     openingIndex: Math.max(0, Math.floor(numberOr(source.openingIndex, 0))),
     openingInteraction,
+    growth: migrateGrowth(source.growth),
     episodeState: migrateEpisodeState(source.episodeState, source),
   };
   base.sightings = Math.max(base.sightings, base.episodeState.ep05.sightings);
@@ -403,10 +437,11 @@ export function tickEp07SwapCooldown(save: GameSave): GameSave {
 }
 
 export function setEp08MonumentFace(save: GameSave, face: Exclude<MonumentFace, null>): GameSave {
-  return { ...save, episodeState: { ...save.episodeState, ep08: { ...save.episodeState.ep08, monumentFace: face } } };
+  return { ...save, episodeState: { ...save.episodeState, ep08: { ...save.episodeState.ep08, monumentFace: face, frontViewed: face === 'front' ? true : save.episodeState.ep08.frontViewed, backViewed: face === 'back' ? true : save.episodeState.ep08.backViewed } } };
 }
 
 export function recordEp08Clue(save: GameSave, clue: 'residue' | 'position'): GameSave {
+  if (!save.episodeState.ep08.frontViewed || !save.episodeState.ep08.backViewed) return save;
   return { ...save, episodeState: { ...save.episodeState, ep08: { ...save.episodeState.ep08, residueRecorded: clue === 'residue' ? true : save.episodeState.ep08.residueRecorded, positionRecorded: clue === 'position' ? true : save.episodeState.ep08.positionRecorded } } };
 }
 

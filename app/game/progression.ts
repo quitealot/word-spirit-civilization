@@ -1,5 +1,5 @@
-import type { MasteryLayer } from './episode-config';
-import type { BossPhase, GameSave } from './save';
+import type { MasteryLayer } from './episode-config.ts';
+import type { BossPhase, GameSave } from './save.ts';
 
 const MASTERY_RANK: Record<MasteryLayer, number> = { L1: 1, L2: 2, L3: 3 };
 

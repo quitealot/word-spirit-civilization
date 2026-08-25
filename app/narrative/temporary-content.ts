@@ -3,7 +3,7 @@ import type {
   Starter,
   TemporaryLine,
   TemporaryStarterBehavior,
-} from './types';
+} from './types.ts';
 
 /**
  * TEMPORARY_CONTENT_PENDING_K3
