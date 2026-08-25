@@ -6,6 +6,7 @@
 
 - [EP01–EP10制作级内容稿](./ep01-10-production-script.md)
 - [语言内容Review工作簿](./language-content-review.xlsx)：36个L2、24个L3、逐集资产清单
+- [L2逐题GitHub Review表](./l2-review.md) / [L3逐题GitHub Review表](./l3-review.md)
 - [第二伙伴3候选设计](./second-companion-candidates.md)
 - [等级/经验与共鸣制作稿](./level-xp-resonance-spec.md)
 - [EP10 Boss制作稿](./ep10-boss-production-spec.md)
@@ -19,4 +20,3 @@
 4. 成长试玩只推进等级/经验与共鸣；正式升星后移。
 5. 真实异步竞技后移。
 6. Boss只可向下适配玩家真实Mastery，禁止按EP或阶段强行塞入L2/L3。
-
