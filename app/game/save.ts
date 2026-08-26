@@ -5,13 +5,14 @@ import { createEmptyAdventureLearning, migrateAdventureLearning, type AdventureL
 export const SAVE_KEY = 'word-spirit-p1-save-v2';
 export const LEGACY_SAVE_KEY = 'word-spirit-p0-save-v1';
 export const STARTER_KEY = 'word-spirit-starter-v1';
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
 
 export type StarterId = '芽语' | '烬尾' | '澜歌';
 export type OpeningCheckpoint = 'harbor' | 'station' | null;
 export type OpeningInteraction = 'luggage' | 'footprints' | null;
-export type TutorialCheckpoint = 'ep1_intro' | 'ep1_lesson' | 'ep1_outro' | null;
+export type TutorialCheckpoint = 'ep1_link_test_result' | 'ep1_spirit_choice' | 'ep1_spirit_reselect' | 'ep1_intro' | 'ep1_lesson' | 'ep1_outro' | null;
 export type Ep1GuideOutcome = 'trained' | 'skipped' | null;
+export type Ep1BondEvidence = { wordId: string; correct: boolean; seenBefore: boolean; latencyMs: number };
 export type MonumentFace = 'front' | 'back' | null;
 export type TrackingSlotId = 'tracking_01' | 'tracking_02' | 'tracking_03';
 export type ApproachStage = 0 | 1 | 2 | 3;
@@ -84,6 +85,8 @@ export type GameSave = {
   openingCheckpoint: OpeningCheckpoint;
   openingIndex: number;
   openingInteraction: OpeningInteraction;
+  ep1RecommendedStarter: StarterId | null;
+  ep1BondEvidence: Ep1BondEvidence[];
   episodeState: EpisodePersistentState;
   growth: GrowthState;
   adventureLearning: AdventureLearningByEpisode;
@@ -111,6 +114,8 @@ export function createEmptySave(): GameSave {
     openingCheckpoint: 'harbor',
     openingIndex: 0,
     openingInteraction: null,
+    ep1RecommendedStarter: null,
+    ep1BondEvidence: [],
     growth: { spirits: {}, claimedEvidenceIds: [], claimedMilestoneIds: [] },
     adventureLearning: createEmptyAdventureLearning(),
     episodeState: {
@@ -147,6 +152,10 @@ export function createEmptySave(): GameSave {
   };
 }
 
+export function ep1CheckpointAfterStarterChoice(recommended: StarterId | null, chosen: StarterId): TutorialCheckpoint {
+  return recommended && recommended !== chosen ? 'ep1_spirit_reselect' : 'ep1_intro';
+}
+
 type StorageLike = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
 function cloneTracking(): Record<TrackingSlotId, TrackingSlotState> {
@@ -181,6 +190,44 @@ function booleanOr(value: unknown, fallback: boolean): boolean {
 
 function stringOrNull(value: unknown): string | null {
   return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+function migrateBondEvidence(value: unknown): Ep1BondEvidence[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap(item => {
+    if (!item || typeof item !== 'object') return [];
+    const source = item as Partial<Ep1BondEvidence>;
+    if (typeof source.wordId !== 'string' || typeof source.correct !== 'boolean') return [];
+    return [{ wordId: source.wordId, correct: source.correct, seenBefore: booleanOr(source.seenBefore, false), latencyMs: Math.floor(numberOr(source.latencyMs, 0)) }];
+  }).slice(0, 9);
+}
+
+const V6_OPENING_OFFSETS = { morning: 0, northView: 6, qiaoyi: 14, linkTestPre: 25, end: 36 } as const;
+
+/** Deterministically maps v3 scene/index positions onto the frozen v6 pre-link chain. */
+export function migrateEp1OpeningPosition(source: Record<string, unknown>): number {
+  const sceneId = [source.ep1SceneId, source.openingSceneId, source.currentSceneId].find(value => typeof value === 'string') as string | undefined;
+  const beatIndex = Math.max(0, Math.floor(numberOr(source.ep1SceneBeatIndex ?? source.openingBeatIndex ?? source.sceneBeatIndex, 0)));
+  if (sceneId === 'ep01.morning') return Math.min(V6_OPENING_OFFSETS.northView, beatIndex);
+  if (sceneId === 'ep01.north_view') return Math.min(V6_OPENING_OFFSETS.qiaoyi, V6_OPENING_OFFSETS.northView + beatIndex);
+  if (sceneId === 'ep01.qiaoyi') return Math.min(V6_OPENING_OFFSETS.linkTestPre, V6_OPENING_OFFSETS.qiaoyi + beatIndex);
+  if (sceneId === 'ep01.link_test_pre') return Math.min(V6_OPENING_OFFSETS.end, V6_OPENING_OFFSETS.linkTestPre + beatIndex);
+  if (sceneId === 'ep01.cenpo') return V6_OPENING_OFFSETS.qiaoyi + Math.min(beatIndex, 10);
+  if (sceneId === 'ep01.spirits') {
+    if (beatIndex >= 7) return V6_OPENING_OFFSETS.end;
+    const mapped = [0, 0, 0, 0, 1, 2, 3][beatIndex] ?? 0;
+    return V6_OPENING_OFFSETS.linkTestPre + mapped;
+  }
+
+  const legacyIndex = Math.max(0, Math.floor(numberOr(source.openingIndex, 0)));
+  if (numberOr(source.saveVersion, 0) >= SAVE_VERSION) return Math.min(V6_OPENING_OFFSETS.end, legacyIndex);
+  if (legacyIndex < V6_OPENING_OFFSETS.qiaoyi) return legacyIndex;
+  if (legacyIndex < 27) return V6_OPENING_OFFSETS.qiaoyi + Math.min(legacyIndex - V6_OPENING_OFFSETS.qiaoyi, 10);
+  if (legacyIndex < 34) {
+    const mapped = [0, 0, 0, 0, 1, 2, 3][legacyIndex - 27] ?? 0;
+    return V6_OPENING_OFFSETS.linkTestPre + mapped;
+  }
+  return V6_OPENING_OFFSETS.end;
 }
 
 function migrateGrowth(value: unknown): GrowthState {
@@ -298,9 +345,9 @@ export function migrateSave(raw: unknown, starterFallback: StarterId | null = nu
   const starter = isStarter(source.starter) ? source.starter : starterFallback;
   const empty = createEmptySave();
   const legacyIncompleteEp1 = numberOr(source.saveVersion, 0) < 7 && !completed.includes(1);
-  const checkpoint = legacyIncompleteEp1 && starter ? 'ep1_intro' : source.checkpoint === 'ep1_intro' || source.checkpoint === 'ep1_lesson' || source.checkpoint === 'ep1_outro'
-    ? source.checkpoint
-    : null;
+  const validCheckpoints: Exclude<TutorialCheckpoint, null>[] = ['ep1_link_test_result', 'ep1_spirit_choice', 'ep1_spirit_reselect', 'ep1_intro', 'ep1_lesson', 'ep1_outro'];
+  const storedCheckpoint = typeof source.checkpoint === 'string' && validCheckpoints.includes(source.checkpoint as Exclude<TutorialCheckpoint, null>) ? source.checkpoint as Exclude<TutorialCheckpoint, null> : null;
+  const checkpoint: TutorialCheckpoint = completed.includes(1) ? null : legacyIncompleteEp1 && starter ? 'ep1_intro' : storedCheckpoint ?? (starter ? 'ep1_intro' : null);
   const openingCheckpoint = source.openingCheckpoint === 'station' || source.openingCheckpoint === 'harbor'
     ? source.openingCheckpoint
     : starter ? null : 'harbor';
@@ -321,8 +368,10 @@ export function migrateSave(raw: unknown, starterFallback: StarterId | null = nu
     ep1TutorialIndex: legacyIncompleteEp1 ? 0 : Math.max(0, Math.floor(numberOr(source.ep1TutorialIndex, 0))),
     ep1GuideOutcome: legacyIncompleteEp1 ? null : source.ep1GuideOutcome === 'trained' || source.ep1GuideOutcome === 'skipped' ? source.ep1GuideOutcome : null,
     openingCheckpoint,
-    openingIndex: legacyIncompleteEp1 ? 0 : Math.max(0, Math.floor(numberOr(source.openingIndex, 0))),
+    openingIndex: legacyIncompleteEp1 && !starter ? 0 : migrateEp1OpeningPosition(source),
     openingInteraction,
+    ep1RecommendedStarter: isStarter(source.ep1RecommendedStarter) ? source.ep1RecommendedStarter : null,
+    ep1BondEvidence: migrateBondEvidence(source.ep1BondEvidence),
     growth: migrateGrowth(source.growth),
     adventureLearning: migrateAdventureLearning(source.adventureLearning),
     episodeState: migrateEpisodeState(source.episodeState, source),

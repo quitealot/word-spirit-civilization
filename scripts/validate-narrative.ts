@@ -1,7 +1,7 @@
 import { EPISODE_CONFIG } from '../app/game/episode-config.ts';
 import type { EpisodeConfig } from '../app/game/episode-config.ts';
 import { ACTIVE_NARRATIVE_PACK } from '../app/narrative/active-scenes.ts';
-import { EP01_V3_SCENES } from '../app/narrative/ep01-v3.ts';
+import { EP01_V6_SCENES, EP01_V6_STATUS } from '../app/narrative/ep01-v6.ts';
 import type {
   NarrativeBeat,
   NarrativePresentation,
@@ -251,16 +251,15 @@ const result = validateNarrativePack({
 printResult(result);
 
 const ep01Result = validateNarrativePack({
-  scenes: EP01_V3_SCENES,
+  scenes: EP01_V6_SCENES,
   episodeConfig: { 1: EPISODE_CONFIG[1] },
   contentStatus: 'formal',
 });
-const ep01Text = JSON.stringify(EP01_V3_SCENES);
-if (ep01Text.includes('你们先去站里。我带点东西，随后到。') || ep01Text.includes('岑婆已经先到了') || ep01Text.includes('你没有多练。岑婆没说什么。')) {
-  throw new Error('EP01 v3 contains text rejected by the final Sol consistency fix.');
+const ep01Text = JSON.stringify(EP01_V6_SCENES);
+if (EP01_V6_STATUS !== 'FROZEN_APPROVED') throw new Error('EP01 v6 must remain FROZEN_APPROVED.');
+if (!ep01Text.includes('我没问你。') || !ep01Text.includes('4个行动倾向情境 → 三只语灵各一次技能体验，共调用9个正式L1。') || !ep01Text.includes('乔姨没有催你。') || !ep01Text.includes('测试结束。乔姨看看三只语灵，又看看你。')) {
+  throw new Error('EP01 v6 is missing one of the four frozen hotfixes.');
 }
-if (!ep01Text.includes('走吧，先去站里。我拿点东西。') || !ep01Text.includes('你决定先上路，训练留到之后。')) {
-  throw new Error('EP01 v3 is missing a final Sol consistency fix.');
-}
+if (ep01Text.includes('ep01.cenpo') || ep01Text.includes('ep01.spirits') || ep01Text.includes('岑姨')) throw new Error('EP01 v6 contains a retired v3 scene or character name.');
 
 if (result.errors.length > 0 || ep01Result.errors.length > 0) process.exitCode = 1;

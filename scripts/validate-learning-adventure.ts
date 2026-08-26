@@ -42,7 +42,7 @@ assert(isAdventureReady(migratedLearning, 3), 'Ready preparation must survive JS
 assert(migratedLearning[3].successfulWordIds[0] === 'w-new-1', 'Call evidence must survive migration');
 
 const migratedSave = migrateSave({ saveVersion: 5, starter: '芽语', completed: [1, 2] });
-assert(migratedSave.saveVersion === 8, 'Legacy saves must migrate to save schema v8');
+assert(migratedSave.saveVersion === 9, 'Legacy saves must migrate to save schema v9');
 assert(migratedSave.adventureLearning[3].status === 'not_started', 'Legacy saves must receive safe empty preparation state');
 const migratedIncompleteEp1 = migrateSave({ saveVersion: 6, starter: '澜歌', completed: [], checkpoint: 'ep1_outro', ep1TutorialIndex: 3 });
 assert(migratedIncompleteEp1.checkpoint === 'ep1_intro' && migratedIncompleteEp1.ep1TutorialIndex === 0, 'Incomplete legacy EP01 saves must restart at the approved post-selection scene');

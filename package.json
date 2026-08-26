@@ -15,7 +15,8 @@
     "validate:dev-presets": "node --experimental-strip-types scripts/validate-dev-presets.ts",
     "validate:learning-adventure": "node --experimental-strip-types scripts/validate-learning-adventure.ts",
     "validate:skill-guidance": "node --experimental-strip-types scripts/validate-skill-guidance.ts",
-    "validate:initial-bond": "node --experimental-strip-types scripts/validate-initial-bond.ts"
+    "validate:initial-bond": "node --experimental-strip-types scripts/validate-initial-bond.ts",
+    "validate:ep01-v6-migration": "node --experimental-strip-types scripts/validate-ep01-v6-migration.ts"
   },
   "dependencies": {
     "next": "16.2.6",
