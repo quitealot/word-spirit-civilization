@@ -1,6 +1,7 @@
 import { EPISODE_CONFIG } from '../app/game/episode-config.ts';
 import type { EpisodeConfig } from '../app/game/episode-config.ts';
-import { TEMPORARY_NARRATIVE_PACK } from '../app/narrative/temporary-scenes.ts';
+import { ACTIVE_NARRATIVE_PACK } from '../app/narrative/active-scenes.ts';
+import { EP01_V3_SCENES } from '../app/narrative/ep01-v3.ts';
 import type {
   NarrativeBeat,
   NarrativePresentation,
@@ -243,10 +244,23 @@ function printResult(result: NarrativeValidationResult) {
 }
 
 const result = validateNarrativePack({
-  scenes: TEMPORARY_NARRATIVE_PACK.scenes,
+  scenes: ACTIVE_NARRATIVE_PACK.scenes,
   episodeConfig: EPISODE_CONFIG,
   contentStatus: 'temporary',
 });
 printResult(result);
 
-if (result.errors.length > 0) process.exitCode = 1;
+const ep01Result = validateNarrativePack({
+  scenes: EP01_V3_SCENES,
+  episodeConfig: { 1: EPISODE_CONFIG[1] },
+  contentStatus: 'formal',
+});
+const ep01Text = JSON.stringify(EP01_V3_SCENES);
+if (ep01Text.includes('你们先去站里。我带点东西，随后到。') || ep01Text.includes('岑婆已经先到了') || ep01Text.includes('你没有多练。岑婆没说什么。')) {
+  throw new Error('EP01 v3 contains text rejected by the final Sol consistency fix.');
+}
+if (!ep01Text.includes('走吧，先去站里。我拿点东西。') || !ep01Text.includes('你决定先上路，训练留到之后。')) {
+  throw new Error('EP01 v3 is missing a final Sol consistency fix.');
+}
+
+if (result.errors.length > 0 || ep01Result.errors.length > 0) process.exitCode = 1;

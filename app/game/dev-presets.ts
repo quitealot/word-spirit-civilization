@@ -270,7 +270,7 @@ export function createDevEntryPreset(
  */
 export function validateDevSave(save: GameSave): DevPresetValidation {
   const errors: string[] = [];
-  if (save.saveVersion !== 6) errors.push(`saveVersion must be 6, got ${save.saveVersion}`);
+  if (save.saveVersion !== 7) errors.push(`saveVersion must be 7, got ${save.saveVersion}`);
   if (!save.starter) errors.push('starter must be selected');
   // Bridge V1 keeps exploration as a readiness/tuning signal. A legal direct
   // challenge may therefore complete an episode below its recommended value.

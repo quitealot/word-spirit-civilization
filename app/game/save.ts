@@ -5,12 +5,13 @@ import { createEmptyAdventureLearning, migrateAdventureLearning, type AdventureL
 export const SAVE_KEY = 'word-spirit-p1-save-v2';
 export const LEGACY_SAVE_KEY = 'word-spirit-p0-save-v1';
 export const STARTER_KEY = 'word-spirit-starter-v1';
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 export type StarterId = '芽语' | '烬尾' | '澜歌';
 export type OpeningCheckpoint = 'harbor' | 'station' | null;
 export type OpeningInteraction = 'luggage' | 'footprints' | null;
 export type TutorialCheckpoint = 'ep1_intro' | 'ep1_lesson' | 'ep1_outro' | null;
+export type Ep1GuideOutcome = 'trained' | 'skipped' | null;
 export type MonumentFace = 'front' | 'back' | null;
 export type TrackingSlotId = 'tracking_01' | 'tracking_02' | 'tracking_03';
 export type ApproachStage = 0 | 1 | 2 | 3;
@@ -79,6 +80,7 @@ export type GameSave = {
   rareSeen: boolean;
   checkpoint: TutorialCheckpoint;
   ep1TutorialIndex: number;
+  ep1GuideOutcome: Ep1GuideOutcome;
   openingCheckpoint: OpeningCheckpoint;
   openingIndex: number;
   openingInteraction: OpeningInteraction;
@@ -105,6 +107,7 @@ export function createEmptySave(): GameSave {
     rareSeen: false,
     checkpoint: null,
     ep1TutorialIndex: 0,
+    ep1GuideOutcome: null,
     openingCheckpoint: 'harbor',
     openingIndex: 0,
     openingInteraction: null,
@@ -292,7 +295,8 @@ export function migrateSave(raw: unknown, starterFallback: StarterId | null = nu
     : [];
   const starter = isStarter(source.starter) ? source.starter : starterFallback;
   const empty = createEmptySave();
-  const checkpoint = source.checkpoint === 'ep1_intro' || source.checkpoint === 'ep1_lesson' || source.checkpoint === 'ep1_outro'
+  const legacyIncompleteEp1 = numberOr(source.saveVersion, 0) < 7 && !completed.includes(1);
+  const checkpoint = legacyIncompleteEp1 && starter ? 'ep1_intro' : source.checkpoint === 'ep1_intro' || source.checkpoint === 'ep1_lesson' || source.checkpoint === 'ep1_outro'
     ? source.checkpoint
     : null;
   const openingCheckpoint = source.openingCheckpoint === 'station' || source.openingCheckpoint === 'harbor'
@@ -312,9 +316,10 @@ export function migrateSave(raw: unknown, starterFallback: StarterId | null = nu
     arenaDone: booleanOr(source.arenaDone, false),
     rareSeen: booleanOr(source.rareSeen, false),
     checkpoint,
-    ep1TutorialIndex: Math.min(3, Math.floor(numberOr(source.ep1TutorialIndex, 0))),
+    ep1TutorialIndex: legacyIncompleteEp1 ? 0 : Math.max(0, Math.floor(numberOr(source.ep1TutorialIndex, 0))),
+    ep1GuideOutcome: legacyIncompleteEp1 ? null : source.ep1GuideOutcome === 'trained' || source.ep1GuideOutcome === 'skipped' ? source.ep1GuideOutcome : null,
     openingCheckpoint,
-    openingIndex: Math.max(0, Math.floor(numberOr(source.openingIndex, 0))),
+    openingIndex: legacyIncompleteEp1 ? 0 : Math.max(0, Math.floor(numberOr(source.openingIndex, 0))),
     openingInteraction,
     growth: migrateGrowth(source.growth),
     adventureLearning: migrateAdventureLearning(source.adventureLearning),
