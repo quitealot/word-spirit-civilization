@@ -1,6 +1,6 @@
 import type { GameSave } from './save.ts';
 
-export type GrowthSource = 'first_correct' | 'review_correct' | 'battle_clear' | 'resonance_milestone';
+export type GrowthSource = 'first_correct' | 'review_correct' | 'battle_skill' | 'weakness_recovered' | 'battle_clear' | 'resonance_milestone';
 
 export type SpiritGrowth = {
   level: number;
@@ -28,6 +28,8 @@ export const GROWTH_RULES = {
   firstCorrectXp: 8,
   reviewCorrectXp: 10,
   battleClearXp: 20,
+  stableBattleSkillXp: 4,
+  weaknessRecoveredXp: 8,
   levelThresholds: [0, 40, 95, 165, 250, 350, 465, 595],
 } as const;
 
@@ -73,6 +75,24 @@ export function grantBattleGrowth(
   battleInstanceId: string,
 ): GrowthAward {
   return grantEvidenceGrowth(save, spiritId, `battle:${battleInstanceId}`, GROWTH_RULES.battleClearXp, 2);
+}
+
+export function grantStableBattleSkillGrowth(
+  save: GameSave,
+  spiritId: string,
+  episode: number,
+  wordId: string,
+): GrowthAward {
+  return grantEvidenceGrowth(save, spiritId, `battle-skill:ep${episode}:${wordId}`, GROWTH_RULES.stableBattleSkillXp, 1);
+}
+
+export function grantWeaknessRecoveryGrowth(
+  save: GameSave,
+  spiritId: string,
+  episode: number,
+  wordId: string,
+): GrowthAward {
+  return grantEvidenceGrowth(save, spiritId, `weakness-recovered:ep${episode}:${wordId}`, GROWTH_RULES.weaknessRecoveredXp, 2);
 }
 
 function grantEvidenceGrowth(

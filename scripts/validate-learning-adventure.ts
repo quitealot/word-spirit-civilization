@@ -5,8 +5,10 @@ import {
   migrateAdventureLearning,
   recordAdventureCall,
   recordPreparedWord,
+  recordWeaknessRecovered,
 } from '../app/game/learning-adventure.ts';
 import { migrateSave } from '../app/game/save.ts';
+import { resolveExecutionQuality, resolveSkillMultiplier } from '../app/game/bridge-config.ts';
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -22,16 +24,25 @@ assert(isAdventureReady(learning, 3), 'Every planned word must be prepared befor
 
 learning = recordAdventureCall(learning, 3, 'w-new-1', true);
 learning = recordAdventureCall(learning, 3, 'w-new-2', false);
-learning = recordAdventureCall(learning, 3, 'outside-pool', true);
-assert(learning[3].calledWordIds.length === 2, 'Only prepared exploration words may become calls');
+learning = recordAdventureCall(learning, 3, 'outside-pool', false);
+assert(learning[3].calledWordIds.length === 3, 'Direct challenges must record guide words outside a prepared pool');
 assert(learning[3].successfulWordIds.length === 1, 'Only correct calls may become successful calls');
+assert(learning[3].weakWordIds.includes('outside-pool'), 'Direct challenge mistakes must enter targeted training');
+learning = recordWeaknessRecovered(learning, 3, 'outside-pool');
+assert(!learning[3].weakWordIds.includes('outside-pool'), 'Successful targeted training must clear the weakness');
+assert(learning[3].stabilizedWordIds.includes('outside-pool'), 'Recovered weakness must remain as effective evidence');
+
+assert(resolveExecutionQuality(true, 2000) === 'stable', 'Fast correct answers must be stable');
+assert(resolveExecutionQuality(true, 5000) === 'hesitant', 'Slow correct answers must be hesitant');
+assert(resolveSkillMultiplier('stable_attack', false, 2000) === 0.3, 'Wrong stable attacks must keep 30% effect');
+assert(resolveSkillMultiplier('control', false, 2000) === 0, 'Wrong control skills must fail instead of sharing attack behavior');
 
 const migratedLearning = migrateAdventureLearning(JSON.parse(JSON.stringify(learning)));
 assert(isAdventureReady(migratedLearning, 3), 'Ready preparation must survive JSON round trip');
 assert(migratedLearning[3].successfulWordIds[0] === 'w-new-1', 'Call evidence must survive migration');
 
-const migratedSave = migrateSave({ saveVersion: 4, starter: '芽语', completed: [1, 2] });
-assert(migratedSave.saveVersion === 5, 'Legacy saves must migrate to save schema v5');
+const migratedSave = migrateSave({ saveVersion: 5, starter: '芽语', completed: [1, 2] });
+assert(migratedSave.saveVersion === 6, 'Legacy saves must migrate to save schema v6');
 assert(migratedSave.adventureLearning[3].status === 'not_started', 'Legacy saves must receive safe empty preparation state');
 
 console.log('Learning × Adventure bridge validator: PASS');

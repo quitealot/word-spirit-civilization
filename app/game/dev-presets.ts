@@ -270,11 +270,10 @@ export function createDevEntryPreset(
  */
 export function validateDevSave(save: GameSave): DevPresetValidation {
   const errors: string[] = [];
-  if (save.saveVersion !== 5) errors.push(`saveVersion must be 5, got ${save.saveVersion}`);
+  if (save.saveVersion !== 6) errors.push(`saveVersion must be 6, got ${save.saveVersion}`);
   if (!save.starter) errors.push('starter must be selected');
-  if (save.exploration < minExplorationForCompleted(save.completed)) {
-    errors.push('exploration is below a completed episode unlock threshold');
-  }
+  // Bridge V1 keeps exploration as a readiness/tuning signal. A legal direct
+  // challenge may therefore complete an episode below its recommended value.
   if (save.episodeState.ep05.sightings > 2 && !save.completed.includes(4) && !save.completed.includes(5)) {
     errors.push('the third sighting requires EP04 completion and EP05 progress');
   }

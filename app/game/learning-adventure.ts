@@ -7,9 +7,12 @@ export type AdventureLearningState = {
   wordIds: string[];
   newWordIds: string[];
   reviewWordIds: string[];
+  targetedWordIds: string[];
   preparedWordIds: string[];
   calledWordIds: string[];
   successfulWordIds: string[];
+  weakWordIds: string[];
+  stabilizedWordIds: string[];
 };
 
 export type AdventureLearningByEpisode = Record<EpisodeId, AdventureLearningState>;
@@ -20,9 +23,12 @@ export function createEmptyAdventureLearningState(): AdventureLearningState {
     wordIds: [],
     newWordIds: [],
     reviewWordIds: [],
+    targetedWordIds: [],
     preparedWordIds: [],
     calledWordIds: [],
     successfulWordIds: [],
+    weakWordIds: [],
+    stabilizedWordIds: [],
   };
 }
 
@@ -47,15 +53,18 @@ export function migrateAdventureLearning(value: unknown): AdventureLearningByEpi
     const wordIds = uniqueStrings(input.wordIds);
     const newWordIds = uniqueStrings(input.newWordIds).filter(wordId => wordIds.includes(wordId));
     const reviewWordIds = uniqueStrings(input.reviewWordIds).filter(wordId => wordIds.includes(wordId));
+    const targetedWordIds = uniqueStrings(input.targetedWordIds).filter(wordId => wordIds.includes(wordId));
     const preparedWordIds = uniqueStrings(input.preparedWordIds).filter(wordId => wordIds.includes(wordId));
-    const calledWordIds = uniqueStrings(input.calledWordIds).filter(wordId => wordIds.includes(wordId));
+    const calledWordIds = uniqueStrings(input.calledWordIds);
     const successfulWordIds = uniqueStrings(input.successfulWordIds).filter(wordId => calledWordIds.includes(wordId));
+    const weakWordIds = uniqueStrings(input.weakWordIds);
+    const stabilizedWordIds = uniqueStrings(input.stabilizedWordIds);
     const status = input.status === 'ready' && preparedWordIds.length === wordIds.length
       ? 'ready'
       : input.status === 'preparing' && wordIds.length > 0
         ? 'preparing'
         : 'not_started';
-    result[id] = { status, wordIds, newWordIds, reviewWordIds, preparedWordIds, calledWordIds, successfulWordIds };
+    result[id] = { status, wordIds, newWordIds, reviewWordIds, targetedWordIds, preparedWordIds, calledWordIds, successfulWordIds, weakWordIds, stabilizedWordIds };
   }
   return result;
 }
@@ -65,21 +74,26 @@ export function beginAdventurePreparation(
   episode: EpisodeId,
   newWordIds: string[],
   reviewWordIds: string[],
+  targetedWordIds: string[] = [],
 ): AdventureLearningByEpisode {
   const current = learning[episode];
   if (current.status === 'ready' || current.status === 'preparing') return learning;
   const newIds = uniqueStrings(newWordIds);
   const reviewIds = uniqueStrings(reviewWordIds).filter(wordId => !newIds.includes(wordId));
+  const targetedIds = uniqueStrings(targetedWordIds).filter(wordId => !newIds.includes(wordId) && !reviewIds.includes(wordId));
   return {
     ...learning,
     [episode]: {
-      status: newIds.length + reviewIds.length === 0 ? 'ready' : 'preparing',
-      wordIds: [...newIds, ...reviewIds],
+      status: newIds.length + reviewIds.length + targetedIds.length === 0 ? 'ready' : 'preparing',
+      wordIds: [...targetedIds, ...reviewIds, ...newIds],
       newWordIds: newIds,
       reviewWordIds: reviewIds,
+      targetedWordIds: targetedIds,
       preparedWordIds: [],
       calledWordIds: [],
       successfulWordIds: [],
+      weakWordIds: current.weakWordIds,
+      stabilizedWordIds: current.stabilizedWordIds,
     },
   };
 }
@@ -107,19 +121,50 @@ export function recordAdventureCall(
   episode: EpisodeId,
   wordId: string,
   correct: boolean,
+  weak = !correct,
 ): AdventureLearningByEpisode {
   const current = learning[episode];
-  if (!current.wordIds.includes(wordId)) return learning;
   return {
     ...learning,
     [episode]: {
       ...current,
       calledWordIds: Array.from(new Set([...current.calledWordIds, wordId])),
-      successfulWordIds: correct
+      successfulWordIds: correct && !weak
         ? Array.from(new Set([...current.successfulWordIds, wordId]))
         : current.successfulWordIds,
+      weakWordIds: weak
+        ? Array.from(new Set([...current.weakWordIds, wordId]))
+        : current.weakWordIds,
+      stabilizedWordIds: weak ? current.stabilizedWordIds.filter(id => id !== wordId) : current.stabilizedWordIds,
     },
   };
+}
+
+export function recordWeaknessRecovered(
+  learning: AdventureLearningByEpisode,
+  episode: EpisodeId,
+  wordId: string,
+): AdventureLearningByEpisode {
+  const next = { ...learning };
+  for (let id = 1; id <= 10; id += 1) {
+    const key = id as EpisodeId;
+    const current = learning[key];
+    next[key] = {
+      ...current,
+      weakWordIds: current.weakWordIds.filter(item => item !== wordId),
+      stabilizedWordIds: key === episode ? Array.from(new Set([...current.stabilizedWordIds, wordId])) : current.stabilizedWordIds,
+    };
+  }
+  return next;
+}
+
+export function collectWeakWordIds(learning: AdventureLearningByEpisode): string[] {
+  const weak: string[] = [];
+  for (let episode = 1; episode <= 10; episode += 1) {
+    const state = learning[episode as EpisodeId];
+    for (const wordId of state.weakWordIds) if (!weak.includes(wordId)) weak.push(wordId);
+  }
+  return weak;
 }
 
 export function isAdventureReady(learning: AdventureLearningByEpisode, episode: EpisodeId): boolean {

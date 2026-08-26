@@ -1,5 +1,5 @@
 import { resolveBossQuestionLayer } from '../app/game/progression.ts';
-import { grantLearningGrowth, grantResonanceMilestone, getSpiritGrowth } from '../app/game/growth.ts';
+import { grantLearningGrowth, grantResonanceMilestone, grantStableBattleSkillGrowth, grantWeaknessRecoveryGrowth, getSpiritGrowth } from '../app/game/growth.ts';
 import { createEmptySave, completeEpisode, confirmEp06Companion, isEpisodeUnlocked, migrateSave, recordEp09TrackingAction, setEp05Sightings } from '../app/game/save.ts';
 import { createTeamBattleState, getActiveSpirit, getSwapAvailability, getSwapCue, resolveEnemyTurn, swapActiveSpirit } from '../app/game/team-battle.ts';
 
@@ -10,9 +10,9 @@ function assert(condition: unknown, message: string): asserts condition {
 let save = createEmptySave();
 save.starter = '芽语';
 save.completed = [1, 2, 3, 4];
-save.exploration = 22;
+save.exploration = 0;
 save.sightings = 2;
-assert(isEpisodeUnlocked(save, 5), 'EP05 should unlock after EP04 and exploration 22');
+assert(isEpisodeUnlocked(save, 5), 'EP05 should allow direct challenge after EP04 without a training-volume gate');
 assert(!isEpisodeUnlocked(save, 6), 'EP06 must stay locked before third sighting');
 
 save = completeEpisode(setEp05Sightings(save, 3), 5);
@@ -61,6 +61,12 @@ const duplicateOnOtherSpirit = grantLearningGrowth(growthSave, 'MIST_PORT_SPIRIT
 assert(duplicateOnOtherSpirit.duplicate, 'One learning evidence must not be claimable by another spirit');
 const review = grantLearningGrowth(growthSave, '芽语', 'learning:1:2', true);
 assert(review.xp >= first.xp, 'Review growth must not be worth less than first correct');
+const stableSkill = grantStableBattleSkillGrowth(review.save, '芽语', 5, '101');
+assert(!stableSkill.duplicate, 'A stable battle skill should create growth evidence');
+const duplicateStableSkill = grantStableBattleSkillGrowth(stableSkill.save, '芽语', 5, '101');
+assert(duplicateStableSkill.duplicate, 'The same episode/word battle evidence must not be farmable');
+const recovered = grantWeaknessRecoveryGrowth(stableSkill.save, '芽语', 5, '101');
+assert(!recovered.duplicate && recovered.resonance >= stableSkill.resonance, 'Weakness recovery should feed visible growth');
 const milestone = grantResonanceMilestone(review.save, 'ep07.teamwork', ['芽语', 'MIST_PORT_SPIRIT_01'], 3);
 const repeatedMilestone = grantResonanceMilestone(milestone, 'ep07.teamwork', ['芽语', 'MIST_PORT_SPIRIT_01'], 3);
 assert(getSpiritGrowth(milestone, '芽语').resonance === getSpiritGrowth(repeatedMilestone, '芽语').resonance, 'Milestones must not repeat');

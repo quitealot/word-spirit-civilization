@@ -2,6 +2,7 @@
 
 import { createEmptyCard, fsrs, Rating, type Card, type CardInput } from 'ts-fsrs';
 import { FIRST_LEARNING_PACK, VOCABULARY, VOCABULARY_BY_ID, type MasteryLayer, type VocabularyEntry } from './vocabulary';
+import { BRIDGE_V1_RULES } from './game/bridge-config';
 
 export type LearningQuestion = {
   id: string;
@@ -122,27 +123,53 @@ export type AdventurePreparationPlan = {
   questions: LearningQuestion[];
   newWordIds: string[];
   reviewWordIds: string[];
+  targetedWordIds: string[];
 };
 
-export function buildAdventurePreparationPlan(episode: number, newLimit = 3, reviewLimit = 2): AdventurePreparationPlan {
+export function getDueWordIds(limit = Number.POSITIVE_INFINITY): string[] {
   const store = loadLearningStore();
   const now = Date.now();
+  return Object.entries(store.progress)
+    .filter(([, progress]) => new Date(progress.card.due).getTime() <= now)
+    .sort((left, right) => new Date(left[1].card.due).getTime() - new Date(right[1].card.due).getTime())
+    .slice(0, limit)
+    .map(([wordId]) => wordId);
+}
+
+export function buildAdventurePreparationPlan(episode: number, weakWordIds: string[] = [], newLimit = BRIDGE_V1_RULES.training.newWordLimit, reviewLimit = BRIDGE_V1_RULES.training.dueReviewLimit): AdventurePreparationPlan {
+  const store = loadLearningStore();
   const packId = `LP${String(Math.min(10, Math.max(1, episode))).padStart(2, '0')}`;
   const packEntries = VOCABULARY.filter(entry => entry.learningPack === packId);
+  const targetedWordIds = Array.from(new Set(weakWordIds))
+    .filter(wordId => VOCABULARY_BY_ID.has(wordId))
+    .slice(0, BRIDGE_V1_RULES.training.targetedWordLimit);
   const newWordIds = packEntries
-    .filter(entry => !store.progress[entry.wordId])
+    .filter(entry => !store.progress[entry.wordId] && !targetedWordIds.includes(entry.wordId))
     .slice(0, newLimit)
     .map(entry => entry.wordId);
-  const reviewWordIds = Object.entries(store.progress)
-    .filter(([wordId, progress]) => !newWordIds.includes(wordId) && new Date(progress.card.due).getTime() <= now)
-    .sort((left, right) => new Date(left[1].card.due).getTime() - new Date(right[1].card.due).getTime())
+  const reviewWordIds = getDueWordIds()
+    .filter(wordId => !newWordIds.includes(wordId) && !targetedWordIds.includes(wordId))
     .slice(0, reviewLimit)
-    .map(([wordId]) => wordId);
-  const questions = [...newWordIds, ...reviewWordIds]
+  const questions = [...targetedWordIds, ...reviewWordIds, ...newWordIds]
     .map(wordId => VOCABULARY_BY_ID.get(wordId))
     .filter((entry): entry is VocabularyEntry => Boolean(entry))
     .map(buildL1Question);
-  return { questions, newWordIds, reviewWordIds };
+  return { questions, newWordIds, reviewWordIds, targetedWordIds };
+}
+
+export function getBattleGuideQuestion(options: {
+  weakWordIds: string[];
+  preparedWordIds: string[];
+  calledWordIds: string[];
+  preferredWordId?: string;
+}): LearningQuestion {
+  const preferred = options.preferredWordId;
+  if (preferred && VOCABULARY_BY_ID.has(preferred)) return getDueQuestion(preferred);
+  const weak = options.weakWordIds.find(wordId => VOCABULARY_BY_ID.has(wordId));
+  if (weak) return getDueQuestion(weak);
+  const due = getDueWordIds(1)[0];
+  if (due) return getDueQuestion(due);
+  return getAdventureQuestion(options.preparedWordIds, options.calledWordIds);
 }
 
 export function getAdventureQuestion(wordIds: string[], alreadyCalledWordIds: string[], preferredWordId?: string): LearningQuestion {
@@ -157,7 +184,7 @@ export function recordLearningAnswer(question: LearningQuestion, correct: boolea
   const store = loadLearningStore();
   const previous = store.progress[question.wordId];
   const card = previous ? hydrateCard(previous.card) : createEmptyCard();
-  const rating = correct ? (latencyMs <= 8000 ? Rating.Good : Rating.Hard) : Rating.Again;
+  const rating = correct ? (latencyMs <= BRIDGE_V1_RULES.response.fsrsHardMs ? Rating.Good : Rating.Hard) : Rating.Again;
   const result = scheduler.next(card, new Date(), rating);
   const next: WordProgress = {
     card: serializeCard(result.card),

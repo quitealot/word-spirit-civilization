@@ -5,7 +5,7 @@ import { createEmptyAdventureLearning, migrateAdventureLearning, type AdventureL
 export const SAVE_KEY = 'word-spirit-p1-save-v2';
 export const LEGACY_SAVE_KEY = 'word-spirit-p0-save-v1';
 export const STARTER_KEY = 'word-spirit-starter-v1';
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 export type StarterId = '芽语' | '烬尾' | '澜歌';
 export type OpeningCheckpoint = 'harbor' | 'station' | null;
@@ -363,10 +363,16 @@ export function isEpisodeUnlocked(save: GameSave, episode: EpisodeId): boolean {
   if (isEpisodeCompleted(save, episode)) return true;
   const condition = EPISODE_CONFIG[episode].unlock;
   if (condition.previousEpisode && !isEpisodeCompleted(save, condition.previousEpisode)) return false;
-  if (condition.explorationAtLeast !== undefined && save.exploration < condition.explorationAtLeast) return false;
+  // Bridge V1: exploration is a configurable readiness signal, never a
+  // learning-volume hard gate for an otherwise reachable mainline episode.
   if (condition.sightingsAtLeast !== undefined && save.sightings < condition.sightingsAtLeast) return false;
   if (condition.requiredCompanion && !save.episodeState.ep06.teamSpiritIds.includes(condition.requiredCompanion)) return false;
   return true;
+}
+
+export function getEpisodeExplorationGap(save: GameSave, episode: EpisodeId): number {
+  const recommended = EPISODE_CONFIG[episode].unlock.explorationAtLeast ?? 0;
+  return Math.max(0, recommended - save.exploration);
 }
 
 export function completeEpisode(save: GameSave, episode: EpisodeId): GameSave {
