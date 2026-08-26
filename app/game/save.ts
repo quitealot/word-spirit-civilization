@@ -5,7 +5,7 @@ import { createEmptyAdventureLearning, migrateAdventureLearning, type AdventureL
 export const SAVE_KEY = 'word-spirit-p1-save-v2';
 export const LEGACY_SAVE_KEY = 'word-spirit-p0-save-v1';
 export const STARTER_KEY = 'word-spirit-starter-v1';
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 
 export type StarterId = '芽语' | '烬尾' | '澜歌';
 export type OpeningCheckpoint = 'harbor' | 'station' | null;
@@ -193,6 +193,8 @@ function migrateGrowth(value: unknown): GrowthState {
     spirits[id] = {
       level: Math.min(8, Math.max(1, Math.floor(numberOr(item.level, 1, 1)))),
       xp: Math.floor(numberOr(item.xp, 0)),
+      stars: Math.min(5, Math.max(1, Math.floor(numberOr(item.stars, 1, 1)))),
+      masteryQuality: Math.floor(numberOr(item.masteryQuality, 0)),
       resonance: Math.floor(numberOr(item.resonance, 0)),
     };
   }

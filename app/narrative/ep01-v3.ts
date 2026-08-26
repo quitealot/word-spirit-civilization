@@ -19,29 +19,29 @@ const northView: NarrativeScene = { sceneId: 'ep01.north_view', beats: [
   { id: 'ep01.north_view.b04', type: 'dialogue', speaker: '阿洛', text: '看不见。连山坡都看不见。今天第一次这么清楚。' },
   { id: 'ep01.north_view.b05', type: 'narration', text: '坡下很静。草叶上的水一滴一滴往下落。' },
   { id: 'ep01.north_view.b06', type: 'dialogue', speaker: '阿洛', text: '我想去看看。就到旧路看看，不往深处走。' },
-  { id: 'ep01.north_view.b07', type: 'dialogue', speaker: '玩家', text: '先和岑婆说一声吧。' },
+  { id: 'ep01.north_view.b07', type: 'dialogue', speaker: '玩家', text: '先和岑姨说一声吧。' },
   { id: 'ep01.north_view.b08', type: 'dialogue', speaker: '阿洛', text: '……也行。她应该也在看。' },
 ] };
 
 const cenpo: NarrativeScene = { sceneId: 'ep01.cenpo', beats: [
-  { id: 'ep01.cenpo.b01', type: 'narration', text: '岑婆站在自家门口。她没看你们。她看着北边。' },
-  { id: 'ep01.cenpo.b02', type: 'dialogue', speaker: '阿洛', text: '岑婆，你看到了吧？北边的雾退了。' },
-  { id: 'ep01.cenpo.b03', type: 'dialogue', speaker: '岑婆', text: '看见了。我还看见你拽着人往坡上跑。' },
+  { id: 'ep01.cenpo.b01', type: 'narration', text: '岑姨站在自家门口。她没看你们。她看着北边。' },
+  { id: 'ep01.cenpo.b02', type: 'dialogue', speaker: '阿洛', text: '岑姨，你看到了吧？北边的雾退了。' },
+  { id: 'ep01.cenpo.b03', type: 'dialogue', speaker: '岑姨', text: '看见了。我还看见你拽着人往坡上跑。' },
   { id: 'ep01.cenpo.b04', type: 'action', actor: '阿洛', text: '阿洛笑了一下，没反驳。', presentation: 'portrait' },
   { id: 'ep01.cenpo.b05', type: 'dialogue', speaker: '阿洛', text: '就到旧路看看，不往深处走。' },
-  { id: 'ep01.cenpo.b06', type: 'narration', text: '岑婆又看了一眼北边。雾还在慢慢往深处退，像水面在落。' },
-  { id: 'ep01.cenpo.b07', type: 'dialogue', speaker: '岑婆', text: '那片地方，好几十年没什么人往里走了。雾退是退了，路好不好走，谁也说不准。' },
-  { id: 'ep01.cenpo.b08', type: 'dialogue', speaker: '岑婆', text: '真要去，带一个。' },
+  { id: 'ep01.cenpo.b06', type: 'narration', text: '岑姨又看了一眼北边。雾还在慢慢往深处退，像水面在落。' },
+  { id: 'ep01.cenpo.b07', type: 'dialogue', speaker: '岑姨', text: '那片地方，好几十年没什么人往里走了。雾退是退了，路好不好走，谁也说不准。' },
+  { id: 'ep01.cenpo.b08', type: 'dialogue', speaker: '岑姨', text: '真要去，带一个。' },
   { id: 'ep01.cenpo.b09', type: 'dialogue', speaker: '阿洛', text: '我也是这么想的。' },
-  { id: 'ep01.cenpo.b10', type: 'dialogue', speaker: '岑婆', text: '我没问你。' },
+  { id: 'ep01.cenpo.b10', type: 'dialogue', speaker: '岑姨', text: '我没问你。' },
   { id: 'ep01.cenpo.b11', type: 'narration', text: '阿洛闭上嘴，朝你使了个眼色，像在说：这关过了。' },
-  { id: 'ep01.cenpo.b12', type: 'dialogue', speaker: '岑婆', text: '走吧，先去站里。我拿点东西。' },
-  { id: 'ep01.cenpo.b13', type: 'narration', text: '岑婆多看了你一眼。没再说别的。' },
+  { id: 'ep01.cenpo.b12', type: 'dialogue', speaker: '岑姨', text: '走吧，先去站里。我拿点东西。' },
+  { id: 'ep01.cenpo.b13', type: 'narration', text: '岑姨多看了你一眼。没再说别的。' },
 ] };
 
 const spirits: NarrativeScene = { sceneId: 'ep01.spirits', beats: [
   { id: 'ep01.spirits.b01', type: 'narration', text: '阿洛带你往语灵站走。路上他几次回头，还想看北边。' },
-  { id: 'ep01.spirits.b02', type: 'narration', text: '语灵站里和往常一样。炉子烧着，水壶在墙边。岑婆把两个小布袋放到桌上。' },
+  { id: 'ep01.spirits.b02', type: 'narration', text: '语灵站里和往常一样。炉子烧着，水壶在墙边。岑姨把两个小布袋放到桌上。' },
   { id: 'ep01.spirits.b03', type: 'dialogue', speaker: '阿洛', text: '你带哪个？' },
   { id: 'ep01.spirits.b04', type: 'narration', text: '三只语灵都在原来的地方。' },
   { id: 'ep01.spirits.b05', type: 'narration', text: '芽语在窗边。你走进去时，它正用叶尖接住一滴从屋檐落下的水。水珠停了一瞬，被它轻轻甩掉。它看见你，把身子转正了一点。' },
@@ -74,14 +74,14 @@ const partnerScenes: Record<Starter, NarrativeScene> = {
 };
 
 const firstGuide: NarrativeScene = { sceneId: 'ep01.first_guide', beats: [
-  { id: 'ep01.first_guide.b01', type: 'narration', text: '你们正准备出门。岑婆从桌边站起来。' },
-  { id: 'ep01.first_guide.b02', type: 'dialogue', speaker: '岑婆', text: '先别急。平时在站里熟是一回事，真带出去又是另一回事。' },
-  { id: 'ep01.first_guide.b03', type: 'dialogue', speaker: '岑婆', text: '你跟它试两下，看看彼此跟不跟得上。' },
+  { id: 'ep01.first_guide.b01', type: 'narration', text: '你们正准备出门。岑姨从桌边站起来。' },
+  { id: 'ep01.first_guide.b02', type: 'dialogue', speaker: '岑姨', text: '先别急。平时在站里熟是一回事，真带出去又是另一回事。' },
+  { id: 'ep01.first_guide.b03', type: 'dialogue', speaker: '岑姨', text: '你跟它试两下，看看彼此跟不跟得上。' },
   { id: 'ep01.first_guide.b04', type: 'narration', text: '【第一次引导训练，系统接管，时长约60–90秒，可跳过。】' },
   { id: 'ep01.first_guide.b05', type: 'narration', text: '训练结束。你的同行语灵站在你身边，比刚才更注意你。' },
   { id: 'ep01.first_guide.b06', type: 'action', actor: '同行语灵', text: '它动了动，没有出声，只是朝门口的方向转过去。', presentation: 'portrait' },
   { id: 'ep01.first_guide.b05_alt', type: 'narration', text: '你决定先上路，训练留到之后。' },
-  { id: 'ep01.first_guide.b06_alt', type: 'dialogue', speaker: '岑婆', text: '行，路上慢点。' },
+  { id: 'ep01.first_guide.b06_alt', type: 'dialogue', speaker: '岑姨', text: '行，路上慢点。' },
   { id: 'ep01.first_guide.b07', type: 'dialogue', speaker: '阿洛', text: '走。它已经想去了。' },
   { id: 'ep01.first_guide.b08', type: 'narration', text: '旧路就在前面。雾退开的地方，能看清地上铺着很老的石板。' },
 ] };

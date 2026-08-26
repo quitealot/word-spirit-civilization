@@ -5,6 +5,8 @@ export type GrowthSource = 'first_correct' | 'review_correct' | 'battle_skill' |
 export type SpiritGrowth = {
   level: number;
   xp: number;
+  stars: number;
+  masteryQuality: number;
   resonance: number;
 };
 
@@ -19,6 +21,9 @@ export type GrowthAward = {
   spiritId: string;
   xp: number;
   resonance: number;
+  masteryQuality: number;
+  fromStars: number;
+  toStars: number;
   fromLevel: number;
   toLevel: number;
   duplicate: boolean;
@@ -31,6 +36,11 @@ export const GROWTH_RULES = {
   stableBattleSkillXp: 4,
   weaknessRecoveredXp: 8,
   levelThresholds: [0, 40, 95, 165, 250, 350, 465, 595],
+  masteryReviewPoints: 2,
+  masteryFastBonus: 1,
+  masteryDepthBonus: { L1: 0, L2: 2, L3: 4 },
+  masteryFastMs: 4500,
+  starThresholds: [0, 12, 32, 64, 108],
 } as const;
 
 export function emptyGrowthState(): GrowthState {
@@ -38,7 +48,16 @@ export function emptyGrowthState(): GrowthState {
 }
 
 export function defaultSpiritGrowth(): SpiritGrowth {
-  return { level: 1, xp: 0, resonance: 0 };
+  return { level: 1, xp: 0, stars: 1, masteryQuality: 0, resonance: 0 };
+}
+
+export function starsForMastery(masteryQuality: number): number {
+  let stars = 1;
+  for (let index = 1; index < GROWTH_RULES.starThresholds.length; index += 1) {
+    if (masteryQuality < GROWTH_RULES.starThresholds[index]) break;
+    stars = index + 1;
+  }
+  return stars;
 }
 
 export function levelForXp(xp: number): number {
@@ -59,13 +78,19 @@ export function grantLearningGrowth(
   spiritId: string,
   evidenceId: string,
   seenBefore: boolean,
+  responseMs = Number.POSITIVE_INFINITY,
+  layer: 'L1' | 'L2' | 'L3' = 'L1',
 ): GrowthAward {
+  const masteryQuality = seenBefore
+    ? GROWTH_RULES.masteryReviewPoints + (responseMs <= GROWTH_RULES.masteryFastMs ? GROWTH_RULES.masteryFastBonus : 0) + GROWTH_RULES.masteryDepthBonus[layer]
+    : 0;
   return grantEvidenceGrowth(
     save,
     spiritId,
     evidenceId,
     seenBefore ? GROWTH_RULES.reviewCorrectXp : GROWTH_RULES.firstCorrectXp,
-    seenBefore ? 2 : 1,
+    0,
+    masteryQuality,
   );
 }
 
@@ -74,7 +99,7 @@ export function grantBattleGrowth(
   spiritId: string,
   battleInstanceId: string,
 ): GrowthAward {
-  return grantEvidenceGrowth(save, spiritId, `battle:${battleInstanceId}`, GROWTH_RULES.battleClearXp, 2);
+  return grantEvidenceGrowth(save, spiritId, `battle:${battleInstanceId}`, GROWTH_RULES.battleClearXp, 0, 0);
 }
 
 export function grantStableBattleSkillGrowth(
@@ -83,7 +108,7 @@ export function grantStableBattleSkillGrowth(
   episode: number,
   wordId: string,
 ): GrowthAward {
-  return grantEvidenceGrowth(save, spiritId, `battle-skill:ep${episode}:${wordId}`, GROWTH_RULES.stableBattleSkillXp, 1);
+  return grantEvidenceGrowth(save, spiritId, `battle-skill:ep${episode}:${wordId}`, GROWTH_RULES.stableBattleSkillXp, 0, 0);
 }
 
 export function grantWeaknessRecoveryGrowth(
@@ -92,7 +117,7 @@ export function grantWeaknessRecoveryGrowth(
   episode: number,
   wordId: string,
 ): GrowthAward {
-  return grantEvidenceGrowth(save, spiritId, `weakness-recovered:ep${episode}:${wordId}`, GROWTH_RULES.weaknessRecoveredXp, 2);
+  return grantEvidenceGrowth(save, spiritId, `weakness-recovered:ep${episode}:${wordId}`, GROWTH_RULES.weaknessRecoveredXp, 0, 0);
 }
 
 function grantEvidenceGrowth(
@@ -101,13 +126,15 @@ function grantEvidenceGrowth(
   evidenceId: string,
   xp: number,
   resonance: number,
+  masteryQuality: number,
 ): GrowthAward {
   const current = getSpiritGrowth(save, spiritId);
   if (save.growth.claimedEvidenceIds.includes(evidenceId)) {
-    return { save, spiritId, xp: 0, resonance: 0, fromLevel: current.level, toLevel: current.level, duplicate: true };
+    return { save, spiritId, xp: 0, resonance: 0, masteryQuality: 0, fromLevel: current.level, toLevel: current.level, fromStars: current.stars, toStars: current.stars, duplicate: true };
   }
   const nextXp = current.xp + xp;
-  const nextGrowth = { level: levelForXp(nextXp), xp: nextXp, resonance: current.resonance + resonance };
+  const nextMastery = current.masteryQuality + masteryQuality;
+  const nextGrowth = { level: levelForXp(nextXp), xp: nextXp, stars: starsForMastery(nextMastery), masteryQuality: nextMastery, resonance: current.resonance + resonance };
   const nextSave: GameSave = {
     ...save,
     growth: {
@@ -116,7 +143,7 @@ function grantEvidenceGrowth(
       claimedEvidenceIds: [...save.growth.claimedEvidenceIds, evidenceId],
     },
   };
-  return { save: nextSave, spiritId, xp, resonance, fromLevel: current.level, toLevel: nextGrowth.level, duplicate: false };
+  return { save: nextSave, spiritId, xp, resonance, masteryQuality, fromLevel: current.level, toLevel: nextGrowth.level, fromStars: current.stars, toStars: nextGrowth.stars, duplicate: false };
 }
 
 export function grantResonanceMilestone(
