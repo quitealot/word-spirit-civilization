@@ -15,6 +15,8 @@ import type { DevPresetResult } from './game/dev-presets';
 import { appendBattleLog, type BattleLogEventInput } from './game/battle-log';
 import { beginAdventurePreparation, collectWeakWordIds, recordAdventureCall, recordPreparedWord, recordWeaknessRecovered, type AdventureLearningState } from './game/learning-adventure';
 import { BRIDGE_V1_RULES, estimatedTrainingSeconds, resolveExecutionQuality, resolveSkillMultiplier, type ExecutionQuality } from './game/bridge-config';
+import { BOND_SITUATIONS, BOND_SKILL_TRIALS, recommendBondStarter, trialEffectPercent, type BondTendency } from './game/initial-bond';
+import { assertSignatureGuidanceIntegrity, resetSkillRelationshipStore } from './game/skill-guidance';
 import { clearGameSave, completeEp08ArenaSnapshot, completeEpisode, confirmEp06Companion, createEmptySave, getEpisodeExplorationGap, isEpisodeCompleted, isEpisodeUnlocked, loadGameSave, markEp10BossDefeated, recordEp07Swap, recordEp08Clue, recordEp09SkySilhouette, recordEp09TrackingAction, saveGameSave, setEp05Sightings, setEp06ApproachStage, setEp08MonumentFace, setEp09RareClueCount, setEp10BossPhase, type ApproachStage, type Ep1GuideOutcome, type GameSave, type StarterId, type TrackingSlotId } from './game/save';
 import { POST_STORIES, STORIES, TEMPORARY_EPISODE_LABELS } from './narrative/temporary-content';
 import { EP01_DEPARTURE_SCENE, EP01_FIRST_GUIDE_SCENE, EP01_PRE_SELECTION_BEATS, ep01GuideBeats, ep01PartnerScene } from './narrative/ep01-v3';
@@ -24,6 +26,8 @@ type Starter = StarterId;
 type Episode = EpisodeId;
 type TrainingSource = 'guide' | 'maintenance' | 'targeted';
 type GrowthSummary = { spiritId: string; source: TrainingSource; before: SpiritGrowth; after: SpiritGrowth };
+type BondAnswerEvidence = { wordId: string; correct: boolean; seenBefore: boolean; latencyMs: number };
+type BondCompletion = { starter: Starter; recommended: Starter; evidence: BondAnswerEvidence[] };
 
 function spiritFor(name: Starter): SpiritConfig { return getSpirit(name); }
 function titleFor(ep: Episode): string { return TEMPORARY_EPISODE_LABELS[ep].title; }
@@ -39,7 +43,7 @@ export default function Home() {
   const trainingBaseline = useRef<{ spiritId: string; source: TrainingSource; growth: SpiritGrowth } | null>(null);
   const saveRef = useRef(save);
   const [, refresh] = useState(0);
-  useEffect(() => { assertVocabularyIntegrity(); const timer = window.setTimeout(() => { bootstrapAnalytics(); setSave(loadGameSave()); setReady(true); }, 0); return () => window.clearTimeout(timer); }, []);
+  useEffect(() => { assertVocabularyIntegrity(); assertSignatureGuidanceIntegrity(); const timer = window.setTimeout(() => { bootstrapAnalytics(); setSave(loadGameSave()); setReady(true); }, 0); return () => window.clearTimeout(timer); }, []);
   useEffect(() => { saveRef.current = save; if (ready) saveGameSave(save); }, [ready, save]);
   const spirit = useMemo(() => save.starter ? spiritFor(save.starter) : null, [save.starter]);
   const starterGrowth = save.starter ? getSpiritGrowth(save, save.starter) : null;
@@ -51,7 +55,19 @@ export default function Home() {
   function beginGrowthTrackedTraining(source: TrainingSource) { if (save.starter) trainingBaseline.current = { spiritId: save.starter, source, growth: getSpiritGrowth(save, save.starter) }; }
   function finishGrowthTrackedTraining() { const baseline = trainingBaseline.current; if (baseline) setGrowthSummary({ spiritId: baseline.spiritId, source: baseline.source, before: baseline.growth, after: getSpiritGrowth(saveRef.current, baseline.spiritId) }); trainingBaseline.current = null; }
   function advanceOpening(index: number) { update(s => ({ ...s, openingCheckpoint: 'harbor', openingIndex: index, openingInteraction: null })); }
-  function choose(starter: Starter) { track('starter_selected', { starter }); update(s => ({ ...s, starter, checkpoint: 'ep1_intro', ep1TutorialIndex: 0, ep1GuideOutcome: null, openingCheckpoint: null, openingInteraction: null })); }
+  function choose(result: BondCompletion) {
+    track('initial_bond_completed', { recommended: result.recommended, starter: result.starter, correct: result.evidence.filter(item => item.correct).length });
+    update(current => {
+      let next: GameSave = { ...current, starter: result.starter, checkpoint: 'ep1_intro', ep1TutorialIndex: 0, ep1GuideOutcome: null, openingCheckpoint: null, openingInteraction: null };
+      for (const item of result.evidence) {
+        if (!item.correct) continue;
+        const award = grantLearningGrowth(next, result.starter, `initial-bond:${item.wordId}`, item.seenBefore, item.latencyMs, 'L1');
+        next = award.save;
+        if (!award.duplicate) next = { ...next, exploration: next.exploration + (item.seenBefore ? BRIDGE_V1_RULES.exploration.correctReview : BRIDGE_V1_RULES.exploration.correctNew) };
+      }
+      return next;
+    });
+  }
   function chooseEp1Guide(outcome: Exclude<Ep1GuideOutcome, null>) {
     if (outcome === 'trained') { beginGrowthTrackedTraining('guide'); update(s => ({ ...s, checkpoint: 'ep1_lesson', ep1TutorialIndex: 0, ep1GuideOutcome: 'trained' })); setLearning(true); }
     else update(s => ({ ...s, checkpoint: 'ep1_outro', ep1TutorialIndex: 0, ep1GuideOutcome: 'skipped' }));
@@ -86,7 +102,7 @@ export default function Home() {
   }
   function winBattle(ep: Episode) { track(ep === 10 ? 'boss_completed' : 'battle_completed', { episode: ep }); setBattle(null); recordBattleClear(ep); if (POST_STORIES[ep]) setPostStory(ep); else { complete(ep); track('episode_completed', { episode: ep }); showResult(ep); } }
   function finishPost(ep: Episode) { setPostStory(null); if (ep === 9) { update(s => setEp09RareClueCount(s, 1)); setSky(true); return; } update(s => { const completed = completeEpisode(s, ep); return ep === 5 ? setEp05Sightings(completed, 3) : completed; }); track('episode_completed', { episode: ep }); showResult(ep); }
-  function reset() { resetLearningStore(); clearGameSave(); setSave(createEmptySave()); setStory(null); setPostStory(null); setTrainingHub(false); setQuickTraining(null); setLearning(false); setBattle(null); setApproach(false); setMonument(false); setTracking(false); setSky(false); setBriefEpisode(null); setPreparation(null); setPreparationComplete(null); setRecallEpisode(null); setResultEpisode(null); refresh(v => v + 1); }
+  function reset() { resetLearningStore(); resetSkillRelationshipStore(); clearGameSave(); setSave(createEmptySave()); setStory(null); setPostStory(null); setTrainingHub(false); setQuickTraining(null); setLearning(false); setBattle(null); setApproach(false); setMonument(false); setTracking(false); setSky(false); setBriefEpisode(null); setPreparation(null); setPreparationComplete(null); setRecallEpisode(null); setResultEpisode(null); refresh(v => v + 1); }
   function applyDevPreset(result: DevPresetResult) { setSave(result.save); setStory(null); setPostStory(null); setBattle(null); setApproach(false); setMonument(false); setTracking(false); setSky(false); setBriefEpisode(null); setPreparation(null); setPreparationComplete(null); setRecallEpisode(null); setResultEpisode(null); if (result.entry.kind === 'battle') setBattle(result.target); else if (result.entry.kind === 'node' && result.target === 6) setApproach(true); else if (result.entry.kind === 'node' && result.target === 8) setMonument(true); else if (result.entry.kind === 'node' && result.target === 9) setTracking(true); else setStory(result.target); }
   if (!ready) return <main />;
   if (!spirit) return <><Ep01OpeningModal index={save.openingIndex} onProgress={advanceOpening} onChoose={choose} />{process.env.NODE_ENV === 'development' && <DevPanel save={save} onApply={applyDevPreset} onReplaceSave={setSave} onClear={() => { clearGameSave(); setSave(createEmptySave()); }} />}</>;
@@ -114,11 +130,11 @@ function beatSpeaker(beat: NarrativeBeat): string { if (beat.type === 'dialogue'
 function beatText(beat: NarrativeBeat): string { return beat.type === 'choice' ? '' : beat.type === 'interaction' ? beat.resultText : beat.text; }
 function NarrativeBeatView({ beat, visual, identity }: { beat: NarrativeBeat; visual: React.ReactNode; identity?: string }) { return <div className="story-stage">{visual}<div>{identity && <em className="identity-strip">{identity}</em>}{beatSpeaker(beat) && <b>{beatSpeaker(beat)}</b>}<p>{beatText(beat)}</p></div></div>; }
 
-function Ep01OpeningModal({ index, onProgress, onChoose }: { index: number; onProgress: (index: number) => void; onChoose: (starter: Starter) => void }) {
+function Ep01OpeningModal({ index, onProgress, onChoose }: { index: number; onProgress: (index: number) => void; onChoose: (result: BondCompletion) => void }) {
   const beats = EP01_PRE_SELECTION_BEATS.filter(item => item.beat.type !== 'choice');
   const safe = Math.min(index, beats.length);
   useEffect(() => { track('ep01_v3_started'); }, []);
-  if (safe >= beats.length) return <StarterGate onChoose={onChoose} />;
+  if (safe >= beats.length) return <InitialBondGate onChoose={onChoose} />;
   const item = beats[safe];
   const place = item.sceneId === 'ep01.morning' ? '窗边' : item.sceneId === 'ep01.north_view' ? '北坡' : item.sceneId === 'ep01.cenpo' ? '岑姨门前' : '语灵站';
   const symbol = item.sceneId === 'ep01.morning' ? '雾' : item.sceneId === 'ep01.north_view' ? '旧路' : item.sceneId === 'ep01.cenpo' ? '门前' : '站';
@@ -126,7 +142,76 @@ function Ep01OpeningModal({ index, onProgress, onChoose }: { index: number; onPr
   return <main className="starter-screen opening-screen"><section className="story-modal opening-modal"><span>EP01 · 雾退了　{place}</span>{safe === 0 && <p className="world-context">雾港——你一直生活的地方。北边终年被雾遮着。</p>}<NarrativeBeatView beat={item.beat} visual={<div className="scene-symbol opening-scene">{symbol}</div>} identity={identity} /><button className="story-next" onClick={() => onProgress(safe + 1)}>继续</button></section></main>;
 }
 
-function StarterGate({ onChoose }: { onChoose: (starter: Starter) => void }) { return <main className="starter-screen"><section className="starter-dialogue"><span>EP01 · 语灵站</span><h1>今天带谁出去？</h1></section><section className="starter-grid">{SPIRITS.map(spirit => <article className={`starter-card ${spirit.tone}`} key={spirit.name}><div className="starter-art"><img className="spirit-art" src={spirit.image} alt={spirit.name} /></div><span>{spirit.name}｜{spirit.roleLabel}</span><h2>{spirit.name}</h2><p>{spirit.roleDescription}</p><div className="starter-skill-list"><b>已会：{spirit.skills.slice(0, 2).map(skill => skill.name).join(' / ')}</b><small>Lv.3 学会：{spirit.skills[2].name}</small></div><button onClick={() => onChoose(spirit.name)}>我想和{spirit.name}一起走</button></article>)}</section></main>; }
+function InitialBondGate({ onChoose }: { onChoose: (result: BondCompletion) => void }) {
+  const [phase, setPhase] = useState<'intro' | 'situations' | 'trials' | 'trial-result' | 'recommendation' | 'compare'>('intro');
+  const [situationIndex, setSituationIndex] = useState(0), [trialIndex, setTrialIndex] = useState(0), [wordIndex, setWordIndex] = useState(0);
+  const [tendencies, setTendencies] = useState<BondTendency[]>([]), [evidence, setEvidence] = useState<BondAnswerEvidence[]>([]), [feedback, setFeedback] = useState('');
+  const started = useRef(Date.now());
+  const trialWordIds = useMemo(() => {
+    const progress = loadLearningStore().progress;
+    return BOND_SKILL_TRIALS.map(trial => [...trial.wordIds].sort((left, right) => (progress[left]?.attempts ?? 0) - (progress[right]?.attempts ?? 0)));
+  }, []);
+  const recommendation = recommendBondStarter(tendencies);
+  const currentTrial = BOND_SKILL_TRIALS[Math.min(trialIndex, BOND_SKILL_TRIALS.length - 1)];
+  const currentQuestion = getDueQuestion(trialWordIds[Math.min(trialIndex, trialWordIds.length - 1)][Math.min(wordIndex, 2)]);
+  const trialEvidence = evidence.filter(item => currentTrial.wordIds.includes(item.wordId));
+  const correctInTrial = trialEvidence.filter(item => item.correct).length;
+
+  function chooseTendency(tendency: BondTendency) {
+    const next = [...tendencies, tendency];
+    setTendencies(next);
+    if (situationIndex < BOND_SITUATIONS.length - 1) setSituationIndex(value => value + 1);
+    else { setPhase('trials'); started.current = Date.now(); }
+  }
+
+  function answerTrial(choice: string) {
+    if (feedback) return;
+    const correct = choice === currentQuestion.answer;
+    const seenBefore = Boolean(loadLearningStore().progress[currentQuestion.wordId]);
+    const latencyMs = Date.now() - started.current;
+    recordLearningAnswer(currentQuestion, correct, latencyMs);
+    setEvidence(items => [...items, { wordId: currentQuestion.wordId, correct, seenBefore, latencyMs }]);
+    setFeedback(correct ? `${currentTrial.skillName}完整度上升` : `正确义项：${currentQuestion.answer}`);
+    window.setTimeout(() => {
+      setFeedback('');
+      if (wordIndex < 2) { setWordIndex(value => value + 1); started.current = Date.now(); }
+      else setPhase('trial-result');
+    }, 650);
+  }
+
+  function nextTrial() {
+    if (trialIndex < BOND_SKILL_TRIALS.length - 1) { setTrialIndex(value => value + 1); setWordIndex(0); setPhase('trials'); started.current = Date.now(); }
+    else setPhase('recommendation');
+  }
+
+  function finish(starter: Starter) { onChoose({ starter, recommended: recommendation, evidence }); }
+
+  if (phase === 'intro') return <main className="starter-screen bond-screen"><section className="bond-panel bond-intro"><span>初伴链接测试</span><h1>先试着和它们配合</h1><p>4个行动选择会判断你更习惯的打法；随后分别体验芽语、烬尾和澜歌的一次基础技能。</p><div className="bond-rules"><b>行动倾向</b><span>决定推荐伙伴</span><b>9个正式L1词</b><span>决定技能本次发动完整度</span></div><small>推荐只是建议。测试结束后，你仍可自己决定今天带谁出去。</small><button className="story-next" onClick={() => setPhase('situations')}>开始链接测试</button></section></main>;
+
+  if (phase === 'situations') {
+    const situation = BOND_SITUATIONS[situationIndex];
+    return <main className="starter-screen bond-screen"><section className="bond-panel"><span>行动倾向　{situationIndex + 1}/{BOND_SITUATIONS.length}</span><div className="bond-progress"><i style={{ width: `${((situationIndex + 1) / BOND_SITUATIONS.length) * 100}%` }} /></div><h2>{situation.prompt}</h2><div className="bond-options">{situation.options.map(option => <button key={option.id} onClick={() => chooseTendency(option.tendency)}>{option.text}</button>)}</div><small>没有标准答案，只选择你最自然的反应。</small></section></main>;
+  }
+
+  if (phase === 'trials') {
+    const spirit = getSpirit(currentTrial.spiritId);
+    return <main className="starter-screen bond-screen"><section className={`bond-panel bond-trial ${spirit.tone}`}><span>技能体验　{trialIndex + 1}/3 · {spirit.name}｜{currentTrial.roleLabel}</span><div className="bond-trial-head"><img src={spirit.image} alt={spirit.name} /><div><h2>{currentTrial.skillName}</h2><p>{currentTrial.instruction}</p><b>{wordIndex + 1}/3</b></div></div><div className="bond-word"><h3>{currentQuestion.word}</h3><i>{currentQuestion.phonetic}</i><p>{currentQuestion.prompt}</p><div>{currentQuestion.choices.map(choice => <button disabled={!!feedback} key={choice} onClick={() => answerTrial(choice)}>{choice}</button>)}</div>{feedback && <strong>{feedback}</strong>}</div><small>本轮词序会优先照顾你尚未接触的正式词；这里只测试L1词义。</small></section></main>;
+  }
+
+  if (phase === 'trial-result') {
+    const spirit = getSpirit(currentTrial.spiritId), percent = trialEffectPercent(correctInTrial);
+    const effect = currentTrial.spiritId === '芽语' ? `护盾形成 ${percent}%` : currentTrial.spiritId === '烬尾' ? `爆发伤害 ${percent}%` : `恢复效果 ${percent}%`;
+    return <main className="starter-screen bond-screen"><section className={`bond-panel bond-result ${spirit.tone}`}><span>{spirit.name} · 技能体验完成</span><img src={spirit.image} alt={spirit.name} /><h2>{currentTrial.skillName}｜{effect}</h2><div className="skill-effect-meter"><i style={{ width: `${percent}%` }} /></div><p>{percent === 100 ? currentTrial.fullEffect : `本次成功调用 ${correctInTrial}/3 个引导词。答错不会取消行动，只会降低技能效果。`}</p><button className="story-next" onClick={nextTrial}>{trialIndex < 2 ? '体验下一只' : '查看链接建议'}</button></section></main>;
+  }
+
+  const correctTotal = evidence.filter(item => item.correct).length;
+  if (phase === 'recommendation') {
+    const spirit = getSpirit(recommendation);
+    return <main className="starter-screen bond-screen"><section className={`bond-panel bond-recommend ${spirit.tone}`}><span>链接建议</span><img src={spirit.image} alt={spirit.name} /><h1>更契合：{spirit.name}</h1><p><b>{spirit.roleLabel}</b> · {spirit.roleDescription}</p><div className="starter-skill-list"><b>已会：{spirit.skills.slice(0, 2).map(item => item.name).join(' / ')}</b><small>Lv.3 学会：{spirit.skills[2].name}</small></div><small>本次 {correctTotal}/9 次有效调用会转化为你最终所选伙伴的成长证据。</small><div className="bridge-actions"><button onClick={() => finish(spirit.name)}>今天和{spirit.name}一起走</button><button className="direct-challenge" onClick={() => setPhase('compare')}>再看看另外两只</button></div></section></main>;
+  }
+
+  return <main className="starter-screen bond-screen"><section className="starter-dialogue"><span>初伴链接测试 · 最终决定</span><h1>今天带谁出去？</h1><p>链接建议是{recommendation}，但决定权仍在你。</p></section><section className="starter-grid">{SPIRITS.map(spirit => <article className={`starter-card ${spirit.tone}`} key={spirit.name}><div className="starter-art"><img className="spirit-art" src={spirit.image} alt={spirit.name} /></div><span>{spirit.name}｜{spirit.roleLabel}</span><h2>{spirit.name}</h2><p>{spirit.roleDescription}</p><div className="starter-skill-list"><b>已会：{spirit.skills.slice(0, 2).map(skill => skill.name).join(' / ')}</b><small>Lv.3 学会：{spirit.skills[2].name}</small></div><button onClick={() => finish(spirit.name)}>{spirit.name === recommendation ? '采用建议，' : ''}和{spirit.name}一起走</button></article>)}</section></main>;
+}
 
 function Ep01AfterSelectionModal({ spirit, index, onProgress, onGuide }: { spirit: SpiritConfig; index: number; onProgress: (index: number) => void; onGuide: (outcome: Exclude<Ep1GuideOutcome, null>) => void }) {
   const beats = [...ep01PartnerScene(spirit.name).beats, ...EP01_FIRST_GUIDE_SCENE.beats.slice(0, 3)];
@@ -215,10 +300,11 @@ function GrowthSummaryModal({ summary, spirit, onClose }: { summary: GrowthSumma
 }
 function StoryModal({ episode, spirit, onClose, onFinish }: { episode: Episode; spirit: SpiritConfig; onClose: () => void; onFinish: () => void }) { const lines = STORIES[episode] ?? ([['[PENDING_K3]', '[PENDING_K3]']] as const); const [index, setIndex] = useState(0), line = lines[Math.min(index, lines.length - 1)], visual = episode === 4 ? '尾' : episode === 8 ? '碑' : episode === 9 ? '稀' : episode === 10 ? '守' : null; return <div className="modal-backdrop"><section className="story-modal"><button className="close" onClick={onClose}>×</button><span>EP{String(episode).padStart(2, '0')} · {placeFor(episode)}</span><div className="story-stage">{visual ? <div className={`scene-symbol scene-${episode}`}>{visual}</div> : <img src={spirit.image} alt={spirit.name} />}<div><b>{line[0]}</b><p>{line[1]}</p></div></div><button className="story-next" onClick={() => index < lines.length - 1 ? setIndex(index + 1) : onFinish()}>{index < lines.length - 1 ? '继续' : EPISODE_CONFIG[episode].hasBattle ? '进入战斗' : '继续'}</button></section></div>; }
 function LearningModal({ pack, onClose, onCancel = onClose, onAnswer }: { pack: ReturnType<typeof getCurrentLearningPack>; onClose: () => void; onCancel?: () => void; onAnswer: (correct: boolean, seen: boolean, question: LearningQuestion, activeSpiritId?: string, responseMs?: number) => void }) {
-  const [index, setIndex] = useState(Math.min(pack.learned, pack.questions.length - 1)); const [feedback, setFeedback] = useState(''); const started = useRef(0); const question = pack.questions[index];
+  const [questions] = useState(() => { const progress = loadLearningStore().progress; const unseen = pack.questions.filter(item => !progress[item.wordId]); return unseen.length > 0 ? unseen : pack.questions; });
+  const [index, setIndex] = useState(0); const [feedback, setFeedback] = useState(''); const started = useRef(0); const question = questions[index];
   useEffect(() => { track('lesson_started', { packId: pack.id }); started.current = Date.now(); }, [pack.id]);
-  function answer(choice: string) { const seen = index < pack.learned; const correct = choice === question.answer; const latencyMs = Date.now() - started.current; recordLearningAnswer(question, correct, latencyMs); track('question_answered', { wordId: question.wordId, layer: question.layer, correct, source: 'lesson' }); onAnswer(correct, seen, question, undefined, latencyMs); setFeedback(correct ? '记住了。伙伴获得XP。' : `正确义项：${question.answer}`); window.setTimeout(() => { setFeedback(''); if (index < pack.questions.length - 1) { setIndex(index + 1); started.current = Date.now(); } else { onClose(); } }, 650); }
-  return <div className="modal-backdrop"><section className="learn-sheet"><button className="close" onClick={onCancel}>×</button><span>{pack.id} · L1　{index + 1}/{pack.questions.length}</span><h2>{question.word}</h2><i>{question.phonetic}</i><p>{question.prompt}</p><div>{question.choices.map(choice => <button key={choice} disabled={!!feedback} onClick={() => answer(choice)}>{choice}</button>)}</div>{feedback && <strong>{feedback}</strong>}</section></div>;
+  function answer(choice: string) { const seen = Boolean(loadLearningStore().progress[question.wordId]); const correct = choice === question.answer; const latencyMs = Date.now() - started.current; recordLearningAnswer(question, correct, latencyMs); track('question_answered', { wordId: question.wordId, layer: question.layer, correct, source: 'lesson' }); onAnswer(correct, seen, question, undefined, latencyMs); setFeedback(correct ? '记住了。伙伴获得XP。' : `正确义项：${question.answer}`); window.setTimeout(() => { setFeedback(''); if (index < questions.length - 1) { setIndex(index + 1); started.current = Date.now(); } else { onClose(); } }, 650); }
+  return <div className="modal-backdrop"><section className="learn-sheet"><button className="close" onClick={onCancel}>×</button><span>{pack.id} · L1　{index + 1}/{questions.length}</span><h2>{question.word}</h2><i>{question.phonetic}</i><p>{question.prompt}</p><div>{question.choices.map(choice => <button key={choice} disabled={!!feedback} onClick={() => answer(choice)}>{choice}</button>)}</div>{feedback && <strong>{feedback}</strong>}</section></div>;
 }
 
 type BattleEvidence = { wordId: string; word: string; quality: ExecutionQuality; skillName: string; effectPercent: number; spiritId: string };
