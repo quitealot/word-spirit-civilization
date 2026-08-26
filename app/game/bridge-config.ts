@@ -38,6 +38,22 @@ export const BRIDGE_V1_RULES = {
     counterDamage: 16,
     bossCounterDamage: 22,
   },
+  skillEffects: {
+    yayu_leaf_pat: { damage: 20 },
+    yayu_bud_guard: { shield: 24 },
+    yayu_root: { mitigation: 0.35, turns: 1 },
+    jinwei_spark: { damage: 20 },
+    jinwei_flame_tail: { damage: 42 },
+    jinwei_charge: { nextAttackMultiplier: 1.5 },
+    lange_water_tone: { damage: 16, weaken: 0.15, turns: 1 },
+    lange_returning_tide: { recovery: 24 },
+    lange_still_wave: { mitigation: 0.3, turns: 1 },
+  },
+  prototypeAcceptance: {
+    playerHp: 32,
+    enemyAttack: 40,
+    targetedTrainingSeconds: 40,
+  },
 } as const;
 
 export function resolveExecutionQuality(correct: boolean, latencyMs: number): ExecutionQuality {

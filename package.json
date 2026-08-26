@@ -13,7 +13,8 @@
     "validate:narrative": "node --experimental-strip-types scripts/validate-narrative.ts",
     "validate:gameplay": "node --experimental-strip-types scripts/validate-gameplay.ts",
     "validate:dev-presets": "node --experimental-strip-types scripts/validate-dev-presets.ts",
-    "validate:learning-adventure": "node --experimental-strip-types scripts/validate-learning-adventure.ts"
+    "validate:learning-adventure": "node --experimental-strip-types scripts/validate-learning-adventure.ts",
+    "validate:skill-guidance": "node --experimental-strip-types scripts/validate-skill-guidance.ts"
   },
   "dependencies": {
     "next": "16.2.6",
