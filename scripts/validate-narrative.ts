@@ -2,6 +2,7 @@ import { EPISODE_CONFIG } from '../app/game/episode-config.ts';
 import type { EpisodeConfig } from '../app/game/episode-config.ts';
 import { ACTIVE_NARRATIVE_PACK } from '../app/narrative/active-scenes.ts';
 import { EP01_V6_SCENES, EP01_V6_STATUS } from '../app/narrative/ep01-v6.ts';
+import { EP02_V1_1_SCENES, EP02_V1_1_STATUS, ep02RuntimeBeats } from '../app/narrative/ep02-v1-1.ts';
 import type {
   NarrativeBeat,
   NarrativePresentation,
@@ -262,4 +263,21 @@ if (!ep01Text.includes('我没问你。') || !ep01Text.includes('4个行动倾�
 }
 if (ep01Text.includes('ep01.cenpo') || ep01Text.includes('ep01.spirits') || ep01Text.includes('岑姨')) throw new Error('EP01 v6 contains a retired v3 scene or character name.');
 
-if (result.errors.length > 0 || ep01Result.errors.length > 0) process.exitCode = 1;
+const ep02Result = validateNarrativePack({
+  scenes: EP02_V1_1_SCENES,
+  episodeConfig: { 2: EPISODE_CONFIG[2] },
+  contentStatus: 'formal',
+});
+const ep02Text = JSON.stringify(EP02_V1_1_SCENES);
+const ep02Beat = (id: string) => EP02_V1_1_SCENES.flatMap(scene => scene.beats).find(beat => beat.id === id);
+const ep02DialogueText = (id: string) => { const beat = ep02Beat(id); return beat?.type === 'dialogue' ? beat.text : null; };
+if (EP02_V1_1_STATUS !== 'FROZEN_APPROVED') throw new Error('EP02 v1.1 must remain FROZEN_APPROVED.');
+if (ep02DialogueText('ep02.footprints.b04') !== '这不是很久以前的。') throw new Error('EP02 final footprints.b04 hotfix is missing.');
+if (ep02DialogueText('ep02.alo_reaction.b04') !== '嗯。') throw new Error('EP02 alo_reaction.b04 must retain the v1 line.');
+if (ep02Text.includes('比我们早，不会太久。') || ep02Text.includes('ep02.over_the_rise.b06') || ep02Text.includes('ep02.over_the_rise.b07')) throw new Error('EP02 contains text or beats removed by the frozen v1.1 patch.');
+for (const starter of ['芽语', '烬尾', '澜歌'] as const) {
+  const branchBeats = ep02RuntimeBeats(starter);
+  if (branchBeats.filter(item => item.beat.id.startsWith('ep02.spirit_pause.') && ['ep02.spirit_pause.yayu', 'ep02.spirit_pause.jinwei', 'ep02.spirit_pause.lange'].includes(item.beat.id)).length !== 1) throw new Error(`EP02 ${starter} runtime branch must contain exactly one spirit reaction.`);
+}
+
+if (result.errors.length > 0 || ep01Result.errors.length > 0 || ep02Result.errors.length > 0) process.exitCode = 1;

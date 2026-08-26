@@ -27,6 +27,6 @@ assert(ep1CheckpointAfterStarterChoice('芽语', '芽语') === 'ep1_intro', 'Cho
 assert(ep1CheckpointAfterStarterChoice('芽语', '烬尾') === 'ep1_spirit_reselect', 'Choosing a non-recommended spirit must enter spirit_reselect');
 
 assert(migrateEp1OpeningPosition({ saveVersion: 8, openingIndex: 34 }) === 36, 'The old flattened selection boundary must map to the V6 link-test boundary');
-assert(SAVE_VERSION === 9, 'EP01 v6 migration requires save schema v9');
+assert(SAVE_VERSION === 10, 'Current save schema must preserve the EP01 v6 migration');
 
 console.log('EP01 v6 save migration validator: PASS (7 recovery paths)');

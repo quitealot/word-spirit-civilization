@@ -37,7 +37,6 @@ function scene(sceneId: string, lines: readonly TemporaryLine[]): NarrativeScene
  * content, not the final K3 script.
  */
 export const TEMPORARY_NARRATIVE_SCENES: readonly NarrativeScene[] = [
-  scene('ep02.old_road', STORIES[2]),
   scene('ep03.awakening_gate', STORIES[3]),
   scene('ep04.first_sighting', STORIES[4]),
   scene('ep05.silent_square', STORIES[5]),

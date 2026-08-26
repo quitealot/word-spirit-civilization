@@ -16,7 +16,7 @@ export const TEMPORARY_CONTENT_STATUS = 'TEMPORARY_CONTENT_PENDING_K3' as const;
 
 export const TEMPORARY_EPISODE_LABELS: Readonly<Record<Episode, { title: string; place: string }>> = {
   1: { title: '雾退了', place: '雾港' },
-  2: { title: '雾散以后', place: '港外旧路' },
+  2: { title: '港外旧路', place: '港外旧路' },
   3: { title: '苏醒之门', place: '石门' },
   4: { title: '回廊里的尾巴', place: '残页回廊' },
   5: { title: '寂静广场', place: '寂静广场' },

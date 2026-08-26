@@ -5,7 +5,7 @@ import { createEmptyAdventureLearning, migrateAdventureLearning, type AdventureL
 export const SAVE_KEY = 'word-spirit-p1-save-v2';
 export const LEGACY_SAVE_KEY = 'word-spirit-p0-save-v1';
 export const STARTER_KEY = 'word-spirit-starter-v1';
-export const SAVE_VERSION = 9;
+export const SAVE_VERSION = 10;
 
 export type StarterId = '芽语' | '烬尾' | '澜歌';
 export type OpeningCheckpoint = 'harbor' | 'station' | null;
@@ -87,6 +87,7 @@ export type GameSave = {
   openingInteraction: OpeningInteraction;
   ep1RecommendedStarter: StarterId | null;
   ep1BondEvidence: Ep1BondEvidence[];
+  ep2NarrativeIndex: number;
   episodeState: EpisodePersistentState;
   growth: GrowthState;
   adventureLearning: AdventureLearningByEpisode;
@@ -116,6 +117,7 @@ export function createEmptySave(): GameSave {
     openingInteraction: null,
     ep1RecommendedStarter: null,
     ep1BondEvidence: [],
+    ep2NarrativeIndex: 0,
     growth: { spirits: {}, claimedEvidenceIds: [], claimedMilestoneIds: [] },
     adventureLearning: createEmptyAdventureLearning(),
     episodeState: {
@@ -372,6 +374,7 @@ export function migrateSave(raw: unknown, starterFallback: StarterId | null = nu
     openingInteraction,
     ep1RecommendedStarter: isStarter(source.ep1RecommendedStarter) ? source.ep1RecommendedStarter : null,
     ep1BondEvidence: migrateBondEvidence(source.ep1BondEvidence),
+    ep2NarrativeIndex: Math.max(0, Math.floor(numberOr(source.ep2NarrativeIndex, 0))),
     growth: migrateGrowth(source.growth),
     adventureLearning: migrateAdventureLearning(source.adventureLearning),
     episodeState: migrateEpisodeState(source.episodeState, source),
