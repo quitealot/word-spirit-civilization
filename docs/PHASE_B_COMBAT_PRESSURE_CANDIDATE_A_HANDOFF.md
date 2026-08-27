@@ -83,4 +83,6 @@
 
 持续 failed 的 Phase B 战后界面当前沿用连续切片的“再确认一下”界面，不额外显示“战败”字样；战败状态已由 resolver 和实际 HP 归零验证。是否需要在产品层明确提示，留给 Sol Review，不在本轮自行扩展。
 
-本轮未提交、未推送、未部署；按任务要求等待用户 / Sol 对 Candidate A 的实机判断。不得继续 Candidate B、不得修改倍率或 no-call、不得迁移主线。
+Candidate A 实现提交：`73e825a59fe8c8378c697002e79a138c2056b29a`。
+
+本轮到此停止，等待用户 / Sol 对 Candidate A 的实机判断。不得继续 Candidate B、不得修改倍率或 no-call、不得迁移主线。
