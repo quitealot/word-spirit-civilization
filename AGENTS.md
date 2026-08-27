@@ -32,7 +32,7 @@
 - EP01《雾退了》v6：`FROZEN / APPROVED`，运行时真源 `app/narrative/ep01-v6.ts`。
 - EP02《港外旧路》v1.1：`FROZEN / APPROVED`，运行时真源 `app/narrative/ep02-v1-1.ts`。
 - EP03《第一次并肩》v1.1：`FROZEN / APPROVED`。
-- EP01–EP03 的正式对白、场景结论、关键因果链不得因后续原型顺手润色。
+- EP01–EP03 的正式对白、场景结论、关键因果链与冻结战斗流程不得因后续原型顺手修改。
 - 当前不开发 EP04；除非用户/最终 Sol Review 明确启动。
 
 第二伙伴注意：旧文档/旧代码里出现的“绒岚”不是当前批准正式名。当前保持未命名占位，直到独立设计 Review 通过；不得据旧文档恢复该名。
@@ -54,42 +54,72 @@
 - 前面学会的词/结构要成为后面学习更难词/结构的脚手架，不要学完即丢。
 - 零基础阶段不要用多个未知英语去解释/测试另一个未知英语。
 - 世界行动优先于学习卡：**世界需求发生 → 命名英语 → 马上使用 → 旧知识帮助新知识 → 逐步撤支架 → 英语驱动行动**。
-- 后台学习状态使用：`Introduced → Guided → Retrieved → Used`；见过一次不等于掌握。
+- 后台学习状态至少使用：`Introduced → Guided → Retrieved → Used`。
 - `Maintained` 只能发生在词已经达到 `Used` 之后；`Used` 或后续 `Maintained` 且 `battleEligible` 的词可进入战斗池。
-- 战斗不能负责第一次教授陌生词。只有已经达到允许条件的词才能进入战斗调用。
+- 战斗不能负责第一次教授陌生词。
 - 英语要嵌在技能/行动中，避免切到独立“英语考试页”。
 
-## 7. 技能 × 英语系统 V2：当前最高优先级
+## 7. 技能 × 英语系统 V2：当前权威
 
 任何战斗、技能、英语调用、倍率或战斗取词改动，必须先读：
 
 1. `docs/SKILL_ENGLISH_SYSTEM_V2.md`
 2. `docs/SKILL_ENGLISH_SYSTEM_V2_ENGINEERING_LOCK.md`
-3. `docs/SKILL_ENGLISH_SYSTEM_V2_PHASE_A_MIGRATION_TASK.md`（仅当执行 Phase A）
-4. `app/AGENTS.md`
+3. `app/AGENTS.md`
 
 V2 核心契约：
 
 > **技能决定这一回合做什么；英语决定这件事这次发挥多少。**
 
-V2 已明确覆盖 Review A / 融合切片 V1/V1.1 中的旧规则：
+当前冻结：
 
-- **战斗层不再要求“与技能/行动语义匹配”。**
-- 战斗取词固定为：`Used-or-Maintained + battleEligible`。
-- 世界教学层仍要求词义与世界行动语义自然。
-- 技能不能拥有专属词池；同一技能可调用不同合格词，不同技能也可调用同一合格词。
-- 即使直接挑战，也不得首次教授陌生英语。
-- 英语发挥倍率原型冻结为独立正确 `1.00`、轻度支架后正确 `0.70`、错误/完整答案 `0.40`；思考时间不影响即时倍率。
-- 没有合格词时使用真实技能的 `noCallMultiplier`，Phase A 冻结为 `0.40`；禁止创造“基础技能20伤害”等临时技能。
-- 战斗数值、取整、减伤/削弱/护盾/回复与敌方行动顺序，以 `SKILL_ENGLISH_SYSTEM_V2_ENGINEERING_LOCK.md` 为准，Codex 不得自行决定。
+- 战斗层不要求“与技能/行动语义匹配”；
+- 战斗取词：`Used-or-Maintained + battleEligible`；
+- 世界教学层仍要求语义自然；
+- 技能不拥有专属词池；
+- 即使直接挑战，也不得首次教授陌生英语；
+- independent / supported / failed = `1.00 / 0.70 / 0.40`；
+- 思考时间不影响即时倍率；
+- 完全无合格词时使用真实技能的独立 `noCallMultiplier = 0.40`，不得创造临时“基础技能”；
+- 战斗数值、取整与结算顺序以 `SKILL_ENGLISH_SYSTEM_V2_ENGINEERING_LOCK.md` 为准。
 
-## 8. 当前工程阶段：V2 Phase A
+## 8. 当前阶段：Phase A 已关闭，Phase B 产品规格已冻结
 
-- 当前最小融合切片 V1/V1.1 已存在于 `/prototype/fusion-slice`，但其旧战斗实现不是 V2 权威。
-- V2 Phase A **只允许迁移融合切片**，用于验证「水音 / 回潮」技能差异与英语发挥倍率。
-- Phase A 不得迁移主线全局九技能，不得修改 `app/page.tsx`、`app/game/bridge-config.ts`、`app/game/spirit-config.ts`、`app/narrative/**`、主存档 schema、成长系统或 EP01–EP03 冻结流程。
-- Phase A 允许文件范围、验收脚本、结算顺序、手机路径与停止线，以 `docs/SKILL_ENGLISH_SYSTEM_V2_PHASE_A_MIGRATION_TASK.md` 为唯一工程任务单。
-- Phase A 完成后必须停止等待用户/Sol Review，不得顺手扩到另外七技能或主线。
+### Phase A
+
+- V2 Phase A 已在 commit `0351c80ef607204f71a83a3a613117efdd83206f` 完成。
+- Sol 状态：`PASS / CLOSED`。
+- 验收记录：`docs/SKILL_ENGLISH_SYSTEM_V2_PHASE_A_SOL_ACCEPTANCE.md`。
+- 正式技能动画明确后移，不属于 Phase B。
+- **不得因为 Phase A 通过而迁移主线九技能。**
+
+### Phase B
+
+当前产品规格：
+
+`docs/TEACH_BATTLE_REPAIR_PHASE_B_SPEC.md`
+
+核心闭环只允许验证：
+
+`语灵站日常完成 → 直接进入测试战斗 → 暴露真实薄弱词 → 针对训练 → 立即再战`
+
+当前状态：
+
+- Phase B 产品方案已 `FROZEN`；
+- **尚未批准 Codex 自行编码**；
+- 下一步只允许先依据产品规格制作一份明确文件范围、状态流、validator、390×844 实机路径与停止线的 Phase B 工程任务单；
+- 工程任务单未冻结前，不得实现。
+
+Phase B 必须继续禁止：
+
+- 接入 `app/page.tsx` 主线；
+- 迁移完整九技能；
+- 修改 EP01–EP03；
+- 做正式技能动画；
+- 新增词、敌人、关卡、剧情或正式技能文案；
+- 扩成长、等级、星级、共鸣；
+- 修改 FSRS / Mastery Layer 核心规则；
+- 新建长期正式抽词算法。
 
 ## 9. 工程执行纪律
 
@@ -108,7 +138,7 @@ V2 已明确覆盖 Review A / 融合切片 V1/V1.1 中的旧规则：
 - `npm run build`
 - 与本次改动直接相关的 `validate:*`
 
-现有重要校验可从 `package.json` 查看。不要为了“全绿”改写冻结内容。
+不要为了“全绿”改写冻结内容。
 
 任务完成时报告：
 
