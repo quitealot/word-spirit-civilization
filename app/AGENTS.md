@@ -18,14 +18,6 @@
 1. `docs/SKILL_ENGLISH_SYSTEM_V2.md`
 2. `docs/SKILL_ENGLISH_SYSTEM_V2_ENGINEERING_LOCK.md`
 
-该两份文档是当前技能 × 英语系统的权威规格。若现有 `spirit-config.ts`、`bridge-config.ts`、`page.tsx` 或其他 V1 代码与 V2 规格冲突：
-
-1. 不得以旧代码反向覆盖 V2；
-2. 不得自行做游戏设计折中；
-3. 不得自行调整技能数值、倍率或词与技能的关系；
-4. 不得自行新增技能效果、正式文案或系统；
-5. 规格缺口使用 `PENDING_K3` 或停下报告。
-
 核心契约固定为：
 
 > 技能决定这一回合做什么；英语决定这件事这次发挥多少。
@@ -38,62 +30,68 @@
 
 战斗层不要求词义与技能语义绑定。世界教学层仍要求语义自然。
 
+不得自行调整技能数值、倍率、词与技能关系或新增正式系统/文案。
+
 ---
 
-## 2. Phase B 连续体验规则
+## 2. Phase B 连续体验冻结规则
 
-涉及“教学页 → 战斗页 → 补弱 → 再战”必须先读：
+涉及“教学页 → 战斗页 → 补弱 → 再战”时，继续遵守：
 
 1. `docs/TEACH_BATTLE_REPAIR_PHASE_B_SPEC.md`
 2. `docs/TEACH_BATTLE_REPAIR_PHASE_B_MIGRATION_TASK.md`
 3. `docs/TEACH_BATTLE_REPAIR_PHASE_B_HANDOFF.md`
 
-Phase B 已实现，但仍是独立原型；不得进入主线。
+Phase B 已实现，仍只属于独立原型。不得修改主线、EP01–EP03、正式词源、成长、正式技能动画或长期抽词系统。
 
 ---
 
-## 3. 当前唯一新增授权：Candidate A 独立战斗压力测试
+## 3. Candidate A 已关闭
 
-用户已批准：
+Candidate A `48 / 80 / 12` 已实现，但 Sol 最终判定：
 
-`docs/PHASE_B_COMBAT_PRESSURE_CANDIDATE_A_TASK.md`
+`NOT PASS / PRESSURE TOO LOW / CLOSED`
 
-Codex 只允许严格按该任务单进行 Candidate A 测试。
+裁决：
 
-Candidate A 只作用于 `flow=phase-b`：
+`docs/PHASE_B_COMBAT_PRESSURE_CANDIDATE_A_SOL_VERDICT.md`
 
-- 玩家 Max HP `48`；
-- 敌人 Max HP `80`；
-- 敌人基础伤害 `12`。
-
-默认 `/prototype/fusion-slice` 必须继续保持 Phase A debug 的 `60 HP / 8伤害`。
-
-### 对旧“不得改 fusion-slice.ts”的唯一窄例外
-
-Candidate A 任务允许 `app/game/fusion-slice.ts` 只做一项接口扩展：
-
-- 给 `resolveFusionBattleCall` 增加带默认值的可选 `enemyDamage` options 注入；
-- 默认仍读取 `FUSION_SLICE_RULES.enemyDamage`；
-- 不得修改技能公式、100/70/40、no-call、weakness、结算顺序或任何其他核心逻辑。
-
-除此之外，`app/game/fusion-slice.ts` 仍视为冻结。
-
-若实现需要超过该例外，立即停止并报告。
+Candidate A 历史 profile 必须保留，不得直接改写成 B。
 
 ---
 
-## 4. 持续禁止
+## 4. 当前唯一新授权：Candidate B
 
-不得：
+必须先读取：
 
-- 修改 `app/page.tsx` 主线；
-- 修改 `app/game/bridge-config.ts`；
-- 修改 `app/game/spirit-config.ts`；
-- 修改 `app/game/zero-base-teaching.ts`；
-- 修改 `app/narrative/**` 或 EP01–EP03；
-- 修改 100/70/40 或 `noCallMultiplier`；
-- 修改水音/回潮；
-- 新增正式技能动画、词、敌人、关卡、剧情、成长或长期抽词系统；
-- 把 Candidate A 的 `80/12` 传播到默认 debug、主线或未来正式平衡。
+`docs/PHASE_B_COMBAT_PRESSURE_CANDIDATE_B_TASK.md`
 
-正式实现前不得修改 EP01–EP03 冻结剧情或冻结战斗流程。
+当前只允许把 Phase B 战斗压力从 A 推进到 B：
+
+- Candidate A 历史 profile：`48 / 80 / 12`，保留；
+- Candidate B：`48 / 80 / 14`；
+- 唯一平衡变化：敌方基础伤害 `12 → 14`。
+
+本轮允许修改的 app 文件仅按任务单：
+
+- `app/game/phase-b-flow.ts`
+- `app/prototype/fusion-slice/page.tsx`
+
+**本轮不得再修改 `app/game/fusion-slice.ts`。** Candidate A 已完成 enemyDamage 可选注入，Candidate B 只使用既有接口。
+
+继续禁止：
+
+- `app/page.tsx`
+- `app/game/bridge-config.ts`
+- `app/game/spirit-config.ts`
+- `app/game/zero-base-teaching.ts`
+- `app/learning-engine.ts`
+- `app/narrative/**`
+- EP01–EP03
+- 100 / 70 / 40
+- no-call
+- 水音 / 回潮效果
+- teaching / repair
+- 新词、新敌人、新关卡、新剧情、新系统
+
+完成 Candidate B 后立即停止，不得自行继续 Candidate C 或主线。
