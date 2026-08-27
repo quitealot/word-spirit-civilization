@@ -20,7 +20,8 @@
     "validate:ep02-v1-1": "node --experimental-strip-types scripts/validate-ep02-v1-1.ts",
     "validate:ep03-v1-1": "node --experimental-strip-types scripts/validate-ep03-v1-1.ts",
     "validate:zero-base-teaching": "node --experimental-strip-types scripts/validate-zero-base-teaching.ts",
-    "validate:fusion-slice": "node --experimental-strip-types scripts/validate-fusion-slice.ts"
+    "validate:fusion-slice": "node --experimental-strip-types scripts/validate-fusion-slice.ts",
+    "validate:skill-english-v2": "node --experimental-strip-types scripts/validate-skill-english-v2.ts"
   },
   "dependencies": {
     "next": "16.2.6",
