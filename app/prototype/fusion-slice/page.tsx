@@ -6,12 +6,15 @@ import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import {
   FUSION_SLICE_RULES,
+  FUSION_BATTLE_SKILLS,
   createFusionBattleState,
-  getFusionBattleEligibleRelations,
+  getFusionBattleEligibleWords,
   resolveDirectChallengeTurn,
   resolveFusionBattleCall,
-  type FusionBattleRelation,
+  selectFusionBattleCall,
+  type FusionBattleCall,
   type FusionBattleState,
+  type FusionBattleWordCandidate,
   type FusionWeakness,
 } from '../../game/fusion-slice';
 import { ZERO_BASE_WORDS, createZeroBaseProgress, loadZeroBaseProgress, type ZeroBaseProgress } from '../../game/zero-base-teaching';
@@ -19,7 +22,7 @@ import { ZERO_BASE_WORDS, createZeroBaseProgress, loadZeroBaseProgress, type Zer
 type SliceStage = 'menu' | 'battle' | 'review' | 'targeted' | 'trained' | 'result';
 type BattleMode = 'eligible_words' | 'direct';
 
-const CHOICE_SETS: Record<FusionBattleRelation['wordId'], readonly string[]> = {
+const CHOICE_SETS: Record<FusionBattleWordCandidate['wordId'], readonly string[]> = {
   w1718: ['水', '人；人们', '需要', '帮助'],
   w729: ['帮助', '选择', '需要', '水'],
 };
@@ -30,7 +33,7 @@ export default function FusionSlicePrototypePage() {
   const [stage, setStage] = useState<SliceStage>('menu');
   const [mode, setMode] = useState<BattleMode>('eligible_words');
   const [battle, setBattle] = useState<FusionBattleState>(createFusionBattleState);
-  const [selected, setSelected] = useState<FusionBattleRelation | null>(null);
+  const [selected, setSelected] = useState<FusionBattleCall | null>(null);
   const [supportUsed, setSupportUsed] = useState(false);
   const [feedback, setFeedback] = useState('');
   const [weaknessesBeforeTraining, setWeaknessesBeforeTraining] = useState<FusionWeakness[]>([]);
@@ -41,7 +44,7 @@ export default function FusionSlicePrototypePage() {
     setReady(true);
   }, []);
 
-  const eligible = useMemo(() => getFusionBattleEligibleRelations(progress), [progress]);
+  const eligible = useMemo(() => getFusionBattleEligibleWords(progress), [progress]);
   const target = weaknessesBeforeTraining[targetIndex];
   const targetWord = target ? ZERO_BASE_WORDS.find(word => word.wordId === target.wordId) : undefined;
 
@@ -69,12 +72,12 @@ export default function FusionSlicePrototypePage() {
 
   function answer(choice: string) {
     if (!selected || feedback) return;
-    const source = ZERO_BASE_WORDS.find(word => word.wordId === selected.wordId);
+    const source = ZERO_BASE_WORDS.find(word => word.wordId === selected.word.wordId);
     if (!source) return;
     const correct = choice === source.targetGloss;
     const quality = correct ? (supportUsed ? 'supported' : 'independent') : 'failed';
     const outcome = resolveFusionBattleCall(battle, selected, quality);
-    setFeedback(`${selected.skillName}${quality === 'independent' ? '完整发动' : quality === 'supported' ? '借助支架发动' : '没有完全发动'} · ${outcome.damage}伤害 · ${outcome.effectPercent}%`);
+    setFeedback(`${selected.skill.skillName}${quality === 'independent' ? '完整发动' : quality === 'supported' ? '借助支架发动' : '没有完全发动'} · ${outcome.damage}伤害 · ${outcome.effectPercent}%`);
     finishTurn(outcome.state);
   }
 
@@ -126,11 +129,11 @@ export default function FusionSlicePrototypePage() {
       </div>
       <div className="fusion-arena"><Image src="/spirit-lange.png" alt="澜歌" width={180} height={180} priority /><strong>VS</strong><div className="fusion-enemy">蚀</div></div>
       {mode === 'direct' ? <div className="fusion-skills"><button onClick={directAttack} disabled={!!feedback}><b>基础技能</b><small>不调用英语 · 20伤害</small></button></div> : selected ? <div className="fusion-inline-call">
-        <span>{selected.skillName} · 当前英语调用</span><h2>{selected.word}</h2><p>{supportUsed ? '已使用世界动作重演；本次最高发挥70%。' : '直接完成可让技能完整发动。思考时间不限。'}</p>
-        <div>{CHOICE_SETS[selected.wordId].map(choice => <button key={choice} disabled={!!feedback} onClick={() => answer(choice)}>{choice}</button>)}</div>
+        <span>{selected.skill.skillName} · 当前行动调用</span><small>本次调用词</small><h2>{selected.word.word}</h2><p>{supportUsed ? '已使用世界动作重演；本次最高发挥70%。' : '直接完成可让技能完整发动。思考时间不限。'}</p>
+        <div>{CHOICE_SETS[selected.word.wordId].map(choice => <button key={choice} disabled={!!feedback} onClick={() => answer(choice)}>{choice}</button>)}</div>
         {!supportUsed && !feedback && <button className="fusion-support" onClick={() => setSupportUsed(true)}>回想刚才的世界动作</button>}
-        {supportUsed && <div className="fusion-world-replay">{selected.word === 'water' ? '水桶与水面再次亮起。' : '同行语灵再次走向需要帮助的人。'}</div>}
-      </div> : <div className="fusion-skills">{eligible.map(relation => <button key={relation.wordId} onClick={() => setSelected(relation)}><b>{relation.skillName}</b><small><code>{relation.word}</code> · 已达到 Used</small></button>)}</div>}
+        {supportUsed && <div className="fusion-world-replay">{selected.word.word === 'water' ? '水桶与水面再次亮起。' : '同行语灵再次走向需要帮助的人。'}</div>}
+      </div> : <div className="fusion-skills">{FUSION_BATTLE_SKILLS.map(skill => <button key={skill.skillId} onClick={() => setSelected(selectFusionBattleCall(skill, eligible, battle.turn))}><b>{skill.skillName}</b><small>{skill.effectLabel}</small></button>)}</div>}
       {feedback && <strong className="fusion-feedback">{feedback}</strong>}
       <small className="fusion-rule">敌方 HP 归零即胜利。错误仍造成伤害；时间只记录，不削弱技能。</small>
     </section>}
