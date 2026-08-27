@@ -423,8 +423,8 @@ function BattleModal({ episode, spirit, save, onClose, onAnswer, onAdventureCall
     const correct = choice === question.answer;
     const latencyMs = Date.now() - started.current;
     const executionKind = teamTactic ? (teamTactic === 'cover' ? 'shield' : 'mitigation') : skill.executionKind;
-    const quality = resolveExecutionQuality(correct, latencyMs);
-    const multiplier = resolveSkillMultiplier(executionKind, correct, latencyMs);
+    const quality = resolveExecutionQuality(correct);
+    const multiplier = resolveSkillMultiplier(executionKind, correct);
     const effectPercent = Math.round(multiplier * 100);
     const store = loadLearningStore();
     const seen = (store.progress[question.wordId]?.attempts ?? 0) > 0;
@@ -457,7 +457,7 @@ function BattleModal({ episode, spirit, save, onClose, onAnswer, onAdventureCall
       battleLog({ turn: before.turn, activeSpirit: beforeActive.id, enemyAttackKind: attack.kind, shield: shieldAbsorbed, reduction: reduced, questionResult: correct ? 'correct' : 'incorrect', wordId: question.wordId, damageTaken, damageDealt, battleResult: nextTeam.result === 'won' ? 'victory' : nextTeam.result === 'lost' ? 'defeat' : 'turn' });
       const readableName = beforeActive.id === 'MIST_PORT_SPIRIT_01' ? '绒岚' : beforeActive.id;
       const defenseFeedback = shieldAbsorbed > 0 ? `护盾吸收${shieldAbsorbed}，HP仅-${damageTaken}` : reduced > 0 ? `削弱减伤${reduced}，HP-${damageTaken}` : `承受${damageTaken}伤害`;
-      const executionFeedback = quality === 'stable' ? '完整发动' : quality === 'hesitant' ? `迟疑发动 · ${effectPercent}%` : `未完全发动 · ${effectPercent}%`;
+      const executionFeedback = quality === 'stable' ? '完整发动' : quality === 'supported' ? `支架后发动 · ${effectPercent}%` : `未完全发动 · ${effectPercent}%`;
       if (nextTeam.result === 'won') { outcome.current = 'won'; setMessage(`${readableName}技能${executionFeedback} · 造成${damageDealt}伤害 · 战斗结束`); timer.current = window.setTimeout(onWin, 350); }
       else if (nextTeam.result === 'lost') { outcome.current = 'defeated'; setDefeated(true); setMessage(`${readableName}${defenseFeedback} · 队伍无法继续`); }
       else setMessage(`${readableName}技能${executionFeedback} · ${defenseFeedback} · 造成${damageDealt}伤害`);
@@ -478,7 +478,7 @@ function BattleModal({ episode, spirit, save, onClose, onAnswer, onAdventureCall
     setEnemy(next);
     if (correct) setWrongId(undefined);
     else setWrongId(question.wordId);
-    const executionFeedback = quality === 'stable' ? '完整发动' : quality === 'hesitant' ? `迟疑发动 · ${effectPercent}%` : `未完全发动 · ${effectPercent}%`;
+    const executionFeedback = quality === 'stable' ? '完整发动' : quality === 'supported' ? `支架后发动 · ${effectPercent}%` : `未完全发动 · ${effectPercent}%`;
     const firstEp03EnemyAction = episode === 3 && !ep03GlanceSeen.current;
     if (firstEp03EnemyAction) { ep03GlanceSeen.current = true; onFirstEnemyAction(); }
     const combatMessage = `${skill.name}${executionFeedback} · 造成${damage}伤害${generatedDefense ? ` · 防护${generatedDefense}` : ''}${recovery ? ` · 恢复${recovery}` : ''}${damageTaken ? ` · 受到反击${damageTaken}` : ''}`;

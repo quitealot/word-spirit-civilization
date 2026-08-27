@@ -32,7 +32,7 @@ export default function SkillGuidancePrototypePage() {
     const correct = choice === maintainQuestion.answer;
     const latencyMs = Date.now() - started.current;
     recordAnswer(correct, latencyMs);
-    const outcome = resolveBudGuardPrototype(correct, latencyMs);
+    const outcome = resolveBudGuardPrototype(correct);
     recordSkillRelationshipCall({ skillId: 'yayu_bud_guard', wordId: MAINTAIN_WORD_ID, quality: outcome.quality });
     if (outcome.quality !== 'stable') {
       recordSkillWeakness({ wordId: MAINTAIN_WORD_ID, word: 'maintain', spiritId: '芽语', skillId: 'yayu_bud_guard', skillName: '护芽', quality: outcome.quality, effectPercent: outcome.effectPercent });

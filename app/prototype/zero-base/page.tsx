@@ -2,6 +2,7 @@
 /* eslint-disable react-hooks/set-state-in-effect -- restore the prototype-only local save after client hydration */
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import {
   createZeroBaseProgress,
   loadZeroBaseProgress,
@@ -207,7 +208,7 @@ export default function ZeroBaseTeachingPrototypePage() {
         {step === 'final_choose' && <><h2 className="zb-action-word">choose water</h2><p className="zb-world-only">场景会提醒你，但不自动翻译。</p><ChoiceObjects onWater={() => { evidence('choose', 'used', 'final_choose', 0); evidence('water', 'used', 'final_choose', 0); advance('final_help'); }} wrong={wrongChoice} />{feedback && <em className="zb-feedback">{feedback}</em>}<button className="zb-help" onClick={() => { setWorldPulse(true); setFeedback('水桶轻轻晃了一下。'); window.setTimeout(() => setWorldPulse(false), 1000); }}>看看场景</button></>}
         {step === 'final_help' && <><PeopleGroup /><h2 className="zb-action-word">help people</h2><button className="zb-primary action" onClick={() => { evidence('help', 'retrieved', 'final_help', 0); evidence('people', 'used', 'final_help', 0); evidence('help', 'used', 'final_help', 0); setProgress(current => ({ ...current, completedAt: Date.now() })); advance('complete'); }}>help people</button></>}
 
-        {step === 'complete' && <><span className="zb-kicker">事情做完了</span><h1>你刚刚读懂了三句英语。</h1><div className="zb-complete-lines"><b>People need water.</b><b>choose water</b><b>help people</b></div><p>没有单词卡结算。你看懂它们，然后让场景继续了。</p><button className="zb-primary" onClick={reset}>从头再玩一次</button></>}
+        {step === 'complete' && <><span className="zb-kicker">事情做完了</span><h1>你刚刚读懂了三句英语。</h1><div className="zb-complete-lines"><b>People need water.</b><b>choose water</b><b>help people</b></div><p>没有单词卡结算。你看懂它们，然后让场景继续了。</p><div className="zb-complete-actions"><Link className="zb-primary" href="/prototype/fusion-slice">带着已学词进入测试战斗</Link><button className="zb-help" onClick={reset}>从头再玩一次</button></div></>}
       </div>
     </section>
 

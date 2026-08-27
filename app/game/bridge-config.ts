@@ -1,5 +1,6 @@
 export type SkillExecutionKind = 'stable_attack' | 'burst' | 'shield' | 'mitigation' | 'recovery' | 'control' | 'charge';
-export type ExecutionQuality = 'stable' | 'hesitant' | 'failed';
+export type SkillCallSupport = 'none' | 'light' | 'full';
+export type ExecutionQuality = 'stable' | 'supported' | 'failed' | 'hesitant';
 
 export const BRIDGE_V1_RULES = {
   training: {
@@ -15,10 +16,9 @@ export const BRIDGE_V1_RULES = {
     weaknessRecovered: 2,
   },
   response: {
-    stableMs: 3500,
     fsrsHardMs: 8000,
-    stableMultiplier: 1,
-    hesitantMultiplier: 0.85,
+    independentMultiplier: 1,
+    lightSupportMultiplier: 0.7,
   },
   skillFailureMultipliers: {
     stable_attack: 0.3,
@@ -56,16 +56,16 @@ export const BRIDGE_V1_RULES = {
   },
 } as const;
 
-export function resolveExecutionQuality(correct: boolean, latencyMs: number): ExecutionQuality {
+export function resolveExecutionQuality(correct: boolean, support: SkillCallSupport = 'none'): ExecutionQuality {
   if (!correct) return 'failed';
-  return latencyMs <= BRIDGE_V1_RULES.response.stableMs ? 'stable' : 'hesitant';
+  return support === 'none' ? 'stable' : 'supported';
 }
 
-export function resolveSkillMultiplier(kind: SkillExecutionKind, correct: boolean, latencyMs: number): number {
+export function resolveSkillMultiplier(kind: SkillExecutionKind, correct: boolean, support: SkillCallSupport = 'none'): number {
   if (!correct) return BRIDGE_V1_RULES.skillFailureMultipliers[kind];
-  return latencyMs <= BRIDGE_V1_RULES.response.stableMs
-    ? BRIDGE_V1_RULES.response.stableMultiplier
-    : BRIDGE_V1_RULES.response.hesitantMultiplier;
+  return support === 'none'
+    ? BRIDGE_V1_RULES.response.independentMultiplier
+    : BRIDGE_V1_RULES.response.lightSupportMultiplier;
 }
 
 export function estimatedTrainingSeconds(wordCount: number): number {

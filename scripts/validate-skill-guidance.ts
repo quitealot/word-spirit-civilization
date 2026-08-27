@@ -20,14 +20,14 @@ assert(new Set(skills.map(skill => skill.id)).size === 9, 'Every starter skill n
 assert(getSignatureGuidance('w1233', '芽语', 'yayu_bud_guard')?.word === 'protect', 'protect must be associated with 芽语·护芽');
 assert(getSignatureGuidance('w2341', '芽语', 'yayu_bud_guard')?.word === 'maintain', 'maintain must be associated with 芽语·护芽');
 
-assert(resolveSkillMultiplier('stable_attack', false, 1000) > resolveSkillMultiplier('burst', false, 1000), 'High-risk burst failure must lose more effect than stable attack');
-assert(resolveSkillMultiplier('shield', false, 1000) > resolveSkillMultiplier('mitigation', false, 1000), 'Shield failure must weaken while mitigation may fail');
-assert(resolveSkillMultiplier('recovery', false, 1000) > 0, 'Recovery failure must retain partial healing');
-assert(resolveSkillMultiplier('control', false, 1000) === 0, 'Control failure may fully fail');
-assert(resolveSkillMultiplier('shield', true, BRIDGE_V1_RULES.response.stableMs + 100) === BRIDGE_V1_RULES.response.hesitantMultiplier, 'Slow correct answers must use the configured hesitant multiplier');
+assert(resolveSkillMultiplier('stable_attack', false) > resolveSkillMultiplier('burst', false), 'High-risk burst failure must lose more effect than stable attack');
+assert(resolveSkillMultiplier('shield', false) > resolveSkillMultiplier('mitigation', false), 'Shield failure must weaken while mitigation may fail');
+assert(resolveSkillMultiplier('recovery', false) > 0, 'Recovery failure must retain partial healing');
+assert(resolveSkillMultiplier('control', false) === 0, 'Control failure may fully fail');
+assert(resolveSkillMultiplier('shield', true, 'light') === BRIDGE_V1_RULES.response.lightSupportMultiplier, 'Light support must use the configured support multiplier');
 
-const failedGuard = resolveBudGuardPrototype(false, 1000);
-const stableGuard = resolveBudGuardPrototype(true, 1000);
+const failedGuard = resolveBudGuardPrototype(false);
+const stableGuard = resolveBudGuardPrototype(true);
 assert(failedGuard.shield > 0 && failedGuard.shield < stableGuard.shield, 'Wrong maintain must create a partial rather than full shield');
 assert(failedGuard.defeated, 'Acceptance battle must fail after the partial shield');
 assert(!stableGuard.defeated, 'Acceptance retry must survive after the full shield');

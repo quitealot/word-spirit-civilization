@@ -53,6 +53,7 @@ export type SkillRelationshipProgress = {
   resonance: number;
   signatureWordIdsSeen: string[];
   successfulCalls: number;
+  /** Legacy field name retained for save compatibility; now counts supported calls. */
   hesitantCalls: number;
   failedCalls: number;
 };
@@ -68,7 +69,7 @@ export type SkillWeaknessEvidence = {
   spiritId: string;
   skillId: StarterSkillId | 'companion_cover' | 'companion_soften';
   skillName: string;
-  quality: 'hesitant' | 'failed';
+  quality: 'supported' | 'failed' | 'hesitant';
   effectPercent: number;
 };
 
@@ -99,8 +100,11 @@ export function loadSkillRelationshipStore(): SpiritSkillRelationshipStore {
   if (typeof window === 'undefined') return { skills: {}, recentWeaknesses: [] };
   try {
     const parsed = JSON.parse(window.localStorage.getItem(RELATIONSHIP_STORE_KEY) || '{"skills":{},"recentWeaknesses":[]}') as Partial<SpiritSkillRelationshipStore>;
+    const recentWeaknesses = Array.isArray(parsed.recentWeaknesses)
+      ? parsed.recentWeaknesses.map(item => ({ ...item, quality: item.quality === 'hesitant' ? 'supported' as const : item.quality }))
+      : [];
     return parsed && typeof parsed === 'object' && parsed.skills
-      ? { skills: parsed.skills, recentWeaknesses: Array.isArray(parsed.recentWeaknesses) ? parsed.recentWeaknesses : [] }
+      ? { skills: parsed.skills, recentWeaknesses: recentWeaknesses as SkillWeaknessEvidence[] }
       : { skills: {}, recentWeaknesses: [] };
   } catch {
     return { skills: {}, recentWeaknesses: [] };
@@ -110,9 +114,10 @@ export function loadSkillRelationshipStore(): SpiritSkillRelationshipStore {
 export function recordSkillRelationshipCall(options: {
   skillId: StarterSkillId;
   wordId: string;
-  quality: 'stable' | 'hesitant' | 'failed';
+  quality: 'stable' | 'supported' | 'failed' | 'hesitant';
 }): SkillRelationshipProgress {
   const store = loadSkillRelationshipStore();
+  const quality = options.quality === 'hesitant' ? 'supported' : options.quality;
   const current = store.skills[options.skillId] ?? {
     proficiency: 0,
     resonance: 0,
@@ -123,14 +128,14 @@ export function recordSkillRelationshipCall(options: {
   };
   const signature = Boolean(getSignatureGuidance(options.wordId, undefined, options.skillId));
   const next: SkillRelationshipProgress = {
-    proficiency: current.proficiency + (options.quality === 'stable' ? 2 : options.quality === 'hesitant' ? 1 : 0),
-    resonance: current.resonance + (signature && options.quality !== 'failed' ? 1 : 0),
+    proficiency: current.proficiency + (quality === 'stable' ? 2 : quality === 'supported' ? 1 : 0),
+    resonance: current.resonance + (signature && quality !== 'failed' ? 1 : 0),
     signatureWordIdsSeen: signature
       ? Array.from(new Set([...current.signatureWordIdsSeen, options.wordId]))
       : current.signatureWordIdsSeen,
-    successfulCalls: current.successfulCalls + (options.quality === 'stable' ? 1 : 0),
-    hesitantCalls: current.hesitantCalls + (options.quality === 'hesitant' ? 1 : 0),
-    failedCalls: current.failedCalls + (options.quality === 'failed' ? 1 : 0),
+    successfulCalls: current.successfulCalls + (quality === 'stable' ? 1 : 0),
+    hesitantCalls: current.hesitantCalls + (quality === 'supported' ? 1 : 0),
+    failedCalls: current.failedCalls + (quality === 'failed' ? 1 : 0),
   };
   store.skills[options.skillId] = next;
   if (typeof window !== 'undefined') window.localStorage.setItem(RELATIONSHIP_STORE_KEY, JSON.stringify(store));
@@ -154,9 +159,9 @@ export function resetSkillRelationshipStore(): void {
   if (typeof window !== 'undefined') window.localStorage.removeItem(RELATIONSHIP_STORE_KEY);
 }
 
-export function resolveBudGuardPrototype(correct: boolean, latencyMs: number) {
-  const quality = resolveExecutionQuality(correct, latencyMs);
-  const multiplier = resolveSkillMultiplier('shield', correct, latencyMs);
+export function resolveBudGuardPrototype(correct: boolean, support: 'none' | 'light' | 'full' = 'none') {
+  const quality = resolveExecutionQuality(correct, support);
+  const multiplier = resolveSkillMultiplier('shield', correct, support);
   const fullShield = BRIDGE_V1_RULES.skillEffects.yayu_bud_guard.shield;
   const shield = Math.round(fullShield * multiplier);
   const damageTaken = Math.max(0, BRIDGE_V1_RULES.prototypeAcceptance.enemyAttack - shield);

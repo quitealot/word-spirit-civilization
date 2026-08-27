@@ -32,10 +32,10 @@ learning = recordWeaknessRecovered(learning, 3, 'outside-pool');
 assert(!learning[3].weakWordIds.includes('outside-pool'), 'Successful targeted training must clear the weakness');
 assert(learning[3].stabilizedWordIds.includes('outside-pool'), 'Recovered weakness must remain as effective evidence');
 
-assert(resolveExecutionQuality(true, 2000) === 'stable', 'Fast correct answers must be stable');
-assert(resolveExecutionQuality(true, 5000) === 'hesitant', 'Slow correct answers must be hesitant');
-assert(resolveSkillMultiplier('stable_attack', false, 2000) === 0.3, 'Wrong stable attacks must keep 30% effect');
-assert(resolveSkillMultiplier('control', false, 2000) === 0, 'Wrong control skills must fail instead of sharing attack behavior');
+assert(resolveExecutionQuality(true, 'none') === 'stable', 'Independent correct answers must be stable');
+assert(resolveExecutionQuality(true, 'light') === 'supported', 'Correct answers after support must be marked supported');
+assert(resolveSkillMultiplier('stable_attack', false, 'none') === 0.3, 'Wrong stable attacks must keep 30% effect');
+assert(resolveSkillMultiplier('control', false, 'none') === 0, 'Wrong control skills must fail instead of sharing attack behavior');
 
 const migratedLearning = migrateAdventureLearning(JSON.parse(JSON.stringify(learning)));
 assert(isAdventureReady(migratedLearning, 3), 'Ready preparation must survive JSON round trip');

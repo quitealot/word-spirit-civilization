@@ -292,7 +292,8 @@ if (EP03_V1_1_STATUS !== 'FROZEN_APPROVED') throw new Error('EP03 v1.1 must rema
 if (ep03Beat('ep03.encounter.b13') || ep03Beat('ep03.stone_gate.b06')) throw new Error('EP03 contains a beat removed by the frozen v1.1 patch.');
 if (ep03Beat(EP03_FIRST_ENEMY_ACTION_EVENT.eventId)) throw new Error('The first enemy action glance must be a battle event, not a NarrativeBeat.');
 if (EP03_FIRST_ENEMY_ACTION_EVENT.action !== '你的语灵稳住身形。重新面对前方之前，它忽然回头看了你一眼。只一下。') throw new Error('EP03 first enemy action event text drifted.');
-if (ep03Beat('ep03.stone_gate.b04')?.type !== 'dialogue' || ep03Beat('ep03.stone_gate.b04')?.text !== '先别往前。回吧。') throw new Error('EP03 must stop at the frozen stone-gate line.');
+const ep03StoneGateBeat = ep03Beat('ep03.stone_gate.b04');
+if (!ep03StoneGateBeat || ep03StoneGateBeat.type !== 'dialogue' || ep03StoneGateBeat.text !== '先别往前。回吧。') throw new Error('EP03 must stop at the frozen stone-gate line.');
 if (JSON.stringify(EP03_V1_1_SCENES).includes('PENDING_K3')) throw new Error('EP03 formal content may not contain PENDING_K3.');
 for (const starter of ['芽语', '烬尾', '澜歌'] as const) {
   const runtime = ep03IntroRuntimeBeats(starter);
