@@ -76,8 +76,10 @@ export default function ZeroBaseTeachingPrototypePage() {
   const [helpLayer, setHelpLayer] = useState<0 | 1 | 2 | 3 | 4>(0);
   const [worldPulse, setWorldPulse] = useState(false);
   const [mustRetry, setMustRetry] = useState(false);
+  const [phaseB, setPhaseB] = useState(false);
 
   useEffect(() => {
+    setPhaseB(new URLSearchParams(window.location.search).get('flow') === 'phase-b');
     const stored = loadZeroBaseProgress();
     const storedStep = STEP_ORDER.includes(stored.currentStep as Step) ? stored.currentStep as Step : 'arrival';
     setProgress(stored);
@@ -161,8 +163,8 @@ export default function ZeroBaseTeachingPrototypePage() {
 
   return <main className="zb-shell">
     <header className="zb-topbar">
-      <div><span>独立教学母版 · V1</span><b>水桶边的小事</b></div>
-      <div className="zb-tools"><small>{completedCount}/5 已用于行动</small><button onClick={reset}>重新开始</button></div>
+      <div>{!phaseB && <span>独立教学母版 · V1</span>}<b>水桶边的小事</b></div>
+      {!phaseB && <div className="zb-tools"><small>{completedCount}/5 已用于行动</small><button onClick={reset}>重新开始</button></div>}
     </header>
 
     <section className="zb-stage" aria-live="polite">
@@ -208,13 +210,15 @@ export default function ZeroBaseTeachingPrototypePage() {
         {step === 'final_choose' && <><h2 className="zb-action-word">choose water</h2><p className="zb-world-only">场景会提醒你，但不自动翻译。</p><ChoiceObjects onWater={() => { evidence('choose', 'used', 'final_choose', 0); evidence('water', 'used', 'final_choose', 0); advance('final_help'); }} wrong={wrongChoice} />{feedback && <em className="zb-feedback">{feedback}</em>}<button className="zb-help" onClick={() => { setWorldPulse(true); setFeedback('水桶轻轻晃了一下。'); window.setTimeout(() => setWorldPulse(false), 1000); }}>看看场景</button></>}
         {step === 'final_help' && <><PeopleGroup /><h2 className="zb-action-word">help people</h2><button className="zb-primary action" onClick={() => { evidence('help', 'retrieved', 'final_help', 0); evidence('people', 'used', 'final_help', 0); evidence('help', 'used', 'final_help', 0); setProgress(current => ({ ...current, completedAt: Date.now() })); advance('complete'); }}>help people</button></>}
 
-        {step === 'complete' && <><span className="zb-kicker">事情做完了</span><h1>你刚刚读懂了三句英语。</h1><div className="zb-complete-lines"><b>People need water.</b><b>choose water</b><b>help people</b></div><p>没有单词卡结算。你看懂它们，然后让场景继续了。</p><div className="zb-complete-actions"><Link className="zb-primary" href="/prototype/fusion-slice">带着已学词进入测试战斗</Link><button className="zb-help" onClick={reset}>从头再玩一次</button></div></>}
+        {step === 'complete' && (phaseB
+          ? <><h1>事情做完了。</h1><Link className="zb-primary" href="/prototype/fusion-slice?flow=phase-b">继续</Link></>
+          : <><span className="zb-kicker">事情做完了</span><h1>你刚刚读懂了三句英语。</h1><div className="zb-complete-lines"><b>People need water.</b><b>choose water</b><b>help people</b></div><p>没有单词卡结算。你看懂它们，然后让场景继续了。</p><div className="zb-complete-actions"><Link className="zb-primary" href="/prototype/fusion-slice">带着已学词进入测试战斗</Link><button className="zb-help" onClick={reset}>从头再玩一次</button></div></>)}
       </div>
     </section>
 
-    <footer className="zb-dev-progress">
+    {!phaseB && <footer className="zb-dev-progress">
       <span>本地过程记录</span>
       {ZERO_BASE_WORDS.map(word => <b key={word.wordId}>{word.word}<em>{progress.stages[word.wordId]}</em></b>)}
-    </footer>
+    </footer>}
   </main>;
 }
