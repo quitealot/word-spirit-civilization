@@ -30,7 +30,7 @@ import {
   resolvePhaseBRetrieve,
   shouldShowPhaseBJustUsed,
   showPhaseBRetrieve,
-  PHASE_B_COMBAT_CANDIDATE_A,
+  PHASE_B_COMBAT_CANDIDATE_B,
   type PhaseBRepairState,
 } from '../../game/phase-b-flow';
 
@@ -69,8 +69,8 @@ export default function FusionSlicePrototypePage() {
       setMode('with_calls');
       if (entry.destination === 'battle') {
         setBattle(createFusionBattleState({
-          enemyHp: PHASE_B_COMBAT_CANDIDATE_A.enemyMaxHp,
-          playerHp: PHASE_B_COMBAT_CANDIDATE_A.playerMaxHp,
+          enemyHp: PHASE_B_COMBAT_CANDIDATE_B.enemyMaxHp,
+          playerHp: PHASE_B_COMBAT_CANDIDATE_B.playerMaxHp,
         }));
       }
       setStage(entry.destination);
@@ -89,8 +89,8 @@ export default function FusionSlicePrototypePage() {
     }
     setMode(eligible.length > 0 ? 'with_calls' : 'no_call');
     setBattle(createFusionBattleState(phaseB ? {
-      enemyHp: PHASE_B_COMBAT_CANDIDATE_A.enemyMaxHp,
-      playerHp: PHASE_B_COMBAT_CANDIDATE_A.playerMaxHp,
+      enemyHp: PHASE_B_COMBAT_CANDIDATE_B.enemyMaxHp,
+      playerHp: PHASE_B_COMBAT_CANDIDATE_B.playerMaxHp,
     } : undefined));
     setSelected(null);
     setSupportUsed(false);
@@ -140,7 +140,7 @@ export default function FusionSlicePrototypePage() {
     const correct = choice === source.targetGloss;
     const quality = correct ? (supportUsed ? 'supported' : 'independent') : 'failed';
     const outcome = phaseB
-      ? resolveFusionBattleCall(battle, selected, quality, { enemyDamage: PHASE_B_COMBAT_CANDIDATE_A.enemyDamage })
+      ? resolveFusionBattleCall(battle, selected, quality, { enemyDamage: PHASE_B_COMBAT_CANDIDATE_B.enemyDamage })
       : resolveFusionBattleCall(battle, selected, quality);
     playTurn(selected.skill, outcome);
   }
@@ -191,7 +191,7 @@ export default function FusionSlicePrototypePage() {
 
   if (!ready) return <main className="fusion-shell"><div className="zb-loading">正在读取学习证据…</div></main>;
 
-  const battleRules = phaseB ? PHASE_B_COMBAT_CANDIDATE_A : FUSION_SLICE_RULES;
+  const battleRules = phaseB ? PHASE_B_COMBAT_CANDIDATE_B : FUSION_SLICE_RULES;
 
   return <main className="fusion-shell">
     {!phaseB && <header className="fusion-header">

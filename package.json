@@ -23,7 +23,8 @@
     "validate:fusion-slice": "node --experimental-strip-types scripts/validate-fusion-slice.ts",
     "validate:skill-english-v2": "node --experimental-strip-types scripts/validate-skill-english-v2.ts",
     "validate:phase-b-flow": "node --experimental-strip-types scripts/validate-phase-b-flow.ts",
-    "validate:phase-b-combat-pressure": "node --experimental-strip-types scripts/validate-phase-b-combat-pressure.ts"
+    "validate:phase-b-combat-pressure": "node --experimental-strip-types scripts/validate-phase-b-combat-pressure.ts",
+    "validate:phase-b-combat-pressure-b": "node --experimental-strip-types scripts/validate-phase-b-combat-pressure-b.ts"
   },
   "dependencies": {
     "next": "16.2.6",

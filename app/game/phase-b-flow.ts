@@ -12,6 +12,12 @@ export const PHASE_B_COMBAT_CANDIDATE_A = {
   enemyDamage: 12,
 } as const;
 
+export const PHASE_B_COMBAT_CANDIDATE_B = {
+  playerMaxHp: 48,
+  enemyMaxHp: 80,
+  enemyDamage: 14,
+} as const;
+
 export type PhaseBRepairStep = 'meaning' | 'retrieve';
 export type PhaseBRepairState = {
   index: number;
