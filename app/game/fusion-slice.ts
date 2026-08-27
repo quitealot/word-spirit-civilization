@@ -7,7 +7,6 @@ export type FusionActionTag = 'station_support';
 export type FusionBattleSkill = {
   skillId: 'lange_water_tone' | 'lange_returning_tide';
   skillName: '水音' | '回潮';
-  effectLabel: '造成稳定伤害' | '攻击并恢复生命';
   actionTags: readonly FusionActionTag[];
   baseDamage: number;
 };
@@ -42,14 +41,12 @@ export const FUSION_BATTLE_SKILLS: readonly FusionBattleSkill[] = [
   {
     skillId: 'lange_water_tone',
     skillName: '水音',
-    effectLabel: '造成稳定伤害',
     actionTags: ['station_support'],
     baseDamage: 24,
   },
   {
     skillId: 'lange_returning_tide',
     skillName: '回潮',
-    effectLabel: '攻击并恢复生命',
     actionTags: ['station_support'],
     baseDamage: 24,
   },

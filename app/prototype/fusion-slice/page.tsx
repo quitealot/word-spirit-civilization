@@ -133,7 +133,7 @@ export default function FusionSlicePrototypePage() {
         <div>{CHOICE_SETS[selected.word.wordId].map(choice => <button key={choice} disabled={!!feedback} onClick={() => answer(choice)}>{choice}</button>)}</div>
         {!supportUsed && !feedback && <button className="fusion-support" onClick={() => setSupportUsed(true)}>回想刚才的世界动作</button>}
         {supportUsed && <div className="fusion-world-replay">{selected.word.word === 'water' ? '水桶与水面再次亮起。' : '同行语灵再次走向需要帮助的人。'}</div>}
-      </div> : <div className="fusion-skills">{FUSION_BATTLE_SKILLS.map(skill => <button key={skill.skillId} onClick={() => setSelected(selectFusionBattleCall(skill, eligible, battle.turn))}><b>{skill.skillName}</b><small>{skill.effectLabel}</small></button>)}</div>}
+      </div> : <div className="fusion-skills">{FUSION_BATTLE_SKILLS.map(skill => <button key={skill.skillId} onClick={() => setSelected(selectFusionBattleCall(skill, eligible, battle.turn))}><b>{skill.skillName}</b><small>选择后确定本次调用词</small></button>)}</div>}
       {feedback && <strong className="fusion-feedback">{feedback}</strong>}
       <small className="fusion-rule">敌方 HP 归零即胜利。错误仍造成伤害；时间只记录，不削弱技能。</small>
     </section>}
