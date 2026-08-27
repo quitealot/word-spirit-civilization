@@ -1,17 +1,17 @@
 # 《语灵》Phase B 战斗压力 Sol Review
 
-状态：`REVIEWED / BALANCE HOLD / NOT AUTHORIZED FOR CODE`
+状态：`CANDIDATE-A APPROVED FOR ISOLATED TEST ONLY`
 日期：2026-08-27
 
 本文件记录 Phase B 实机反馈：当前问题不一定是 `failed = 0.40` 本身，而是测试敌人压力过低，导致低发挥技能仍能长期磨死敌人，英语失误缺少真实战斗后果。
 
-当前先做产品/数值 Review，**不授权 Codex 修改冻结数值或代码**。
+用户已批准 **Candidate A 独立平衡测试**。授权范围仅以 `docs/PHASE_B_COMBAT_PRESSURE_CANDIDATE_A_TASK.md` 为准，不代表主线正式平衡通过。
 
 ---
 
 ## 1. 当前基线
 
-当前融合切片：
+当前融合切片默认 debug 基线：
 
 - 玩家 Max HP：`48`
 - 敌人 Max HP：`60`
@@ -62,7 +62,7 @@
 
 ---
 
-## 4. Sol 第一候选参数：Phase B Candidate A
+## 4. Phase B Candidate A
 
 仅作为 **Phase B 独立切片的第一轮平衡候选**：
 
@@ -73,26 +73,44 @@
 - 100 / 70 / 40：不变
 - no-call 40：不变
 
-这不是主线正式数值，也不授权当前代码修改；它是下一次窄平衡测试的 Candidate A。
+### 代表性确定性结果
 
-### 在当前两技能模型下的代表性结果
+按现有结算规则：
 
-以现有结算规则做确定性推演：
-
-- 全部 independent，合理使用水音 + 一次回潮：约 `5` 回合胜利，结束约 `26 HP`；
-- 其中一次 failed、其余及时恢复为 independent：约 `6` 回合胜利，结束约 `16 HP`；
-- 连续两次 failed 后再恢复正确：约 `7` 回合，可能只剩约 `6 HP`，明显进入危险区；
-- 如果持续按 failed 40% 发挥，即使在水音 / 回潮之间选择，也不应能够把 `80 HP / 12伤害` 的敌人稳定磨死。
+- 全部 independent，`水音 → 水音 → 回潮 → 水音 → 水音`：第 `5` 回合胜，约剩 `26 HP`；
+- 第一次水音 failed，之后恢复 independent：第 `6` 回合胜，约剩 `16 HP`；
+- 连续两次水音 failed，之后恢复 independent：第 `7` 回合胜，约剩 `6 HP`；
+- 若所有调用持续 failed，在两个现有真实技能之间任意选择，也不应存在稳定获胜路径。
 
 这些数字只用于验证目标曲线，不作为主线正式平衡。
 
 ---
 
-## 5. 为什么 Candidate A 比直接降 failed 更合适
+## 5. Candidate A 的工程隔离裁决
+
+为了不破坏 Phase A / no-call debug 历史基线，Candidate A **只作用于 `flow=phase-b`**。
+
+因此：
+
+- 默认 `/prototype/fusion-slice` 继续保持 `60 HP / 8伤害`；
+- Candidate A 连续路径使用 `80 HP / 12伤害`；
+- 不允许直接把 `FUSION_SLICE_RULES.enemyMaxHp / enemyDamage` 全局改成 `80 / 12`；
+- no-call debug 继续按 Phase A 基线回归；
+- Candidate A 不是新的正式战斗配置系统，只是 Phase B 原型测试 profile。
+
+具体工程方式与允许文件范围，以：
+
+`docs/PHASE_B_COMBAT_PRESSURE_CANDIDATE_A_TASK.md`
+
+为唯一任务单。
+
+---
+
+## 6. 为什么 Candidate A 比直接降 failed 更合适
 
 ### 全正确
 
-玩家的高质量英语让技能更快结束战斗，因此少吃敌方行动。
+高质量英语更快结束战斗，因此少吃敌方行动。
 
 ### 一次答错
 
@@ -100,7 +118,7 @@
 
 ### 连续答错
 
-低伤害 + 较弱回复/削弱无法抵消不断增加的敌方行动次数，危险会自然累积。
+低伤害 + 较弱回复/削弱无法抵消敌方行动，危险自然累积。
 
 ### 训练后再战
 
@@ -109,55 +127,51 @@
 - 水音 `7伤害 + 8%削弱` → `18伤害 + 20%削弱`
 - 回潮 `4伤害 + 9回复` → `10伤害 + 22回复`
 
-在更有压力的敌人面前会被放大成真正的回合数与生存差异，而不是只看到 UI 数字变大。
+在更有压力的敌人面前会转化成真实的回合数和生存差异。
 
 ---
 
-## 6. failed 与 no-call 的冲突处理
+## 7. failed 与 no-call
 
-本轮明确：**不允许只修改 failed。**
+本轮仍明确：**不允许只修改 failed。**
 
-如果未来实机证明仅提高敌人压力仍不够，需要重新 Review 英语倍率，则必须同时 Review：
+如果 Candidate A 实机证明仅提高敌人压力仍不够，需要重新 Review 英语倍率，则必须同时 Review：
 
 - `failedMultiplier`
 - `noCallMultiplier`
 
-不得让“完全没有英语调用”在系统上天然优于“尝试了但答错”。
+不得让“完全没有英语调用”天然优于“尝试了但答错”。
 
-Phase B 主流程来自完整语灵站教学，正常已有合格词，因此 `no-call` **不是本轮 Phase B 主验收路径的平衡目标**。
-
-Phase A 的 no-call debug 回归与“无合格词是否必须可赢”这一历史要求，本文件暂不改写；如未来要调整 no-call 的正式胜负定位，必须另开 Sol Review，不能由 Codex 从 Candidate A 自行推导。
+Candidate A 本轮通过 Phase B-only profile 隔离，不改写 Phase A no-call debug 的 `60/8` 历史验证。
 
 ---
 
-## 7. 下一次窄平衡验证必须观察
-
-若后续授权 Candidate A 做独立切片测试，只验证：
+## 8. Candidate A 必须观察
 
 1. 全 independent 是否稳定在约 4–5 回合且不显得过险；
-2. 单次 failed 是否大概率多付出一次敌方行动；
-3. 连续两次 failed 是否真的进入危险血线；
-4. 持续 failed 是否会正常战败；
-5. 一次正确使用回潮是否真能成为“救回来”的战术选择；
-6. repair 后同词 100% 发挥是否能明显减少回合数/提高剩余 HP；
-7. 是否因此产生“答错一次就很害怕”的反效果。
+2. 单次 failed 是否明显增加敌方行动代价；
+3. 连续两次 failed 是否进入危险血线；
+4. 持续 failed 是否正常战败；
+5. 正确使用回潮是否能成为真实的“救回来”选择；
+6. repair 后同词 100% 是否明显减少回合数/提高剩余 HP；
+7. 是否产生“答错一次就害怕”的反效果。
 
-如果第 7 项出现，优先微调敌方压力，不先改为 `0伤害 / 跳过回合`。
+若第 7 项出现，优先微调 Phase B 敌人压力，不改为 `0伤害 / 跳过回合`。
 
 ---
 
-## 8. 当前停止线
+## 9. 当前授权与停止线
 
-当前只记录 Review，不实现。
+当前允许 Codex **只执行 Candidate A 独立测试任务单**。
 
 Codex 不得自行：
 
-- 把敌人改成 `80 / 12`；
-- 修改 `failed` 或 `noCall`；
-- 修改水音 / 回潮；
+- 改 `failed` 或 `noCall`；
+- 改水音 / 回潮；
+- 改 Phase B repair；
+- 将 `80 / 12` 写入默认 Phase A debug 或主线；
 - 增加回合上限、怒气、资源条、额外惩罚；
-- 修改 Phase B repair；
 - 迁移主线九技能；
 - 修改 EP01–EP03。
 
-下一步必须由用户 / Sol 明确批准“做 Candidate A 独立平衡测试”后，才允许给 Codex 下一个只改原型参数与对应 validator 的窄任务单。
+Candidate A 实现、验证和 handoff 完成后立即停止，等待用户 / Sol 实机 Review；不得自行继续 Candidate B。
