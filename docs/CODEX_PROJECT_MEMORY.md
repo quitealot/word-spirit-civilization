@@ -87,38 +87,66 @@ Phase B 已实现，工程交接：
 
 Phase B 仍是独立原型，不进入主线。
 
-## 7. 当前唯一新任务：Phase B Candidate A 战斗压力测试
+## 7. Candidate A：已实现但产品不通过
 
-用户已批准：
+实现基线：`73e825a59fe8c8378c697002e79a138c2056b29a`
 
-`docs/PHASE_B_COMBAT_PRESSURE_CANDIDATE_A_TASK.md`
+工程交接：
 
-状态：`READY FOR CODEX / CANDIDATE-A ONLY`
+`docs/PHASE_B_COMBAT_PRESSURE_CANDIDATE_A_HANDOFF.md`
 
-Candidate A 只用于 `flow=phase-b`：
+最终裁决：
+
+`docs/PHASE_B_COMBAT_PRESSURE_CANDIDATE_A_SOL_VERDICT.md`
+
+状态：`NOT PASS / PRESSURE TOO LOW / CLOSED`
+
+Candidate A：
+
+- 玩家 `48`
+- 敌人 `80`
+- 敌伤 `12`
+
+工程 validator 与代表曲线成立，但用户/Sol 实机体验判断仍是压力偏低，低质量调用的真实后果不够强。
+
+Candidate A 历史 profile 必须保留，不能删除或直接改成 B。
+
+## 8. 当前唯一新任务：Candidate B
+
+工程任务单：
+
+`docs/PHASE_B_COMBAT_PRESSURE_CANDIDATE_B_TASK.md`
+
+状态：`READY FOR CODEX / CANDIDATE-B ONLY`
+
+Candidate B 只用于 `flow=phase-b`：
 
 - 玩家 Max HP：`48`
 - 敌人 Max HP：`80`
-- 敌人基础伤害：`12`
+- 敌人基础伤害：`14`
 
-目的：验证“答错仍能行动，但低效率让敌人多行动；一次失误能救，持续低质量会输”。
+与 A 相比**只改敌伤 12 → 14**。
 
-目标曲线：
+预期代表曲线：
 
-- 全 independent：约 5 回合，约剩 26 HP；
-- 一次 failed 后恢复：约 6 回合，约剩 16 HP；
-- 连续两次 failed 后恢复：约 7 回合，约剩 6 HP；
-- 持续 failed：两个现有真实技能的任意全 failed 序列都不应获胜；
-- repair 后恢复 100%：回合数与剩余 HP 明显改善。
+- 全 independent：5回合胜，约 `23 HP`；
+- 一次 failed 后恢复：6回合胜，约 `10 HP`；
+- 连续两次 failed 当前代表路径：击杀前战败；
+- 持续 failed：继续无获胜路径且压力更早兑现；
+- 回潮仍应保有真实救场价值。
 
-### 隔离要求
+重要：不要求“任意出现两次 failed 的所有策略必败”。一次失误仍应可救，两次连续不稳定应形成真实失败风险，但不能机械写成死刑。
 
-- Candidate A 不得全局改 `FUSION_SLICE_RULES` 的 `60/8` debug 基线；
-- 默认 `/prototype/fusion-slice` no-call 回归继续按 60/8；
-- 100/70/40、no-call、水音/回潮、repair 不改；
-- `app/game/fusion-slice.ts` 只允许按任务单增加带默认值的可选 `enemyDamage` 注入，其他核心结算不得改。
+### Candidate B 工程边界
 
-## 8. Candidate A 停止线
+- 保留 `PHASE_B_COMBAT_CANDIDATE_A = 48/80/12`；
+- 新增 Candidate B `48/80/14`；
+- Phase B 玩家路径改用 B；
+- 默认 Phase A debug 保持 `48/60/8`；
+- `app/game/fusion-slice.ts` 本轮不得再修改；Candidate A 已完成可选 enemyDamage 注入；
+- 100/70/40、no-call、水音/回潮、repair、取词和结算顺序全部不变。
+
+## 9. Candidate B 停止线
 
 持续禁止：
 
@@ -131,19 +159,21 @@ Candidate A 只用于 `flow=phase-b`：
 - 新词、敌人、关卡、剧情；
 - 回合上限、怒气、资源条、额外惩罚；
 - 自行调整 failed/no-call；
-- Candidate B。
+- 同时修改敌人 HP、技能数值等第二变量；
+- Candidate C。
 
-Candidate A 完成后必须提交 handoff 与 commit SHA，然后立即停止等待用户 / Sol Review。
+Candidate B 完成后必须提交 handoff 与 commit SHA，然后立即停止等待用户 / Sol Review。
 
-## 9. 新 Codex 会话启动检查
+## 10. 新 Codex 会话启动检查
 
 开始前确认：
 
-1. 是否严格执行 `PHASE_B_COMBAT_PRESSURE_CANDIDATE_A_TASK.md`？
-2. 是否把 80/12 限定在 `flow=phase-b`？
-3. 是否保持默认 debug 60/8？
-4. 是否只对 `fusion-slice.ts` 做任务单允许的窄接口注入？
-5. 是否没有改倍率、技能、repair、主线或冻结剧情？
-6. 完成后是否准备立即停止？
+1. 是否严格执行 `PHASE_B_COMBAT_PRESSURE_CANDIDATE_B_TASK.md`？
+2. 是否只把 Phase B 敌伤从12改为14？
+3. 是否保留 Candidate A 48/80/12？
+4. 是否保持默认 debug 48/60/8？
+5. 是否完全不修改 `app/game/fusion-slice.ts`？
+6. 是否没有改倍率、技能、repair、主线或冻结剧情？
+7. 完成后是否准备立即停止？
 
 不确定就停下核对，不要猜。
