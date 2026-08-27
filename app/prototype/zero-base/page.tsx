@@ -2,7 +2,6 @@
 /* eslint-disable react-hooks/set-state-in-effect -- restore the prototype-only local save after client hydration */
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import {
   createZeroBaseProgress,
   loadZeroBaseProgress,
@@ -211,8 +210,8 @@ export default function ZeroBaseTeachingPrototypePage() {
         {step === 'final_help' && <><PeopleGroup /><h2 className="zb-action-word">help people</h2><button className="zb-primary action" onClick={() => { evidence('help', 'retrieved', 'final_help', 0); evidence('people', 'used', 'final_help', 0); evidence('help', 'used', 'final_help', 0); setProgress(current => ({ ...current, completedAt: Date.now() })); advance('complete'); }}>help people</button></>}
 
         {step === 'complete' && (phaseB
-          ? <><h1>事情做完了。</h1><Link className="zb-primary" href="/prototype/fusion-slice?flow=phase-b">继续</Link></>
-          : <><span className="zb-kicker">事情做完了</span><h1>你刚刚读懂了三句英语。</h1><div className="zb-complete-lines"><b>People need water.</b><b>choose water</b><b>help people</b></div><p>没有单词卡结算。你看懂它们，然后让场景继续了。</p><div className="zb-complete-actions"><Link className="zb-primary" href="/prototype/fusion-slice">带着已学词进入测试战斗</Link><button className="zb-help" onClick={reset}>从头再玩一次</button></div></>)}
+          ? <><h1>事情做完了。</h1><a className="zb-primary" href="/prototype/fusion-slice?flow=phase-b">继续</a></>
+          : <><span className="zb-kicker">事情做完了</span><h1>你刚刚读懂了三句英语。</h1><div className="zb-complete-lines"><b>People need water.</b><b>choose water</b><b>help people</b></div><p>没有单词卡结算。你看懂它们，然后让场景继续了。</p><div className="zb-complete-actions"><a className="zb-primary" href="/prototype/fusion-slice">带着已学词进入测试战斗</a><button className="zb-help" onClick={reset}>从头再玩一次</button></div></>)}
       </div>
     </section>
 
