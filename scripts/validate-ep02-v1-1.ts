@@ -23,6 +23,6 @@ const oldSave = migrateSave({ saveVersion: 9, starter: '芽语', completed: [1],
 assert(oldSave.ep2NarrativeIndex === 0 && oldSave.completed.includes(1), 'Pre-EP02 saves must migrate without losing EP01');
 const resumed = migrateSave({ saveVersion: 10, starter: '烬尾', completed: [1], exploration: 9, ep2NarrativeIndex: 17 });
 assert(resumed.ep2NarrativeIndex === 17, 'EP02 narrative position must survive refresh');
-assert(SAVE_VERSION === 10, 'EP02 narrative persistence requires save schema v10');
+assert(SAVE_VERSION >= 10, 'EP02 narrative persistence requires save schema v10 or later');
 
 console.log('EP02 v1.1 validator: PASS (frozen beats, 3 starter paths, save migration)');

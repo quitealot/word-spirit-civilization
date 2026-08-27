@@ -3,6 +3,7 @@ import type { EpisodeConfig } from '../app/game/episode-config.ts';
 import { ACTIVE_NARRATIVE_PACK } from '../app/narrative/active-scenes.ts';
 import { EP01_V6_SCENES, EP01_V6_STATUS } from '../app/narrative/ep01-v6.ts';
 import { EP02_V1_1_SCENES, EP02_V1_1_STATUS, ep02RuntimeBeats } from '../app/narrative/ep02-v1-1.ts';
+import { EP03_FIRST_ENEMY_ACTION_EVENT, EP03_V1_1_SCENES, EP03_V1_1_STATUS, ep03IntroRuntimeBeats } from '../app/narrative/ep03-v1-1.ts';
 import type {
   NarrativeBeat,
   NarrativePresentation,
@@ -280,4 +281,22 @@ for (const starter of ['芽语', '烬尾', '澜歌'] as const) {
   if (branchBeats.filter(item => item.beat.id.startsWith('ep02.spirit_pause.') && ['ep02.spirit_pause.yayu', 'ep02.spirit_pause.jinwei', 'ep02.spirit_pause.lange'].includes(item.beat.id)).length !== 1) throw new Error(`EP02 ${starter} runtime branch must contain exactly one spirit reaction.`);
 }
 
-if (result.errors.length > 0 || ep01Result.errors.length > 0 || ep02Result.errors.length > 0) process.exitCode = 1;
+const ep03Result = validateNarrativePack({
+  scenes: EP03_V1_1_SCENES,
+  episodeConfig: { 3: EPISODE_CONFIG[3] },
+  contentStatus: 'formal',
+});
+const ep03Beats = EP03_V1_1_SCENES.flatMap(scene => scene.beats);
+const ep03Beat = (id: string) => ep03Beats.find(beat => beat.id === id);
+if (EP03_V1_1_STATUS !== 'FROZEN_APPROVED') throw new Error('EP03 v1.1 must remain FROZEN_APPROVED.');
+if (ep03Beat('ep03.encounter.b13') || ep03Beat('ep03.stone_gate.b06')) throw new Error('EP03 contains a beat removed by the frozen v1.1 patch.');
+if (ep03Beat(EP03_FIRST_ENEMY_ACTION_EVENT.eventId)) throw new Error('The first enemy action glance must be a battle event, not a NarrativeBeat.');
+if (EP03_FIRST_ENEMY_ACTION_EVENT.action !== '你的语灵稳住身形。重新面对前方之前，它忽然回头看了你一眼。只一下。') throw new Error('EP03 first enemy action event text drifted.');
+if (ep03Beat('ep03.stone_gate.b04')?.type !== 'dialogue' || ep03Beat('ep03.stone_gate.b04')?.text !== '先别往前。回吧。') throw new Error('EP03 must stop at the frozen stone-gate line.');
+if (JSON.stringify(EP03_V1_1_SCENES).includes('PENDING_K3')) throw new Error('EP03 formal content may not contain PENDING_K3.');
+for (const starter of ['芽语', '烬尾', '澜歌'] as const) {
+  const runtime = ep03IntroRuntimeBeats(starter);
+  if (runtime.filter(item => ['ep03.spirit_alert.yayu', 'ep03.spirit_alert.jinwei', 'ep03.spirit_alert.lange'].includes(item.beat.id)).length !== 1) throw new Error(`EP03 ${starter} runtime branch must contain exactly one spirit reaction.`);
+}
+
+if (result.errors.length > 0 || ep01Result.errors.length > 0 || ep02Result.errors.length > 0 || ep03Result.errors.length > 0) process.exitCode = 1;

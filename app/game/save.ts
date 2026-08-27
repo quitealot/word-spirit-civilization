@@ -5,7 +5,7 @@ import { createEmptyAdventureLearning, migrateAdventureLearning, type AdventureL
 export const SAVE_KEY = 'word-spirit-p1-save-v2';
 export const LEGACY_SAVE_KEY = 'word-spirit-p0-save-v1';
 export const STARTER_KEY = 'word-spirit-starter-v1';
-export const SAVE_VERSION = 10;
+export const SAVE_VERSION = 11;
 
 export type StarterId = '芽语' | '烬尾' | '澜歌';
 export type OpeningCheckpoint = 'harbor' | 'station' | null;
@@ -17,6 +17,7 @@ export type MonumentFace = 'front' | 'back' | null;
 export type TrackingSlotId = 'tracking_01' | 'tracking_02' | 'tracking_03';
 export type ApproachStage = 0 | 1 | 2 | 3;
 export type BossPhase = 0 | 1 | 2 | 3;
+export type Ep03Phase = 'intro' | 'battle' | 'retreat' | 'victory' | 'stone_gate' | 'complete';
 
 export type TrackingSlotState = {
   completed: boolean;
@@ -24,6 +25,13 @@ export type TrackingSlotState = {
 };
 
 export type EpisodePersistentState = {
+  ep03: {
+    phase: Ep03Phase;
+    narrativeIndex: number;
+    firstEnemyActionGlanceSeen: boolean;
+    retreatWeakWordIds: string[];
+    bonded: boolean;
+  };
   ep05: {
     sightings: number;
     battleCompleted: boolean;
@@ -121,6 +129,7 @@ export function createEmptySave(): GameSave {
     growth: { spirits: {}, claimedEvidenceIds: [], claimedMilestoneIds: [] },
     adventureLearning: createEmptyAdventureLearning(),
     episodeState: {
+      ep03: { phase: 'intro', narrativeIndex: 0, firstEnemyActionGlanceSeen: false, retreatWeakWordIds: [], bonded: false },
       ep05: { sightings: 0, battleCompleted: false },
       ep06: {
         approachStage: 0,
@@ -275,6 +284,7 @@ function migrateTracking(value: unknown): Record<TrackingSlotId, TrackingSlotSta
 
 function migrateEpisodeState(value: unknown, legacy: Record<string, unknown>): EpisodePersistentState {
   const input = value && typeof value === 'object' ? value as Partial<EpisodePersistentState> : {};
+  const ep03Input: Partial<EpisodePersistentState['ep03']> = input.ep03 ?? {};
   const ep05Input: Partial<EpisodePersistentState['ep05']> = input.ep05 ?? {};
   const ep06Input: Partial<EpisodePersistentState['ep06']> = input.ep06 ?? {};
   const ep07Input: Partial<EpisodePersistentState['ep07']> = input.ep07 ?? {};
@@ -293,8 +303,19 @@ function migrateEpisodeState(value: unknown, legacy: Record<string, unknown>): E
     ? Array.from(new Set([...(starter ? [starter] : []), ...legacyTeam, 'MIST_PORT_SPIRIT_01']))
     : legacyTeam;
   const rareSeen = booleanOr(ep09Input.rareSeen, booleanOr(legacy.rareSeen, false));
+  const completedEpisodes = Array.isArray(legacy.completed) ? legacy.completed.filter(isEpisodeId) : [];
+  const ep03Complete = completedEpisodes.includes(3);
+  const ep03Phases: Ep03Phase[] = ['intro', 'battle', 'retreat', 'victory', 'stone_gate', 'complete'];
+  const ep03Phase = ep03Complete ? 'complete' : ep03Phases.includes(ep03Input.phase as Ep03Phase) ? ep03Input.phase as Ep03Phase : 'intro';
 
   return {
+    ep03: {
+      phase: ep03Phase,
+      narrativeIndex: Math.max(0, Math.floor(numberOr(ep03Input.narrativeIndex, 0))),
+      firstEnemyActionGlanceSeen: booleanOr(ep03Input.firstEnemyActionGlanceSeen, ep03Complete),
+      retreatWeakWordIds: Array.isArray(ep03Input.retreatWeakWordIds) ? Array.from(new Set(ep03Input.retreatWeakWordIds.filter((id): id is string => typeof id === 'string' && id.length > 0))) : [],
+      bonded: booleanOr(ep03Input.bonded, ep03Complete),
+    },
     ep05: {
       sightings: Math.max(legacySightings, Math.min(3, Math.floor(numberOr(ep05Input.sightings, 0)))),
       battleCompleted: booleanOr(ep05Input.battleCompleted, false),
@@ -440,6 +461,7 @@ export function completeEpisode(save: GameSave, episode: EpisodeId): GameSave {
     completed: Array.from(new Set([...save.completed, episode])).sort((a, b) => a - b) as EpisodeId[],
     episodeState: {
       ...save.episodeState,
+      ep03: { ...save.episodeState.ep03, retreatWeakWordIds: [...save.episodeState.ep03.retreatWeakWordIds] },
       ep05: { ...save.episodeState.ep05 },
       ep06: { ...save.episodeState.ep06, teamSpiritIds: [...save.episodeState.ep06.teamSpiritIds] },
       ep07: { ...save.episodeState.ep07 },
@@ -453,6 +475,7 @@ export function completeEpisode(save: GameSave, episode: EpisodeId): GameSave {
     next.checkpoint = null;
     next.ep1TutorialIndex = 3;
   }
+  if (episode === 3) next.episodeState.ep03 = { ...next.episodeState.ep03, phase: 'complete', narrativeIndex: 0, retreatWeakWordIds: [], bonded: true };
   if (effects.sightingsAtLeast !== undefined) {
     next.sightings = Math.max(next.sightings, effects.sightingsAtLeast);
     next.episodeState.ep05.sightings = Math.max(next.episodeState.ep05.sightings, effects.sightingsAtLeast);
@@ -474,6 +497,24 @@ export function completeEpisode(save: GameSave, episode: EpisodeId): GameSave {
     next.episodeState.ep09.rareClueCount = Math.max(next.episodeState.ep09.rareClueCount, 1) as 0 | 1 | 2 | 3;
   }
   return next;
+}
+
+export function setEp03Progress(save: GameSave, phase: Ep03Phase, narrativeIndex = 0): GameSave {
+  return { ...save, episodeState: { ...save.episodeState, ep03: { ...save.episodeState.ep03, phase, narrativeIndex: Math.max(0, Math.floor(narrativeIndex)) } } };
+}
+
+export function recordEp03FirstEnemyAction(save: GameSave): GameSave {
+  if (save.episodeState.ep03.firstEnemyActionGlanceSeen) return save;
+  return { ...save, episodeState: { ...save.episodeState, ep03: { ...save.episodeState.ep03, firstEnemyActionGlanceSeen: true } } };
+}
+
+export function recordEp03Retreat(save: GameSave, weakWordIds: string[]): GameSave {
+  return { ...save, episodeState: { ...save.episodeState, ep03: { ...save.episodeState.ep03, phase: 'retreat', narrativeIndex: 0, retreatWeakWordIds: Array.from(new Set(weakWordIds.filter(Boolean))), bonded: false } } };
+}
+
+export function confirmEp03Bond(save: GameSave): GameSave {
+  if (save.episodeState.ep03.bonded) return save;
+  return { ...save, episodeState: { ...save.episodeState, ep03: { ...save.episodeState.ep03, bonded: true } } };
 }
 
 export function setEp05Sightings(save: GameSave, sightings: number): GameSave {

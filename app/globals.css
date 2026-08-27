@@ -151,3 +151,5 @@ button { font:inherit; }
     align-items:start;
   }
 }
+
+.ep03-system-note{display:block;margin:14px 0;padding:10px 12px;border-radius:10px;background:#e4ede7;color:#28624e;text-align:center}.ep03-unknown{margin-inline:auto}.ep03-gate{border-radius:16px;background:linear-gradient(145deg,#8d8170,#4a463f);color:#ded3bd}.ep03-bond-update{display:grid;align-content:center;gap:8px;min-height:150px;text-align:center}.ep03-bond-update small{color:#238064;font-weight:800;letter-spacing:.1em}.ep03-bond-update b{font-family:serif;font-size:28px;color:#173c31}
