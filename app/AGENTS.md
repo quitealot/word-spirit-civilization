@@ -40,25 +40,60 @@
 
 ---
 
-## 2. 当前 Phase B 强制规则
+## 2. Phase B 连续体验规则
 
-只要任务涉及“教学页 → 战斗页 → 补弱 → 再战”的连续体验，还必须先读取：
+涉及“教学页 → 战斗页 → 补弱 → 再战”必须先读：
 
 1. `docs/TEACH_BATTLE_REPAIR_PHASE_B_SPEC.md`
 2. `docs/TEACH_BATTLE_REPAIR_PHASE_B_MIGRATION_TASK.md`
+3. `docs/TEACH_BATTLE_REPAIR_PHASE_B_HANDOFF.md`
 
-当前唯一批准的 Phase B 工程范围，以迁移任务单为准。
+Phase B 已实现，但仍是独立原型；不得进入主线。
 
-Phase B 只允许串联独立原型，不得：
+---
+
+## 3. 当前唯一新增授权：Candidate A 独立战斗压力测试
+
+用户已批准：
+
+`docs/PHASE_B_COMBAT_PRESSURE_CANDIDATE_A_TASK.md`
+
+Codex 只允许严格按该任务单进行 Candidate A 测试。
+
+Candidate A 只作用于 `flow=phase-b`：
+
+- 玩家 Max HP `48`；
+- 敌人 Max HP `80`；
+- 敌人基础伤害 `12`。
+
+默认 `/prototype/fusion-slice` 必须继续保持 Phase A debug 的 `60 HP / 8伤害`。
+
+### 对旧“不得改 fusion-slice.ts”的唯一窄例外
+
+Candidate A 任务允许 `app/game/fusion-slice.ts` 只做一项接口扩展：
+
+- 给 `resolveFusionBattleCall` 增加带默认值的可选 `enemyDamage` options 注入；
+- 默认仍读取 `FUSION_SLICE_RULES.enemyDamage`；
+- 不得修改技能公式、100/70/40、no-call、weakness、结算顺序或任何其他核心逻辑。
+
+除此之外，`app/game/fusion-slice.ts` 仍视为冻结。
+
+若实现需要超过该例外，立即停止并报告。
+
+---
+
+## 4. 持续禁止
+
+不得：
 
 - 修改 `app/page.tsx` 主线；
-- 修改 `app/game/fusion-slice.ts` 的 Phase A 核心战斗结算；
 - 修改 `app/game/bridge-config.ts`；
 - 修改 `app/game/spirit-config.ts`；
 - 修改 `app/game/zero-base-teaching.ts`；
 - 修改 `app/narrative/**` 或 EP01–EP03；
-- 新增正式技能动画、词、敌人、关卡、剧情、成长或长期抽词系统。
-
-若实现发现必须触碰禁止范围才能继续，立即停止并报告，不得自行扩大范围。
+- 修改 100/70/40 或 `noCallMultiplier`；
+- 修改水音/回潮；
+- 新增正式技能动画、词、敌人、关卡、剧情、成长或长期抽词系统；
+- 把 Candidate A 的 `80/12` 传播到默认 debug、主线或未来正式平衡。
 
 正式实现前不得修改 EP01–EP03 冻结剧情或冻结战斗流程。
