@@ -14,7 +14,7 @@
 
 - 项目正式名称：**《语灵》**。
 - 生物/伙伴统一称：**语灵**。`词灵` 为废弃旧称；新代码、新文档、新 UI、新对白禁止继续使用旧称。
-- 核心用户优先级：**纯零基础/基础断层的英语学习者优先**。
+- 核心用户优先级：**纯零基础/基础断层英语学习者优先**。
 - 产品形态固定为移动端 Web 叙事 RPG：背景/立绘/节点交互/对话/技能战斗/轻量动画与特效。
 - 禁止滑向开放世界、摇杆自由走路、实时自由探索或 3D 大世界。
 - 复杂度放在内容与学习编排，不放在不断新增系统。
@@ -76,6 +76,7 @@
 
 - 基线 commit：`0351c80ef607204f71a83a3a613117efdd83206f`
 - 状态：`PASS / CLOSED`
+- 默认 debug 基线：玩家48 / 敌人60 / 敌伤8。
 - 不因此批准主线九技能迁移。
 
 ### Phase B 连续体验
@@ -86,28 +87,38 @@
 - Phase B 已实现，仍只属于独立原型。
 - 主闭环：`语灵站日常 → 战斗 → 真实薄弱 → 两步 repair → 自动再战`。
 
-## 8. 当前唯一新授权：Phase B Candidate A
+## 8. 战斗压力候选状态
+
+### Candidate A
+
+- 实现基线：`73e825a59fe8c8378c697002e79a138c2056b29a`
+- 参数：玩家48 / 敌人80 / 敌伤12
+- Sol 最终裁决：`NOT PASS / PRESSURE TOO LOW / CLOSED`
+- 裁决文档：`docs/PHASE_B_COMBAT_PRESSURE_CANDIDATE_A_SOL_VERDICT.md`
+
+Candidate A 作为历史配置保留，不得删除或改写成 Candidate B。
+
+### 当前唯一新授权：Candidate B
 
 用户已批准执行：
 
-`docs/PHASE_B_COMBAT_PRESSURE_CANDIDATE_A_TASK.md`
+`docs/PHASE_B_COMBAT_PRESSURE_CANDIDATE_B_TASK.md`
 
-只验证 Phase B 独立连续切片战斗压力：
+只验证 Phase B 独立连续切片，唯一平衡变化：
 
-- 玩家 Max HP `48`
-- Phase B 敌人 Max HP `80`
-- Phase B 敌人基础伤害 `12`
+- 玩家 Max HP：`48`（不变）
+- 敌人 Max HP：`80`（不变）
+- 敌人基础伤害：`14`（由 Candidate A 的12提高到14）
 
-**必须隔离：**
+必须保留：
 
-- Candidate A 只作用于 `flow=phase-b`；
-- 默认 `/prototype/fusion-slice` 继续保持 Phase A debug `60 HP / 8伤害`；
-- 不得全局改写 `FUSION_SLICE_RULES.enemyMaxHp / enemyDamage`；
-- 100/70/40、no-call、水音/回潮、repair 规则均不改。
+- Candidate A 历史 profile `48/80/12`；
+- 默认 `/prototype/fusion-slice` Phase A debug `48/60/8`；
+- 100/70/40、no-call、水音/回潮、repair、取词和结算顺序全部不变。
 
-Candidate A 对 `app/game/fusion-slice.ts` 的唯一授权例外：按任务单给 `resolveFusionBattleCall` 增加带默认值的可选 enemyDamage 注入；除此之外核心结算仍冻结。
+Candidate B 不需要也**不得再修改 `app/game/fusion-slice.ts`**。Candidate A 已完成 enemyDamage 可选注入，本轮只使用既有接口。
 
-完成 Candidate A 后立即停止，提交 handoff，等待用户/Sol实机 Review；不得自行继续 Candidate B 或主线。
+完成 Candidate B 后立即停止，提交 handoff，等待用户/Sol实机 Review；不得自行继续 Candidate C 或主线。
 
 ## 9. 持续禁止
 
@@ -119,7 +130,8 @@ Candidate A 对 `app/game/fusion-slice.ts` 的唯一授权例外：按任务单�
 - 做正式技能动画；
 - 新增词、敌人、关卡、剧情、资源条、怒气、额外失败惩罚或大型系统；
 - 修改 FSRS / Mastery Layer 核心规则；
-- 自行调整 failed/no-call。
+- 自行调整 failed/no-call；
+- 同时修改多个平衡变量。
 
 ## 10. 验证与完成标准
 
