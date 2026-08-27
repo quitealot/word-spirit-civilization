@@ -83,7 +83,7 @@ V2 核心契约：
 - 完全无合格词时使用真实技能的独立 `noCallMultiplier = 0.40`，不得创造临时“基础技能”；
 - 战斗数值、取整与结算顺序以 `SKILL_ENGLISH_SYSTEM_V2_ENGINEERING_LOCK.md` 为准。
 
-## 8. 当前阶段：Phase A 已关闭，Phase B 产品规格已冻结
+## 8. 当前阶段：Phase A 已关闭，Phase B 已批准工程执行
 
 ### Phase A
 
@@ -95,20 +95,25 @@ V2 核心契约：
 
 ### Phase B
 
-当前产品规格：
+产品规格：
 
 `docs/TEACH_BATTLE_REPAIR_PHASE_B_SPEC.md`
 
-核心闭环只允许验证：
+工程任务单：
 
-`语灵站日常完成 → 直接进入测试战斗 → 暴露真实薄弱词 → 针对训练 → 立即再战`
+`docs/TEACH_BATTLE_REPAIR_PHASE_B_MIGRATION_TASK.md`
 
 当前状态：
 
 - Phase B 产品方案已 `FROZEN`；
-- **尚未批准 Codex 自行编码**；
-- 下一步只允许先依据产品规格制作一份明确文件范围、状态流、validator、390×844 实机路径与停止线的 Phase B 工程任务单；
-- 工程任务单未冻结前，不得实现。
+- Phase B 工程任务单已 `READY FOR CODEX / PHASE-B ONLY`；
+- Codex 现在只允许严格按该任务单修改独立原型；
+- 完成后必须停止并提交 Phase B handoff，等待用户 / Sol 实机 Review；
+- 未经下一次明确 Review，不得进入主线战斗迁移。
+
+Phase B 核心闭环只允许验证：
+
+`语灵站日常完成 → 直接进入测试战斗 → 暴露真实薄弱词 → 针对训练 → 立即再战`
 
 Phase B 必须继续禁止：
 
