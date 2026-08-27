@@ -28,6 +28,10 @@ export type FusionBattleCall = {
   word: FusionBattleWordCandidate;
 };
 
+export type FusionBattleResolveOptions = {
+  enemyDamage?: number;
+};
+
 export type FusionWeakness = {
   wordId: FusionBattleWordCandidate['wordId'];
   word: FusionBattleWordCandidate['word'];
@@ -185,8 +189,9 @@ function resolveFusionSkillTurn(options: {
   effectPercent: number;
   calledWord: FusionBattleWordCandidate | null;
   weaknessQuality?: FusionCallQuality;
+  enemyDamage?: number;
 }): FusionTurnOutcome {
-  const { state, skill, multiplier, effectPercent, calledWord, weaknessQuality } = options;
+  const { state, skill, multiplier, effectPercent, calledWord, weaknessQuality, enemyDamage } = options;
   if (state.result !== 'active') {
     return {
       stateAfterSkill: state,
@@ -215,7 +220,7 @@ function resolveFusionSkillTurn(options: {
   const enemyDamageBeforeShield = won
     ? 0
     : resolveFusionEnemyDamage(
-        FUSION_SLICE_RULES.enemyDamage,
+        enemyDamage ?? FUSION_SLICE_RULES.enemyDamage,
         appliedEnemyWeaken,
         state.playerNextDamageMitigation,
       );
@@ -267,6 +272,7 @@ export function resolveFusionBattleCall(
   state: FusionBattleState,
   call: FusionBattleCall,
   quality: FusionCallQuality,
+  options: FusionBattleResolveOptions = {},
 ): FusionTurnOutcome {
   const multiplier = FUSION_SLICE_RULES.effectMultipliers[quality];
   return resolveFusionSkillTurn({
@@ -276,6 +282,7 @@ export function resolveFusionBattleCall(
     effectPercent: Math.round(multiplier * 100),
     calledWord: call.word,
     weaknessQuality: quality,
+    enemyDamage: options.enemyDamage,
   });
 }
 

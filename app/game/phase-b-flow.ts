@@ -6,6 +6,12 @@ import {
 } from './fusion-slice.ts';
 import type { ZeroBaseProgress } from './zero-base-teaching.ts';
 
+export const PHASE_B_COMBAT_CANDIDATE_A = {
+  playerMaxHp: 48,
+  enemyMaxHp: 80,
+  enemyDamage: 12,
+} as const;
+
 export type PhaseBRepairStep = 'meaning' | 'retrieve';
 export type PhaseBRepairState = {
   index: number;

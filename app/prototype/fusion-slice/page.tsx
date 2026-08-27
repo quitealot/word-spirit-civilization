@@ -30,6 +30,7 @@ import {
   resolvePhaseBRetrieve,
   shouldShowPhaseBJustUsed,
   showPhaseBRetrieve,
+  PHASE_B_COMBAT_CANDIDATE_A,
   type PhaseBRepairState,
 } from '../../game/phase-b-flow';
 
@@ -66,6 +67,12 @@ export default function FusionSlicePrototypePage() {
     if (continuous) {
       const entry = getPhaseBEntry(stored);
       setMode('with_calls');
+      if (entry.destination === 'battle') {
+        setBattle(createFusionBattleState({
+          enemyHp: PHASE_B_COMBAT_CANDIDATE_A.enemyMaxHp,
+          playerHp: PHASE_B_COMBAT_CANDIDATE_A.playerMaxHp,
+        }));
+      }
       setStage(entry.destination);
     }
     setReady(true);
@@ -81,7 +88,10 @@ export default function FusionSlicePrototypePage() {
       return;
     }
     setMode(eligible.length > 0 ? 'with_calls' : 'no_call');
-    setBattle(createFusionBattleState());
+    setBattle(createFusionBattleState(phaseB ? {
+      enemyHp: PHASE_B_COMBAT_CANDIDATE_A.enemyMaxHp,
+      playerHp: PHASE_B_COMBAT_CANDIDATE_A.playerMaxHp,
+    } : undefined));
     setSelected(null);
     setSupportUsed(false);
     setFeedback('');
@@ -129,7 +139,9 @@ export default function FusionSlicePrototypePage() {
     if (!source) return;
     const correct = choice === source.targetGloss;
     const quality = correct ? (supportUsed ? 'supported' : 'independent') : 'failed';
-    const outcome = resolveFusionBattleCall(battle, selected, quality);
+    const outcome = phaseB
+      ? resolveFusionBattleCall(battle, selected, quality, { enemyDamage: PHASE_B_COMBAT_CANDIDATE_A.enemyDamage })
+      : resolveFusionBattleCall(battle, selected, quality);
     playTurn(selected.skill, outcome);
   }
 
@@ -179,6 +191,8 @@ export default function FusionSlicePrototypePage() {
 
   if (!ready) return <main className="fusion-shell"><div className="zb-loading">正在读取学习证据…</div></main>;
 
+  const battleRules = phaseB ? PHASE_B_COMBAT_CANDIDATE_A : FUSION_SLICE_RULES;
+
   return <main className="fusion-shell">
     {!phaseB && <header className="fusion-header">
       <div><span>Learning × Adventure · V2 Phase A</span><h1>语灵站日常 → HP测试战斗</h1><p>只调用 Used / Maintained 且 battleEligible 的正式词；技能决定效果，英语决定发挥。</p></div>
@@ -200,8 +214,8 @@ export default function FusionSlicePrototypePage() {
 
     {stage === 'battle' && <section className="fusion-battle">
       <div className="fusion-bars">
-        <div><span>澜歌 HP</span><b>{battle.playerHp}/{FUSION_SLICE_RULES.playerMaxHp}</b><i><em style={{ width: `${battle.playerHp / FUSION_SLICE_RULES.playerMaxHp * 100}%` }} /></i></div>
-        <div className="enemy"><span>测试敌人 HP</span><b>{battle.enemyHp}/{FUSION_SLICE_RULES.enemyMaxHp}</b><i><em style={{ width: `${battle.enemyHp / FUSION_SLICE_RULES.enemyMaxHp * 100}%` }} /></i></div>
+        <div><span>澜歌 HP</span><b>{battle.playerHp}/{battleRules.playerMaxHp}</b><i><em style={{ width: `${battle.playerHp / battleRules.playerMaxHp * 100}%` }} /></i></div>
+        <div className="enemy"><span>测试敌人 HP</span><b>{battle.enemyHp}/{battleRules.enemyMaxHp}</b><i><em style={{ width: `${battle.enemyHp / battleRules.enemyMaxHp * 100}%` }} /></i></div>
       </div>
       <div className="fusion-arena"><Image src="/spirit-lange.png" alt="澜歌" width={180} height={180} priority /><strong>VS</strong><div className="fusion-enemy">蚀</div></div>
       {selected ? <div className="fusion-inline-call">
