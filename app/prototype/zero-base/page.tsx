@@ -200,7 +200,7 @@ export default function ZeroBaseTeachingPrototypePage() {
           {helpLayer === 2 && <div className="zb-help-box"><b>拆开看看</b><p>People / need / water</p><p>人们 / 需要 / 水</p></div>}
           {helpLayer === 3 && <div className="zb-help-box full"><b>整句意思</b><p>People need water.</p><strong>人们需要水。</strong><button onClick={() => { setHelpLayer(0); setMustRetry(true); setFeedback('中文已收起。现在再亲手做一次。'); }}>收起中文，再做一次</button></div>}
           {helpLayer === 4 && null}
-          <div className="zb-final-actions"><button onClick={resolveNeed}><Bucket full /><span>拿水过去</span></button><button onClick={wrongChoice}><span className="zb-basket">绳</span><span>拿绳筐过去</span></button></div>
+          <div className="zb-final-actions"><button disabled={helpLayer === 3} onClick={resolveNeed}><Bucket full /><span>拿水过去</span></button><button disabled={helpLayer === 3} onClick={wrongChoice}><span className="zb-basket">绳</span><span>拿绳筐过去</span></button></div>
           {helpLayer < 3 && <button className="zb-help" onClick={requestHelp}>{helpLayer === 0 ? '我还不确定' : helpLayer === 1 ? '再拆开一点' : '告诉我整句意思'}</button>}
           {feedback && <em className="zb-feedback">{feedback}</em>}
         </>}
