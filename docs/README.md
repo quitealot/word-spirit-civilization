@@ -7,7 +7,10 @@
 ## 当前最高优先级文档
 
 - [`AGENTS.md`](../AGENTS.md)：Codex 项目级常驻规则、权限边界、冻结范围、执行纪律。
-- [`CODEX_PROJECT_MEMORY.md`](./CODEX_PROJECT_MEMORY.md)：截至 2026-08-27 的当前产品记忆、EP01–EP03 冻结状态、零基础教学原则、Review A 停止线与旧文档污染提醒。
+- [`CODEX_PROJECT_MEMORY.md`](./CODEX_PROJECT_MEMORY.md)：截至 2026-08-27 的当前产品记忆、EP01–EP03 冻结状态、零基础教学原则与 V2 当前工程阶段。
+- [`SKILL_ENGLISH_SYSTEM_V2.md`](./SKILL_ENGLISH_SYSTEM_V2.md)：技能 × 英语系统 V2 产品/玩法权威规格。
+- [`SKILL_ENGLISH_SYSTEM_V2_ENGINEERING_LOCK.md`](./SKILL_ENGLISH_SYSTEM_V2_ENGINEERING_LOCK.md)：V2 工程语义补充裁决，锁定 Maintained、取整、no-call、结算顺序与 Phase A 范围。
+- [`SKILL_ENGLISH_SYSTEM_V2_PHASE_A_MIGRATION_TASK.md`](./SKILL_ENGLISH_SYSTEM_V2_PHASE_A_MIGRATION_TASK.md)：Codex 当前唯一可执行的 V2 Phase A 迁移任务单。
 - [`EP01_V6_INTEGRATION_REVIEW.md`](./EP01_V6_INTEGRATION_REVIEW.md)：EP01 v6 工程接入与回归记录。
 - [`EP02_V1_1_INTEGRATION_REVIEW.md`](./EP02_V1_1_INTEGRATION_REVIEW.md)：EP02 v1.1 工程接入与回归记录。
 - [`EP03_V1_1_INTEGRATION_REVIEW.md`](./EP03_V1_1_INTEGRATION_REVIEW.md)：EP03 v1.1 工程接入与回归记录。
@@ -30,8 +33,9 @@
 1. 正式名称统一为《语灵》，生物统一称“语灵”；“词灵”为废弃旧称。
 2. 正式 5505 Excel 的 `wordId` 与源字段是词汇唯一真源，禁止编造 wordId、正式释义和正式例句。
 3. EP01 v6、EP02 v1.1、EP03 v1.1 已 `FROZEN / APPROVED` 并完成工程接入，除阻塞级 bug 或明确解冻外不得修改。
-4. 当前暂停 EP04；零基础最小融合切片 V1 已实现，正在等待实机体验验收，不得据此扩系统。
-5. 第二伙伴正式名当前未定；旧文档中的“绒岚已冻结”为过时信息，不得恢复到新内容。
-6. 零基础用户是教学设计的第一服务对象；不要默认学生已掌握 1000+ 词、简单句或基础语法。
-7. 产品形态为移动端节点式叙事 RPG，不扩成开放世界、自由走路或 3D 大地图。
-8. 不把本地测试快照、CSS 剪影或按钮骨架包装成真实后端、正式美术或完成玩法。
+4. 当前暂停 EP04；现阶段只允许按 Phase A 任务单迁移独立融合切片，不得据此扩主线或九技能。
+5. V2 已覆盖旧 Review A 的“战斗层技能/行动语义匹配”规则；战斗层取词为 `Used-or-Maintained + battleEligible`，世界教学仍要求语义自然。
+6. 第二伙伴正式名当前未定；旧文档中的“绒岚已冻结”为过时信息，不得恢复到新内容。
+7. 零基础用户是教学设计的第一服务对象；不要默认学生已掌握 1000+ 词、简单句或基础语法。
+8. 产品形态为移动端节点式叙事 RPG，不扩成开放世界、自由走路或 3D 大地图。
+9. 不把本地测试快照、CSS 剪影或按钮骨架包装成真实后端、正式美术或完成玩法。
