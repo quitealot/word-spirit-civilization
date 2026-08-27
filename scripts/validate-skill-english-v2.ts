@@ -96,6 +96,8 @@ assert.equal(noCallTide.state.weaknesses.length, 0);
 assert.equal(noCallTide.damage, 4);
 assert.equal(noCallTide.healing, 9);
 assert.equal(noCallTide.actualHealing, 9);
+assert.equal(noCallTide.stateAfterSkill.playerHp, 29, 'Recovery must be exposed before the enemy action');
+assert.equal(noCallTide.state.playerHp, 21, 'Enemy damage must follow the visible recovery phase');
 assert.deepEqual(FUSION_BATTLE_SKILLS.map(skill => skill.skillName), ['水音', '回潮'], 'No temporary basic skill may exist');
 
 let direct = createFusionBattleState();

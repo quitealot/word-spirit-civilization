@@ -53,6 +53,7 @@ export type FusionResolvedComponents = {
 };
 
 export type FusionTurnOutcome = FusionResolvedComponents & {
+  stateAfterSkill: FusionBattleState;
   state: FusionBattleState;
   effectPercent: number;
   actualHealing: number;
@@ -188,6 +189,7 @@ function resolveFusionSkillTurn(options: {
   const { state, skill, multiplier, effectPercent, calledWord, weaknessQuality } = options;
   if (state.result !== 'active') {
     return {
+      stateAfterSkill: state,
       state,
       damage: 0,
       healing: 0,
@@ -229,7 +231,19 @@ function resolveFusionSkillTurn(options: {
       ]
     : state.weaknesses;
 
+  const stateAfterSkill: FusionBattleState = {
+    enemyHp,
+    playerHp: healedPlayerHp,
+    playerShield: state.playerShield,
+    enemyNextDamageWeaken: appliedEnemyWeaken,
+    playerNextDamageMitigation: state.playerNextDamageMitigation,
+    result: won ? 'won' : 'active',
+    weaknesses,
+    turn: state.turn,
+  };
+
   return {
+    stateAfterSkill,
     state: {
       enemyHp,
       playerHp,

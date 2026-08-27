@@ -60,16 +60,32 @@ export default function FusionSlicePrototypePage() {
     setStage('battle');
   }
 
-  function finishTurn(next: FusionBattleState) {
-    setBattle(next);
+  function completeTurn(next: FusionBattleState) {
+    setFeedback('');
+    setSelected(null);
+    setSupportUsed(false);
+    if (next.result === 'active') return;
+    setWeaknessesBeforeTraining(next.weaknesses);
+    setTargetIndex(0);
+    setStage('review');
+  }
+
+  function playTurn(skill: FusionBattleSkill, outcome: FusionTurnOutcome, suffix = '') {
+    setBattle(outcome.stateAfterSkill);
+    setFeedback(`${formatSkillOutcome(skill, outcome)}${suffix}`);
+
+    if (outcome.state.result === 'won') {
+      window.setTimeout(() => {
+        setBattle(outcome.state);
+        completeTurn(outcome.state);
+      }, 700);
+      return;
+    }
+
     window.setTimeout(() => {
-      setFeedback('');
-      setSelected(null);
-      setSupportUsed(false);
-      if (next.result === 'active') return;
-      setWeaknessesBeforeTraining(next.weaknesses);
-      setTargetIndex(0);
-      setStage('review');
+      setBattle(outcome.state);
+      setFeedback(`敌方行动 · 承受${outcome.enemyDamage}伤害`);
+      window.setTimeout(() => completeTurn(outcome.state), 700);
     }, 700);
   }
 
@@ -80,8 +96,7 @@ export default function FusionSlicePrototypePage() {
     const correct = choice === source.targetGloss;
     const quality = correct ? (supportUsed ? 'supported' : 'independent') : 'failed';
     const outcome = resolveFusionBattleCall(battle, selected, quality);
-    setFeedback(formatOutcome(selected.skill, outcome));
-    finishTurn(outcome.state);
+    playTurn(selected.skill, outcome);
   }
 
   function chooseSkill(skill: FusionBattleSkill) {
@@ -91,8 +106,7 @@ export default function FusionSlicePrototypePage() {
       return;
     }
     const outcome = resolveFusionNoCallTurn(battle, skill);
-    setFeedback(`${formatOutcome(skill, outcome)} · 未调用陌生英语`);
-    finishTurn(outcome.state);
+    playTurn(skill, outcome, ' · 未调用陌生英语');
   }
 
   function resolveTargeted(choice: string) {
@@ -166,11 +180,10 @@ function skillEffectSummary(skill: FusionBattleSkill): string {
   return `${config.damage}伤害 · 下一击削弱${Math.round((config.enemyNextDamageWeaken ?? 0) * 100)}%`;
 }
 
-function formatOutcome(skill: FusionBattleSkill, outcome: FusionTurnOutcome): string {
+function formatSkillOutcome(skill: FusionBattleSkill, outcome: FusionTurnOutcome): string {
   const components = [`${skill.skillName} · ${outcome.effectPercent}%发挥`, `${outcome.damage}伤害`];
   if (outcome.healing > 0) components.push(`实际恢复${outcome.actualHealing}生命`);
   if (outcome.enemyNextDamageWeaken > 0) components.push(`敌方本次伤害降低${Math.round(outcome.enemyNextDamageWeaken * 100)}%`);
   if (outcome.state.result === 'won') components.push('敌人未行动');
-  else components.push(`承受${outcome.enemyDamage}伤害`);
   return components.join(' · ');
 }
