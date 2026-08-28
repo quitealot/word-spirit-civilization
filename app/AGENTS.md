@@ -4,7 +4,7 @@
 
 ## 1. 战斗 / 技能 / 英语调用强制规则
 
-涉及战斗结算、技能、英语调用、倍率、战斗取词前必须先读：
+涉及战斗结算、技能、英语调用、倍率、伤害/回复/护盾/减伤、战斗取词时，必须先读：
 
 1. `docs/SKILL_ENGLISH_SYSTEM_V2.md`
 2. `docs/SKILL_ENGLISH_SYSTEM_V2_ENGINEERING_LOCK.md`
@@ -14,77 +14,65 @@
 
 > 技能决定这一回合做什么；英语决定这件事这次发挥多少。
 
-默认 V2 冻结基线仍为：
+正式 V2 默认：
 
-- `Used-or-Maintained + battleEligible`；
-- 战斗层不按技能语义分词；
+- 战斗池：`Used-or-Maintained + battleEligible`；
+- 战斗层不按技能语义绑定词；
 - independent / supported / failed = `1.00 / 0.70 / 0.40`；
 - 默认 no-call = `0.40`；
 - 思考时间不影响即时倍率。
 
-不得自行调整技能数值、倍率、词与技能关系或新增正式系统/文案。
-
----
+不得自行调技能、倍率、词与技能关系、结算公式或正式文案。
 
 ## 2. Phase B 连续体验
 
-涉及“教学页 → 战斗页 → 补弱 → 再战”继续遵守：
+涉及“教学 → 战斗 → 补弱 → 再战”时继续遵守：
 
-1. `docs/TEACH_BATTLE_REPAIR_PHASE_B_SPEC.md`
-2. `docs/TEACH_BATTLE_REPAIR_PHASE_B_HANDOFF.md`
+- `docs/TEACH_BATTLE_REPAIR_PHASE_B_SPEC.md`
+- `docs/TEACH_BATTLE_REPAIR_PHASE_B_HANDOFF.md`
 
-Phase B 已实现，仍只属于独立原型；不得进入主线。
+Phase B 仍只属于独立原型，不进入主线。
 
----
+## 3. Candidate C 当前状态
 
-## 3. Candidate A / B 状态
+Candidate C 实现基线：
 
-- Candidate A `48/80/12`：`NOT PASS / PRESSURE TOO LOW / CLOSED`。
-- Candidate B `48/80/14 + 40/40`：`NOT PASS / FEEDBACK UNREADABLE / BALANCE HOLD`。
-- Candidate B 裁决：`docs/PHASE_B_COMBAT_PRESSURE_CANDIDATE_B_SOL_VERDICT.md`。
+`3665f6d11771163c307a799e4719b3def53a5c85`
 
-Candidate B 的问题不是只靠继续提高敌伤能解决，而是玩家无法清楚读懂：
+交接：
 
-`自己的技能结果 → 敌方行动 → 自己受伤结果`。
+`docs/PHASE_B_COMBAT_FEEDBACK_CANDIDATE_C_HANDOFF.md`
 
----
+Sol Review：
 
-## 4. Candidate C：已冻结任务单，但当前禁止执行
+`docs/PHASE_B_COMBAT_FEEDBACK_CANDIDATE_C_SOL_REVIEW.md`
 
-任务单：
+状态：
 
-`docs/PHASE_B_COMBAT_FEEDBACK_CANDIDATE_C_TASK.md`
+`ENGINEERING PASS / PRODUCT PLAYTEST HOLD`
 
-状态：`FROZEN / NOT AUTHORIZED FOR CODE`
+Candidate C 只在 Phase B 原型中测试：
 
-候选方向：
-
-- 压力仍为 `48 / 80 / 14`；
-- 成熟顺序回合反馈；
-- failed 候选 `0.25`；
-- no-call 候选 `0.25`；
-- independent `1.00`、supported `0.70` 不变；
-- 水音/回潮基础效果、teaching/repair 不变；
+- 玩家48 / 敌人80 / 敌伤14；
+- failed 25%；
+- no-call 25%；
+- 顺序反馈：skill result → enemy prepare → enemy damage → next turn；
 - 战败先明确显示，再进入 repair。
 
-**当前不得修改任何 Candidate C 代码。**
+Candidate C 的25/25不是正式 V2 全局值。默认 Phase A 与历史 Candidate A/B 必须继续保留原行为。
 
-只有用户明确说“执行 Candidate C”后，才允许重新读取该任务单并按其范围执行。
+仓库存在两份 Candidate C 前置任务稿：以 `docs/PHASE_B_COMBAT_FEEDBACK_CANDIDATE_C_TASK.md` 为权威任务名；`docs/PHASE_B_FEEDBACK_PACING_CANDIDATE_C_TASK.md` 仅作历史参考，不得重复执行。
 
----
+## 4. 当前停止线
 
-## 5. 持续禁止
+在用户/Sol完成 Candidate C 产品实机裁决前，不得：
 
-当前不得：
-
+- 启动 Candidate D；
+- 再调倍率或敌伤；
+- 把25%/25%写入正式 V2；
 - 修改 `app/page.tsx` 主线；
-- 修改 EP01–EP03；
-- 迁移完整九技能；
-- 修改正式 5505 词源；
-- 修改成长、等级、星级、共鸣；
-- 新增正式技能动画、词、敌人、关卡、剧情或大型系统；
-- 自行调整 failed/no-call；
-- 自行继续提高敌伤；
-- 未授权先改 Candidate C。
+- 修改 `bridge-config.ts`、`spirit-config.ts`、`zero-base-teaching.ts`、`learning-engine.ts`；
+- 修改 `app/narrative/**` 或 EP01–EP03；
+- 扩九技能、成长、正式动画、新词、新敌人、新关卡、新剧情或大型系统。
 
-如用户未明确授权 Candidate C，遇到相关请求只做 Review/任务单，不写运行代码。
+若没有新的明确任务单，停下等待。
