@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   FUSION_SLICE_RULES,
   FUSION_BATTLE_SKILLS,
@@ -30,12 +30,14 @@ import {
   resolvePhaseBRetrieve,
   shouldShowPhaseBJustUsed,
   showPhaseBRetrieve,
-  PHASE_B_COMBAT_CANDIDATE_B,
+  PHASE_B_COMBAT_CANDIDATE_C,
+  PHASE_B_COMBAT_FEEDBACK_TIMING,
   type PhaseBRepairState,
 } from '../../game/phase-b-flow';
 
-type SliceStage = 'menu' | 'battle' | 'review' | 'targeted' | 'trained' | 'result' | 'end' | 'evidence_missing';
+type SliceStage = 'menu' | 'battle' | 'review' | 'targeted' | 'trained' | 'result' | 'end' | 'evidence_missing' | 'battle_lost';
 type BattleMode = 'with_calls' | 'no_call';
+type FeedbackStage = 'idle' | 'skill_result' | 'enemy_prepare' | 'enemy_damage';
 
 const CHOICE_SETS: Record<FusionBattleWordCandidate['wordId'], readonly string[]> = {
   w1718: ['水', '人；人们', '需要', '帮助'],
@@ -58,6 +60,22 @@ export default function FusionSlicePrototypePage() {
   const [callNumber, setCallNumber] = useState(0);
   const [showJustUsed, setShowJustUsed] = useState(false);
   const [repair, setRepair] = useState<PhaseBRepairState>(beginPhaseBRepair);
+  const [feedbackStage, setFeedbackStage] = useState<FeedbackStage>('idle');
+  const [feedbackOutcome, setFeedbackOutcome] = useState<{ skill: FusionBattleSkill; outcome: FusionTurnOutcome; suffix: string } | null>(null);
+  const feedbackTimers = useRef<number[]>([]);
+
+  function clearFeedbackTimers() {
+    feedbackTimers.current.forEach(timer => window.clearTimeout(timer));
+    feedbackTimers.current = [];
+  }
+
+  function scheduleFeedback(callback: () => void, delay: number) {
+    const timer = window.setTimeout(() => {
+      feedbackTimers.current = feedbackTimers.current.filter(item => item !== timer);
+      callback();
+    }, delay);
+    feedbackTimers.current.push(timer);
+  }
 
   useEffect(() => {
     const stored = loadZeroBaseProgress();
@@ -69,8 +87,8 @@ export default function FusionSlicePrototypePage() {
       setMode('with_calls');
       if (entry.destination === 'battle') {
         setBattle(createFusionBattleState({
-          enemyHp: PHASE_B_COMBAT_CANDIDATE_B.enemyMaxHp,
-          playerHp: PHASE_B_COMBAT_CANDIDATE_B.playerMaxHp,
+          enemyHp: PHASE_B_COMBAT_CANDIDATE_C.enemyMaxHp,
+          playerHp: PHASE_B_COMBAT_CANDIDATE_C.playerMaxHp,
         }));
       }
       setStage(entry.destination);
@@ -78,23 +96,31 @@ export default function FusionSlicePrototypePage() {
     setReady(true);
   }, []);
 
+  useEffect(() => () => {
+    feedbackTimers.current.forEach(timer => window.clearTimeout(timer));
+    feedbackTimers.current = [];
+  }, []);
+
   const eligible = useMemo(() => getFusionBattleEligibleWords(progress), [progress]);
   const target = weaknessesBeforeTraining[targetIndex];
   const targetWord = target ? ZERO_BASE_WORDS.find(word => word.wordId === target.wordId) : undefined;
 
   function startBattle(rematch = false) {
+    clearFeedbackTimers();
     if (phaseB && eligible.length === 0) {
       setStage('evidence_missing');
       return;
     }
     setMode(eligible.length > 0 ? 'with_calls' : 'no_call');
     setBattle(createFusionBattleState(phaseB ? {
-      enemyHp: PHASE_B_COMBAT_CANDIDATE_B.enemyMaxHp,
-      playerHp: PHASE_B_COMBAT_CANDIDATE_B.playerMaxHp,
+      enemyHp: PHASE_B_COMBAT_CANDIDATE_C.enemyMaxHp,
+      playerHp: PHASE_B_COMBAT_CANDIDATE_C.playerMaxHp,
     } : undefined));
     setSelected(null);
     setSupportUsed(false);
     setFeedback('');
+    setFeedbackStage('idle');
+    setFeedbackOutcome(null);
     setShowJustUsed(false);
     setCallNumber(0);
     if (rematch) setBattleNumber(current => current + 1);
@@ -103,6 +129,8 @@ export default function FusionSlicePrototypePage() {
 
   function completeTurn(next: FusionBattleState) {
     setFeedback('');
+    setFeedbackStage('idle');
+    setFeedbackOutcome(null);
     setSelected(null);
     setSupportUsed(false);
     setShowJustUsed(false);
@@ -111,26 +139,51 @@ export default function FusionSlicePrototypePage() {
     setWeaknessesBeforeTraining(repairQueue);
     setTargetIndex(0);
     setRepair(beginPhaseBRepair());
-    setStage(phaseB ? getPhaseBPostBattleStage(repairQueue) : 'review');
+    setStage(phaseB && next.result === 'lost' ? 'battle_lost' : phaseB ? getPhaseBPostBattleStage(repairQueue) : 'review');
   }
 
   function playTurn(skill: FusionBattleSkill, outcome: FusionTurnOutcome, suffix = '') {
+    clearFeedbackTimers();
     setBattle(outcome.stateAfterSkill);
+    setFeedbackOutcome({ skill, outcome, suffix });
     setFeedback(`${formatSkillOutcome(skill, outcome)}${suffix}`);
+    setFeedbackStage('skill_result');
 
-    if (outcome.state.result === 'won') {
-      window.setTimeout(() => {
+    if (!phaseB) {
+      if (outcome.state.result === 'won') {
+        scheduleFeedback(() => {
+          setBattle(outcome.state);
+          completeTurn(outcome.state);
+        }, 700);
+        return;
+      }
+      scheduleFeedback(() => {
         setBattle(outcome.state);
-        completeTurn(outcome.state);
+        setFeedback(`敌方行动 · 承受${outcome.enemyDamage}伤害`);
+        setFeedbackStage('enemy_damage');
+        scheduleFeedback(() => completeTurn(outcome.state), 700);
       }, 700);
       return;
     }
 
-    window.setTimeout(() => {
-      setBattle(outcome.state);
-      setFeedback(`敌方行动 · 承受${outcome.enemyDamage}伤害`);
-      window.setTimeout(() => completeTurn(outcome.state), 700);
-    }, 700);
+    if (outcome.state.result === 'won') {
+      scheduleFeedback(() => {
+        setBattle(outcome.state);
+        completeTurn(outcome.state);
+      }, PHASE_B_COMBAT_FEEDBACK_TIMING.skillResultHoldMs);
+      return;
+    }
+
+    scheduleFeedback(() => {
+      setFeedback('敌方行动');
+      setFeedbackStage('enemy_prepare');
+      scheduleFeedback(() => {
+        setBattle(outcome.state);
+        setFeedback(`-${outcome.enemyDamage} HP`);
+        setFeedbackStage('enemy_damage');
+        scheduleFeedback(() => completeTurn(outcome.state), PHASE_B_COMBAT_FEEDBACK_TIMING.enemyDamageHoldMs);
+      }, PHASE_B_COMBAT_FEEDBACK_TIMING.enemyPrepareMs);
+    }, PHASE_B_COMBAT_FEEDBACK_TIMING.skillResultHoldMs);
   }
 
   function answer(choice: string) {
@@ -140,7 +193,10 @@ export default function FusionSlicePrototypePage() {
     const correct = choice === source.targetGloss;
     const quality = correct ? (supportUsed ? 'supported' : 'independent') : 'failed';
     const outcome = phaseB
-      ? resolveFusionBattleCall(battle, selected, quality, { enemyDamage: PHASE_B_COMBAT_CANDIDATE_B.enemyDamage })
+      ? resolveFusionBattleCall(battle, selected, quality, {
+          enemyDamage: PHASE_B_COMBAT_CANDIDATE_C.enemyDamage,
+          qualityMultiplier: quality === 'failed' ? PHASE_B_COMBAT_CANDIDATE_C.failedMultiplier : undefined,
+        })
       : resolveFusionBattleCall(battle, selected, quality);
     playTurn(selected.skill, outcome);
   }
@@ -154,7 +210,12 @@ export default function FusionSlicePrototypePage() {
       setCallNumber(nextCallNumber);
       return;
     }
-    const outcome = resolveFusionNoCallTurn(battle, skill);
+    const outcome = phaseB
+      ? resolveFusionNoCallTurn(battle, skill, {
+          enemyDamage: PHASE_B_COMBAT_CANDIDATE_C.enemyDamage,
+          noCallMultiplier: PHASE_B_COMBAT_CANDIDATE_C.noCallMultiplier,
+        })
+      : resolveFusionNoCallTurn(battle, skill);
     playTurn(skill, outcome, ' · 未调用陌生英语');
   }
 
@@ -164,7 +225,7 @@ export default function FusionSlicePrototypePage() {
       const correct = choice === targetWord.targetGloss;
       const next = resolvePhaseBRetrieve(repair, correct, weaknessesBeforeTraining.length);
       setFeedback(correct ? '重新确认了' : '再看一次');
-      window.setTimeout(() => {
+      scheduleFeedback(() => {
         setFeedback('');
         if (next.complete) {
           startBattle(true);
@@ -178,11 +239,11 @@ export default function FusionSlicePrototypePage() {
     if (!targetWord || feedback) return;
     if (choice !== targetWord.targetGloss) {
       setFeedback(`再看一次：${targetWord.word} → ${targetWord.targetGloss}`);
-      window.setTimeout(() => setFeedback(''), 900);
+      scheduleFeedback(() => setFeedback(''), 900);
       return;
     }
     setFeedback(`${targetWord.word} 已重新建立意义`);
-    window.setTimeout(() => {
+    scheduleFeedback(() => {
       setFeedback('');
       if (targetIndex < weaknessesBeforeTraining.length - 1) setTargetIndex(index => index + 1);
       else setStage('trained');
@@ -191,7 +252,7 @@ export default function FusionSlicePrototypePage() {
 
   if (!ready) return <main className="fusion-shell"><div className="zb-loading">正在读取学习证据…</div></main>;
 
-  const battleRules = phaseB ? PHASE_B_COMBAT_CANDIDATE_B : FUSION_SLICE_RULES;
+  const battleRules = phaseB ? PHASE_B_COMBAT_CANDIDATE_C : FUSION_SLICE_RULES;
 
   return <main className="fusion-shell">
     {!phaseB && <header className="fusion-header">
@@ -224,9 +285,18 @@ export default function FusionSlicePrototypePage() {
         <div>{CHOICE_SETS[selected.word.wordId].map(choice => <button key={choice} disabled={!!feedback} onClick={() => answer(choice)}>{choice}</button>)}</div>
         {!supportUsed && !feedback && <button className="fusion-support" onClick={() => setSupportUsed(true)}>回想刚才的世界动作</button>}
         {supportUsed && <div className="fusion-world-replay">{selected.word.word === 'water' ? '水桶与水面再次亮起。' : '同行语灵再次走向需要帮助的人。'}</div>}
-      </div> : <div className="fusion-skills">{FUSION_BATTLE_SKILLS.map(skill => <button key={skill.skillId} disabled={!!feedback} onClick={() => chooseSkill(skill)}><b>{skill.skillName}</b><small>{skillEffectSummary(skill)}{mode === 'no_call' ? ' · 本次40%发挥' : ''}</small></button>)}</div>}
-      {feedback && <strong className="fusion-feedback">{feedback}</strong>}
+      </div> : <div className="fusion-skills">{FUSION_BATTLE_SKILLS.map(skill => <button key={skill.skillId} disabled={!!feedback} onClick={() => chooseSkill(skill)}><b>{skill.skillName}</b><small>{skillEffectSummary(skill)}{mode === 'no_call' ? ` · 本次${Math.round((phaseB ? PHASE_B_COMBAT_CANDIDATE_C.noCallMultiplier : FUSION_SLICE_RULES.noCallMultiplier) * 100)}%发挥` : ''}</small></button>)}</div>}
+      {feedback && <strong className={`fusion-feedback fusion-feedback-${feedbackStage}`}>
+        {feedbackStage === 'skill_result' && feedbackOutcome ? <SkillOutcomeFeedback {...feedbackOutcome} /> : feedback}
+      </strong>}
       <small className="fusion-rule">敌方 HP 归零即胜利。错误仍造成伤害；时间只记录，不削弱技能。</small>
+    </section>}
+
+    {stage === 'battle_lost' && <section className="fusion-card fusion-defeat">
+      <span>战斗结果</span><h2>战斗失利</h2>
+      <p>先处理刚才真正没有跟上的词，再回到同一场战斗。</p>
+      <div className="fusion-weak-list">{weaknessesBeforeTraining.map(item => <b key={item.wordId}>{item.word}<small>{item.skillName} · {item.effectPercent}%</small></b>)}</div>
+      <button className="fusion-primary" onClick={() => { setRepair(beginPhaseBRepair()); setTargetIndex(0); setStage('targeted'); }}>处理刚才的问题</button>
     </section>}
 
     {stage === 'review' && <section className="fusion-card">
@@ -252,8 +322,27 @@ function skillEffectSummary(skill: FusionBattleSkill): string {
 
 function formatSkillOutcome(skill: FusionBattleSkill, outcome: FusionTurnOutcome): string {
   const components = [`${skill.skillName} · ${outcome.effectPercent}%发挥`, `${outcome.damage}伤害`];
-  if (outcome.healing > 0) components.push(`实际恢复${outcome.actualHealing}生命`);
+  if (outcome.actualHealing > 0) components.push(`+${outcome.actualHealing} HP`);
   if (outcome.enemyNextDamageWeaken > 0) components.push(`敌方本次伤害降低${Math.round(outcome.enemyNextDamageWeaken * 100)}%`);
   if (outcome.state.result === 'won') components.push('敌人未行动');
   return components.join(' · ');
+}
+
+function SkillOutcomeFeedback({
+  skill,
+  outcome,
+  suffix,
+}: {
+  skill: FusionBattleSkill;
+  outcome: FusionTurnOutcome;
+  suffix: string;
+}) {
+  return <span className="fusion-feedback-content">
+    <span className="fusion-feedback-line fusion-feedback-skill">{skill.skillName} · {outcome.effectPercent}%发挥</span>
+    <span className="fusion-feedback-line fusion-feedback-damage">造成 {outcome.damage} 伤害</span>
+    {outcome.actualHealing > 0 && <span className="fusion-feedback-line fusion-feedback-healing">+{outcome.actualHealing} HP</span>}
+    {outcome.enemyNextDamageWeaken > 0 && <span className="fusion-feedback-line">敌方本次伤害降低 {Math.round(outcome.enemyNextDamageWeaken * 100)}%</span>}
+    {outcome.state.result === 'won' && <span className="fusion-feedback-line">敌人未行动</span>}
+    {suffix && <span className="fusion-feedback-line">{suffix}</span>}
+  </span>;
 }

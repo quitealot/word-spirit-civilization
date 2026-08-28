@@ -18,6 +18,27 @@ export const PHASE_B_COMBAT_CANDIDATE_B = {
   enemyDamage: 14,
 } as const;
 
+export const PHASE_B_COMBAT_CANDIDATE_C = {
+  playerMaxHp: 48,
+  enemyMaxHp: 80,
+  enemyDamage: 14,
+  failedMultiplier: 0.25,
+  noCallMultiplier: 0.25,
+} as const;
+
+export const PHASE_B_COMBAT_FEEDBACK_TIMING = {
+  skillResultHoldMs: 1200,
+  enemyPrepareMs: 400,
+  enemyDamageHoldMs: 1200,
+} as const;
+
+export const PHASE_B_COMBAT_FEEDBACK_SEQUENCE = [
+  'skill_result',
+  'enemy_prepare',
+  'enemy_damage',
+  'next_turn',
+] as const;
+
 export type PhaseBRepairStep = 'meaning' | 'retrieve';
 export type PhaseBRepairState = {
   index: number;

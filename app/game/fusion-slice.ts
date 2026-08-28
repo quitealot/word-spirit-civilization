@@ -30,6 +30,12 @@ export type FusionBattleCall = {
 
 export type FusionBattleResolveOptions = {
   enemyDamage?: number;
+  qualityMultiplier?: number;
+};
+
+export type FusionNoCallResolveOptions = {
+  enemyDamage?: number;
+  noCallMultiplier?: number;
 };
 
 export type FusionWeakness = {
@@ -274,7 +280,7 @@ export function resolveFusionBattleCall(
   quality: FusionCallQuality,
   options: FusionBattleResolveOptions = {},
 ): FusionTurnOutcome {
-  const multiplier = FUSION_SLICE_RULES.effectMultipliers[quality];
+  const multiplier = options.qualityMultiplier ?? FUSION_SLICE_RULES.effectMultipliers[quality];
   return resolveFusionSkillTurn({
     state,
     skill: call.skill,
@@ -289,13 +295,16 @@ export function resolveFusionBattleCall(
 export function resolveFusionNoCallTurn(
   state: FusionBattleState,
   skill: FusionBattleSkill,
+  options: FusionNoCallResolveOptions = {},
 ): FusionTurnOutcome {
+  const multiplier = options.noCallMultiplier ?? FUSION_SLICE_RULES.noCallMultiplier;
   return resolveFusionSkillTurn({
     state,
     skill,
-    multiplier: FUSION_SLICE_RULES.noCallMultiplier,
-    effectPercent: Math.round(FUSION_SLICE_RULES.noCallMultiplier * 100),
+    multiplier,
+    effectPercent: Math.round(multiplier * 100),
     calledWord: null,
+    enemyDamage: options.enemyDamage,
   });
 }
 
