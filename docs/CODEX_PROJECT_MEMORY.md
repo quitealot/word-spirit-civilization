@@ -123,3 +123,18 @@ Candidate C 正在等待用户/Sol 产品实机裁决。Codex 不得自行：
 - 新增词、敌人、关卡、剧情或大型系统。
 
 没有新的明确任务单就停下等待。
+
+## 11. Intent Combat V1 新战斗基线
+
+2026-08-30，用户授权Sol全盘规划、执行与Review。独立入口 `/prototype/intent-combat` 已完成并通过Sol Review：
+
+- 状态：`PASS AS NEW COMBAT BASELINE / MAINLINE MIGRATION NOT AUTHORIZED`；
+- 敌方意图公开；
+- 水音/回潮/静波拥有基础职责；
+- 英语只提供离散掌握奖励，不显示统一发挥百分比；
+- 水音压制保留到下一次真正攻击；
+- 纯战斗模式证明拿掉英语后仍有技能选择；
+- 两段式回合反馈；
+- 19/19专项、既有回归、lint/build/diff、390×844均通过。
+
+权威Review：`docs/INTENT_COMBAT_PROTOTYPE_V1_SOL_REVIEW.md`。下一步只允许用新任务单做独立的教学/战斗/repair再融合，不得直接迁入主线或覆盖V2。

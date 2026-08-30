@@ -80,3 +80,5 @@ Candidate C 的25/25不是正式 V2 全局值。默认 Phase A 与历史 Candida
 ## 5. Intent Combat V1 独立例外
 
 用户/Sol已授权 `docs/INTENT_COMBAT_PROTOTYPE_V1_TASK.md`。只可按任务单新增 `/prototype/intent-combat`、独立结算模块、对应验证与 `.intent-` 样式。不得借此修改既有Phase A/B/C、主线或V2正式基线。
+
+该样机现已通过Sol Review并停止继续修改；Review见 `docs/INTENT_COMBAT_PROTOTYPE_V1_SOL_REVIEW.md`。后续接回教学与repair必须使用新的独立任务单。

@@ -113,6 +113,8 @@ Candidate C 正在等待用户/Sol 产品实机裁决。Codex 现在不得自行
 
 用户已于2026-08-30授权后续由Sol全盘规划、执行与Review。当前唯一新增工程授权为 `docs/INTENT_COMBAT_PROTOTYPE_V1_TASK.md`，只允许按任务单新建 `/prototype/intent-combat` 独立样机。该授权不解冻主线、Candidate D、V2正式倍率、EP01–EP03或其他停止线。
 
+Intent Combat V1当前状态：`PASS AS NEW COMBAT BASELINE / MAINLINE MIGRATION NOT AUTHORIZED`。权威Review为 `docs/INTENT_COMBAT_PROTOTYPE_V1_SOL_REVIEW.md`。不得继续修改本样机或迁入主线，直到新的独立融合任务单冻结。
+
 ## 9. 完成标准
 
 任何获授权工程任务都必须按任务单运行 validator，并至少保证：
