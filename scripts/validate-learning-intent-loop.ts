@@ -157,13 +157,13 @@ assert.deepEqual(
 // 16–18. A battle result is shown before repair, then meaning → retrieve; a retrieve error returns to the same word.
 const defeat = actor();
 let defeatTurns = 0;
-while (defeat.getSnapshot().value === 'skill_select' && defeatTurns < 10) {
+while (defeat.getSnapshot().value === 'skill_select' && defeatTurns < 30) {
   playFailedWave(defeat);
   defeatTurns += 1;
 }
 assert.equal(defeat.getSnapshot().value, 'battle_lost');
 assert.equal(defeat.getSnapshot().context.battle.result, 'lost');
-assert.deepEqual(defeat.getSnapshot().context.repairQueue.map(item => item.wordId), ['w729', 'w1718']);
+assert.deepEqual(defeat.getSnapshot().context.repairQueue.map(item => item.wordId), ['w1718', 'w729']);
 defeat.send({ type: 'CONTINUE' });
 assert.equal(defeat.getSnapshot().value, 'repair_review');
 defeat.send({ type: 'START_REPAIR' });
@@ -171,32 +171,32 @@ assert.equal(defeat.getSnapshot().value, 'repair_meaning');
 assert.equal(defeat.getSnapshot().context.repairIndex, 0);
 defeat.send({ type: 'REPAIR_MEANING_CONTINUE' });
 assert.equal(defeat.getSnapshot().value, 'repair_retrieve');
-defeat.send({ type: 'REPAIR_ANSWER', choice: '水' });
+defeat.send({ type: 'REPAIR_ANSWER', choice: '帮助' });
 assert.equal(defeat.getSnapshot().value, 'repair_meaning');
 assert.equal(defeat.getSnapshot().context.repairIndex, 0);
 
 // 19–21. Multiple weaknesses advance in queue order; the final correct answer auto-resets a new battle.
 defeat.send({ type: 'REPAIR_MEANING_CONTINUE' });
-defeat.send({ type: 'REPAIR_ANSWER', choice: '帮助' });
+defeat.send({ type: 'REPAIR_ANSWER', choice: '水' });
 assert.equal(defeat.getSnapshot().value, 'repair_meaning');
 assert.equal(defeat.getSnapshot().context.repairIndex, 1);
 defeat.send({ type: 'REPAIR_MEANING_CONTINUE' });
-defeat.send({ type: 'REPAIR_ANSWER', choice: '水' });
+defeat.send({ type: 'REPAIR_ANSWER', choice: '帮助' });
 assert.equal(defeat.getSnapshot().value, 'skill_select');
 assert.deepEqual(
   [defeat.getSnapshot().context.battle.playerHp, defeat.getSnapshot().context.battle.enemyHp, defeat.getSnapshot().context.battle.turn, defeat.getSnapshot().context.battle.result],
   [48, 66, 1, 'active'],
 );
 assert.equal(defeat.getSnapshot().context.battleNumber, 2);
-assert.deepEqual(defeat.getSnapshot().context.rematchWordIds, ['w729', 'w1718']);
+assert.deepEqual(defeat.getSnapshot().context.rematchWordIds, ['w1718', 'w729']);
 
 // 22. Repaired words are prioritized within the first two rematch calls, regardless of selected skill.
 defeat.send({ type: 'SELECT_SKILL', skillId: stillWave.skillId });
-assert.equal(selected(defeat).word.wordId, 'w729');
+assert.equal(selected(defeat).word.wordId, 'w1718');
 answerCorrect(defeat);
 advanceActiveTurn(defeat);
 defeat.send({ type: 'SELECT_SKILL', skillId: waterTone.skillId });
-assert.equal(selected(defeat).word.wordId, 'w1718');
+assert.equal(selected(defeat).word.wordId, 'w729');
 
 // 23. A clean kill skips enemy_result and reaches complete without fake repair.
 const clean = actor();

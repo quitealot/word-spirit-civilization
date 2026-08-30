@@ -65,13 +65,13 @@ independent.send({ type: 'CONTINUE' });
 assert.equal(independent.getSnapshot().value, 'enemy_result');
 assert.deepEqual(
   [independent.getSnapshot().context.outcome?.enemyDamage, independent.getSnapshot().context.outcome?.state.pendingEnemyAttackReduction],
-  [6, 0],
+  [2, 0],
 );
 independent.send({ type: 'CONTINUE' });
 assert.equal(independent.getSnapshot().value, 'skill_select');
 assert.deepEqual(
   [independent.getSnapshot().context.battle.turn, independent.getSnapshot().context.battle.enemyHp, independent.getSnapshot().context.battle.playerHp],
-  [2, 54, 42],
+  [2, 54, 46],
 );
 
 const supported = actor();
@@ -158,7 +158,7 @@ suppression.send({ type: 'ANSWER', choice: suppression.getSnapshot().context.sel
 const suppressionAttack = suppression.getSnapshot().context.outcome!;
 assert.deepEqual(
   [suppressionAttack.intent.kind, suppressionAttack.enemyRawDamage, suppressionAttack.enemyDamage, suppressionAttack.stateAfterSkill.pendingEnemyAttackReduction, suppressionAttack.state.pendingEnemyAttackReduction],
-  ['attack', 24, 18, 6, 0],
+  ['attack', 18, 12, 6, 0],
 );
 assert.deepEqual(
   suppressionAttack,

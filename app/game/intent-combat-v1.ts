@@ -96,13 +96,13 @@ export const INTENT_COMBAT_RULES = {
   playerMaxHp: 48,
   enemyMaxHp: 66,
   intentLoop: [
+    { kind: 'attack', label: '攻击', damage: 8 },
     { kind: 'attack', label: '攻击', damage: 12 },
+    { kind: 'charge', label: '蓄力', damage: 0, nextDamage: 18 },
     { kind: 'attack', label: '攻击', damage: 18 },
-    { kind: 'charge', label: '蓄力', damage: 0, nextDamage: 24 },
-    { kind: 'attack', label: '攻击', damage: 24 },
-    { kind: 'attack', label: '攻击', damage: 12 },
-    { kind: 'charge', label: '蓄力', damage: 0, nextDamage: 24 },
-    { kind: 'attack', label: '攻击', damage: 24 },
+    { kind: 'attack', label: '攻击', damage: 8 },
+    { kind: 'charge', label: '蓄力', damage: 0, nextDamage: 18 },
+    { kind: 'attack', label: '攻击', damage: 18 },
   ] as const satisfies readonly IntentEnemyIntent[],
 } as const;
 

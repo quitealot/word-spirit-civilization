@@ -39,15 +39,15 @@ assert.deepEqual(
   [48, 66, { playerHp: 48, enemyHp: 66, playerShield: 0, pendingEnemyAttackReduction: 0, turn: 1, result: 'active', weaknesses: [] }],
 );
 
-// 2–3. The published intent loop is exact and repeats from attack 12 after turn seven.
+// 2–3. Regular attacks create pressure while only the telegraphed heavy attack strongly asks for defense.
 const intentLabels = Array.from({ length: 9 }, (_, index) => {
   const intent = getIntentForTurn(index + 1);
   return intent.kind === 'attack' ? `${intent.label}${intent.damage}` : `${intent.label}${intent.nextDamage}`;
 });
-assert.deepEqual(intentLabels, ['攻击12', '攻击18', '蓄力24', '攻击24', '攻击12', '蓄力24', '攻击24', '攻击12', '攻击18']);
+assert.deepEqual(intentLabels, ['攻击8', '攻击12', '蓄力18', '攻击18', '攻击8', '蓄力18', '攻击18', '攻击8', '攻击12']);
 assert.equal(getIntentForTurn(3).kind, 'charge');
 assert.equal(getIntentForTurn(3).damage, 0);
-assert.equal(getIntentForTurn(3).nextDamage, 24);
+assert.equal(getIntentForTurn(3).nextDamage, 18);
 
 // 4–6. All three skills expose the locked base results and only three discrete qualities.
 assert.deepEqual(
@@ -69,12 +69,12 @@ assert.deepEqual(selectIntentCombatCall(waterTone, 3).word, water);
 const failedWater = callTurn(state(), waterTone, 'failed');
 assert.deepEqual(
   [failedWater.damage, failedWater.enemyDamageReduction, failedWater.enemyDamage, failedWater.stateAfterSkill.pendingEnemyAttackReduction, failedWater.state.pendingEnemyAttackReduction, failedWater.reward, failedWater.state.weaknesses],
-  [12, 0, 12, 0, 0, 0, [{ wordId: 'w1718', word: 'water', skillName: '水音', quality: 'failed', turn: 1 }]],
+  [12, 0, 8, 0, 0, 0, [{ wordId: 'w1718', word: 'water', skillName: '水音', quality: 'failed', turn: 1 }]],
 );
 const supportedWater = callTurn(state(), waterTone, 'supported');
 const independentWater = callTurn(state(), waterTone, 'independent');
-assert.deepEqual([supportedWater.damage, supportedWater.enemyDamageReduction, supportedWater.enemyDamage, supportedWater.stateAfterSkill.pendingEnemyAttackReduction, supportedWater.state.pendingEnemyAttackReduction], [12, 3, 9, 3, 0]);
-assert.deepEqual([independentWater.damage, independentWater.enemyDamageReduction, independentWater.enemyDamage, independentWater.stateAfterSkill.pendingEnemyAttackReduction, independentWater.state.pendingEnemyAttackReduction], [12, 6, 6, 6, 0]);
+assert.deepEqual([supportedWater.damage, supportedWater.enemyDamageReduction, supportedWater.enemyDamage, supportedWater.stateAfterSkill.pendingEnemyAttackReduction, supportedWater.state.pendingEnemyAttackReduction], [12, 3, 5, 3, 0]);
+assert.deepEqual([independentWater.damage, independentWater.enemyDamageReduction, independentWater.enemyDamage, independentWater.stateAfterSkill.pendingEnemyAttackReduction, independentWater.state.pendingEnemyAttackReduction], [12, 6, 2, 6, 0]);
 const supportedTide = callTurn(state({ playerHp: 30 }), returningTide, 'supported');
 const independentTide = callTurn(state({ playerHp: 30 }), returningTide, 'independent');
 assert.deepEqual([supportedTide.damage, supportedTide.healing, supportedTide.actualHealing], [6, 9, 9]);
@@ -85,12 +85,12 @@ assert.deepEqual([supportedWave.damage, supportedWave.shield, supportedWave.rewa
 assert.deepEqual([independentWave.damage, independentWave.shield, independentWave.reward], [0, 18, 10]);
 
 // 10–12. Water's reward waits for the next real attack, survives charge, and is consumed after that attack.
-assert.deepEqual(callTurn(state(), waterTone, 'independent').enemyDamage, 6);
-assert.deepEqual(callTurn(state({ turn: 2 }), waterTone, 'independent').enemyDamage, 12);
+assert.deepEqual(callTurn(state(), waterTone, 'independent').enemyDamage, 2);
+assert.deepEqual(callTurn(state({ turn: 2 }), waterTone, 'independent').enemyDamage, 6);
 const chargedWater = callTurn(state({ turn: 3 }), waterTone, 'independent');
 assert.deepEqual([chargedWater.enemyDamage, chargedWater.stateAfterSkill.pendingEnemyAttackReduction, chargedWater.state.pendingEnemyAttackReduction, chargedWater.state.turn], [0, 6, 6, 4]);
 const followingAttack = resolveIntentCombatBattleOnly(chargedWater.state, stillWave);
-assert.deepEqual([followingAttack.enemyRawDamage, followingAttack.enemyDamage, followingAttack.stateAfterSkill.pendingEnemyAttackReduction, followingAttack.state.pendingEnemyAttackReduction], [24, 18, 6, 0]);
+assert.deepEqual([followingAttack.enemyRawDamage, followingAttack.enemyDamage, followingAttack.stateAfterSkill.pendingEnemyAttackReduction, followingAttack.state.pendingEnemyAttackReduction], [18, 12, 6, 0]);
 const kill = callTurn(state({ enemyHp: 12 }), waterTone, 'independent');
 assert.deepEqual([kill.stateAfterSkill.pendingEnemyAttackReduction, kill.state.result, kill.enemyActed, kill.enemyDamage, kill.state.pendingEnemyAttackReduction, kill.state.turn], [6, 'won', false, 0, 0, 1]);
 
@@ -98,7 +98,7 @@ assert.deepEqual([kill.stateAfterSkill.pendingEnemyAttackReduction, kill.state.r
 const cappedHealing = callTurn(state({ playerHp: 47 }), returningTide, 'independent');
 assert.deepEqual([cappedHealing.healing, cappedHealing.actualHealing, cappedHealing.stateAfterSkill.playerHp], [14, 1, 48]);
 const shielded = callTurn(state({ playerHp: 30 }), stillWave, 'independent');
-assert.deepEqual([shielded.shield, shielded.enemyDamage, shielded.shieldAbsorbed, shielded.playerDamage, shielded.state.playerHp, shielded.state.playerShield], [18, 12, 12, 0, 30, 0]);
+assert.deepEqual([shielded.shield, shielded.enemyDamage, shielded.shieldAbsorbed, shielded.playerDamage, shielded.state.playerHp, shielded.state.playerShield], [18, 8, 8, 0, 30, 0]);
 
 // 15–16. Only failed calls produce the real word weakness; battle-only mode never creates English evidence or reward.
 assert.equal(independentWater.state.weaknesses.length, 0);
@@ -141,7 +141,7 @@ assert.ok(!pageSource.includes('setTimeout'));
 // 18. The pure battle-only path reaches an explicit loss, and only the loss result renders weaknesses.
 let defeated = state();
 let defeatTurns = 0;
-while (defeated.result === 'active' && defeatTurns < 10) {
+while (defeated.result === 'active' && defeatTurns < 30) {
   defeated = resolveIntentCombatBattleOnly(defeated, stillWave).state;
   defeatTurns += 1;
 }

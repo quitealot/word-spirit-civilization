@@ -123,6 +123,8 @@ GitHub底座研究与隔离迁移已经通过，权威Review为 `docs/INTENT_COM
 
 独立连续闭环已通过，权威Review为 `docs/LEARNING_INTENT_REPAIR_LOOP_V1_SOL_REVIEW.md`。状态：`PASS AS INDEPENDENT CONTINUOUS LOOP / MAINLINE MIGRATION NOT AUTHORIZED`。首页测试入口与 `/prototype/zero-base?flow=intent-loop&restart=1` 仅用于独立验证；不得据此直接修改EP03或主线战斗。
 
+用户实机指出48 HP对12/18/24敌伤会把低血量选择压缩成强制防守。独立Intent Combat及其连续闭环的敌方压力V1.1改为普通攻击8/12、蓄力重击18；权威任务为 `docs/INTENT_COMBAT_PRESSURE_V1_1_TASK.md`。本覆盖只作用于独立新底座，不修改主线或正式V2倍率。
+
 ## 9. 完成标准
 
 任何获授权工程任务都必须按任务单运行 validator，并至少保证：
