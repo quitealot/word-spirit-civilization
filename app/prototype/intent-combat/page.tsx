@@ -1,113 +1,39 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMachine } from '@xstate/react';
 import {
   INTENT_COMBAT_RULES,
   INTENT_COMBAT_SKILLS,
-  createIntentCombatState,
   getIntentCombatChoiceSet,
   getIntentDescription,
   getIntentForTurn,
-  resolveIntentCombatBattleOnly,
-  resolveIntentCombatCall,
-  selectIntentCombatCall,
-  type IntentBattleMode,
   type IntentBattleSkill,
   type IntentBattleState,
-  type IntentCallQuality,
   type IntentTurnOutcome,
 } from '../../game/intent-combat-v1';
+import { intentCombatMachine } from '../../game/intent-combat-machine';
+import type { IntentBattleMode, IntentCombatCall, IntentCombatCounts } from '../../game/intent-combat-machine';
 
-type IntentStage = 'battle' | 'feedback' | 'won' | 'lost';
 type FeedbackStep = 'player_result' | 'enemy_result';
 
-type CallCounts = Record<IntentCallQuality, number>;
-
-const EMPTY_COUNTS: CallCounts = { independent: 0, supported: 0, failed: 0 };
-
 export default function IntentCombatPrototypePage() {
-  const [battle, setBattle] = useState<IntentBattleState>(createIntentCombatState);
-  const [displayState, setDisplayState] = useState<IntentBattleState>(createIntentCombatState);
-  const [mode, setMode] = useState<IntentBattleMode>('with_calls');
-  const [stage, setStage] = useState<IntentStage>('battle');
-  const [selected, setSelected] = useState<ReturnType<typeof selectIntentCombatCall> | null>(null);
-  const [supportUsed, setSupportUsed] = useState(false);
-  const [outcome, setOutcome] = useState<IntentTurnOutcome | null>(null);
-  const [feedbackStep, setFeedbackStep] = useState<FeedbackStep>('player_result');
-  const [counts, setCounts] = useState<CallCounts>(EMPTY_COUNTS);
-
-  const intent = useMemo(() => getIntentForTurn(battle.turn), [battle.turn]);
-
-  function resetBattle(nextMode: IntentBattleMode = mode) {
-    const next = createIntentCombatState();
-    setMode(nextMode);
-    setBattle(next);
-    setDisplayState(next);
-    setStage('battle');
-    setSelected(null);
-    setSupportUsed(false);
-    setOutcome(null);
-    setFeedbackStep('player_result');
-    setCounts(EMPTY_COUNTS);
-  }
-
-  function beginOutcome(nextOutcome: IntentTurnOutcome) {
-    setOutcome(nextOutcome);
-    setDisplayState(nextOutcome.stateAfterSkill);
-    setSelected(null);
-    setSupportUsed(false);
-    setFeedbackStep('player_result');
-    setStage('feedback');
-    if (nextOutcome.quality) {
-      setCounts(current => ({ ...current, [nextOutcome.quality as IntentCallQuality]: current[nextOutcome.quality as IntentCallQuality] + 1 }));
-    }
-  }
+  const [snapshot, send] = useMachine(intentCombatMachine);
+  const { battle, mode, selectedCall: selected, supportUsed, outcome, counts } = snapshot.context;
+  const battleStage = snapshot.matches('skill_select') || snapshot.matches('word_call') || snapshot.matches('player_result') || snapshot.matches('enemy_result');
+  const visibleState = snapshot.matches('player_result') && outcome
+    ? outcome.stateAfterSkill
+    : snapshot.matches('enemy_result') && outcome
+      ? outcome.state
+      : battle;
+  const intent = getIntentForTurn(battle.turn);
 
   function chooseSkill(skill: IntentBattleSkill) {
-    if (stage !== 'battle' || battle.result !== 'active') return;
-    if (mode === 'battle_only') {
-      beginOutcome(resolveIntentCombatBattleOnly(battle, skill));
-      return;
-    }
-    setSelected(selectIntentCombatCall(skill, battle.turn));
-    setSupportUsed(false);
+    send({ type: 'SELECT_SKILL', skillId: skill.skillId });
   }
 
   function answer(choice: string) {
-    if (!selected || stage !== 'battle') return;
-    const quality: IntentCallQuality = choice === selected.word.targetGloss
-      ? supportUsed ? 'supported' : 'independent'
-      : 'failed';
-    beginOutcome(resolveIntentCombatCall(battle, selected, quality));
+    send({ type: 'ANSWER', choice });
   }
-
-  function continueFeedback() {
-    if (!outcome) return;
-    if (feedbackStep === 'player_result') {
-      if (outcome.state.result === 'won') {
-        setBattle(outcome.state);
-        setDisplayState(outcome.state);
-        setStage('won');
-        return;
-      }
-      setDisplayState(outcome.state);
-      setFeedbackStep('enemy_result');
-      return;
-    }
-    if (feedbackStep === 'enemy_result') {
-      setBattle(outcome.state);
-      setDisplayState(outcome.state);
-      if (outcome.state.result === 'lost') {
-        setStage('lost');
-        return;
-      }
-      setOutcome(null);
-      setFeedbackStep('player_result');
-      setStage('battle');
-    }
-  }
-
-  const visibleState = stage === 'feedback' ? displayState : battle;
 
   return (
     <main className="intent-shell">
@@ -118,12 +44,12 @@ export default function IntentCombatPrototypePage() {
           <p>技能先决定行动；英语调用只提供对应的掌握奖励。</p>
         </div>
         <div className="intent-mode" role="group" aria-label="战斗模式">
-          <button className={mode === 'with_calls' ? 'active' : ''} onClick={() => resetBattle('with_calls')}>英语调用开启</button>
-          <button className={mode === 'battle_only' ? 'active' : ''} onClick={() => resetBattle('battle_only')}>只测战斗选择</button>
+          <button className={mode === 'with_calls' ? 'active' : ''} onClick={() => send({ type: 'SELECT_MODE', mode: 'with_calls' })}>英语调用开启</button>
+          <button className={mode === 'battle_only' ? 'active' : ''} onClick={() => send({ type: 'SELECT_MODE', mode: 'battle_only' })}>只测战斗选择</button>
         </div>
       </header>
 
-      {(stage === 'battle' || stage === 'feedback') && (
+      {battleStage && (
         <section className="intent-battle-card">
           <div className="intent-hp-row">
             <HpPanel label="澜歌" hp={visibleState.playerHp} maxHp={INTENT_COMBAT_RULES.playerMaxHp} shield={visibleState.playerShield} kind="player" />
@@ -137,7 +63,7 @@ export default function IntentCombatPrototypePage() {
             <small className="intent-pending">{pendingAttackSummary(visibleState)}</small>
           </div>
 
-          {stage === 'battle' && !selected && (
+          {snapshot.matches('skill_select') && (
             <>
               <div className="intent-battle-only-note">
                 {mode === 'battle_only' ? '英语调用关闭：本次只执行技能基础结果。' : '先选技能，再在技能卡内完成词义调用。'}
@@ -148,16 +74,16 @@ export default function IntentCombatPrototypePage() {
             </>
           )}
 
-          {stage === 'battle' && selected && (
-            <CallCard selected={selected} supportUsed={supportUsed} onSupport={() => setSupportUsed(true)} onAnswer={answer} />
+          {snapshot.matches('word_call') && selected && (
+            <CallCard selected={selected} supportUsed={supportUsed} onSupport={() => send({ type: 'USE_SUPPORT' })} onAnswer={answer} />
           )}
 
-          {stage === 'feedback' && outcome && <FeedbackPanel outcome={outcome} step={feedbackStep} nextIntent={feedbackStep === 'enemy_result' ? getIntentForTurn(outcome.state.turn) : null} onContinue={continueFeedback} />}
+          {(snapshot.matches('player_result') || snapshot.matches('enemy_result')) && outcome && <FeedbackPanel outcome={outcome} step={snapshot.matches('player_result') ? 'player_result' : 'enemy_result'} nextIntent={snapshot.matches('enemy_result') ? getIntentForTurn(outcome.state.turn) : null} onContinue={() => send({ type: 'CONTINUE' })} />}
         </section>
       )}
 
-      {(stage === 'won' || stage === 'lost') && (
-        <ResultPanel result={stage} battle={battle} counts={counts} onReset={() => resetBattle()} />
+      {(snapshot.matches('won') || snapshot.matches('lost')) && (
+        <ResultPanel result={snapshot.matches('won') ? 'won' : 'lost'} battle={battle} counts={counts} mode={mode} onReset={() => send({ type: 'RESTART' })} />
       )}
     </main>
   );
@@ -204,7 +130,7 @@ function CallCard({
   onSupport,
   onAnswer,
 }: {
-  selected: ReturnType<typeof selectIntentCombatCall>;
+  selected: IntentCombatCall;
   supportUsed: boolean;
   onSupport: () => void;
   onAnswer: (choice: string) => void;
@@ -264,11 +190,13 @@ function ResultPanel({
   result,
   battle,
   counts,
+  mode,
   onReset,
 }: {
   result: 'won' | 'lost';
   battle: IntentBattleState;
-  counts: CallCounts;
+  counts: IntentCombatCounts;
+  mode: IntentBattleMode;
   onReset: () => void;
 }) {
   return (
@@ -287,7 +215,7 @@ function ResultPanel({
           {battle.weaknesses.length > 0 ? battle.weaknesses.map(item => <p key={item.wordId}>{item.word}<small>{item.skillName} · 第{item.turn}回合</small></p>) : <p>本场没有英语调用记录。</p>}
         </div>
       )}
-      {modeDescription(counts) && <small className="intent-result-note">{modeDescription(counts)}</small>}
+      {modeDescription(mode) && <small className="intent-result-note">{modeDescription(mode)}</small>}
       <button className="intent-restart" onClick={onReset}>重新挑战</button>
     </section>
   );
@@ -339,8 +267,8 @@ function pendingAttackSummary(state: IntentBattleState): string {
     : '待生效压制：无';
 }
 
-function modeDescription(counts: CallCounts): string {
-  return counts.independent + counts.supported + counts.failed === 0
+function modeDescription(mode: IntentBattleMode): string {
+  return mode === 'battle_only'
     ? '只测战斗选择：没有英语题、掌握奖励或薄弱词记录。'
     : '';
 }

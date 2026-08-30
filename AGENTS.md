@@ -115,6 +115,10 @@ Candidate C 正在等待用户/Sol 产品实机裁决。Codex 现在不得自行
 
 Intent Combat V1当前状态：`PASS AS NEW COMBAT BASELINE / MAINLINE MIGRATION NOT AUTHORIZED`。权威Review为 `docs/INTENT_COMBAT_PROTOTYPE_V1_SOL_REVIEW.md`。不得继续修改本样机或迁入主线，直到新的独立融合任务单冻结。
 
+### XState Foundation
+
+GitHub底座研究与隔离迁移已经通过，权威Review为 `docs/INTENT_COMBAT_XSTATE_FOUNDATION_SOL_REVIEW.md`。XState只负责跨阶段流程编排，`intent-combat-v1.ts`纯函数仍是战斗结算真源。状态：`PASS AS ISOLATED FLOW FOUNDATION / FUSION NOT YET AUTHORIZED`。在新融合任务单冻结前，不得接教学、repair或主线。
+
 ## 9. 完成标准
 
 任何获授权工程任务都必须按任务单运行 validator，并至少保证：

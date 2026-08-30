@@ -26,13 +26,16 @@
     "validate:phase-b-combat-pressure": "node --experimental-strip-types scripts/validate-phase-b-combat-pressure.ts",
     "validate:phase-b-combat-pressure-b": "node --experimental-strip-types scripts/validate-phase-b-combat-pressure-b.ts",
     "validate:phase-b-combat-feedback-c": "node --experimental-strip-types scripts/validate-phase-b-combat-feedback-c.ts",
-    "validate:intent-combat-v1": "node --experimental-strip-types scripts/validate-intent-combat-v1.ts"
+    "validate:intent-combat-v1": "node --experimental-strip-types scripts/validate-intent-combat-v1.ts",
+    "validate:intent-combat-xstate": "node --experimental-strip-types scripts/validate-intent-combat-xstate.ts"
   },
   "dependencies": {
+    "@xstate/react": "6.1.0",
     "next": "16.2.6",
     "react": "19.2.6",
     "react-dom": "19.2.6",
-    "ts-fsrs": "^5.4.1"
+    "ts-fsrs": "^5.4.1",
+    "xstate": "5.32.6"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.37.1",

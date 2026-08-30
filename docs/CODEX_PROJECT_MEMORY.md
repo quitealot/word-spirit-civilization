@@ -138,3 +138,9 @@ Candidate C 正在等待用户/Sol 产品实机裁决。Codex 不得自行：
 - 19/19专项、既有回归、lint/build/diff、390×844均通过。
 
 权威Review：`docs/INTENT_COMBAT_PROTOTYPE_V1_SOL_REVIEW.md`。下一步只允许用新任务单做独立的教学/战斗/repair再融合，不得直接迁入主线或覆盖V2。
+
+## 12. XState流程底座
+
+2026-08-30，GitHub先验研究后采用XState v5只负责跨阶段流程编排，战斗领域结算继续使用纯TypeScript；boardgame.io只借鉴纯动作、阶段、日志和无界面模拟测试模式，不引入完整运行时。
+
+Intent Combat独立等价迁移已通过Sol Review：`PASS AS ISOLATED FLOW FOUNDATION / FUSION NOT YET AUTHORIZED`。权威Review为 `docs/INTENT_COMBAT_XSTATE_FOUNDATION_SOL_REVIEW.md`。下一步须另立独立融合任务单，才能接“教学证据→战斗→weakness→repair→再战”；主线迁移仍未授权。
