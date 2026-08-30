@@ -153,3 +153,5 @@ button { font:inherit; }
 }
 
 .ep03-system-note{display:block;margin:14px 0;padding:10px 12px;border-radius:10px;background:#e4ede7;color:#28624e;text-align:center}.ep03-unknown{margin-inline:auto}.ep03-gate{border-radius:16px;background:linear-gradient(145deg,#8d8170,#4a463f);color:#ded3bd}.ep03-bond-update{display:grid;align-content:center;gap:8px;min-height:150px;text-align:center}.ep03-bond-update small{color:#238064;font-weight:800;letter-spacing:.1em}.ep03-bond-update b{font-family:serif;font-size:28px;color:#173c31}
+.p0-loop-card{max-width:1100px;margin:0 auto 16px;display:flex;align-items:center;justify-content:space-between;gap:18px}.p0-loop-card p{margin-bottom:0}.p0-loop-link{display:inline-grid;min-height:43px;place-items:center;border-radius:11px;padding:0 20px;background:#1c765a;color:white;font-weight:800;text-decoration:none;white-space:nowrap}
+@media(max-width:760px){.p0-loop-card{display:block}.p0-loop-link{margin-top:15px}}

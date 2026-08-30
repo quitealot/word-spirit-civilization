@@ -76,11 +76,25 @@ export default function ZeroBaseTeachingPrototypePage() {
   const [worldPulse, setWorldPulse] = useState(false);
   const [mustRetry, setMustRetry] = useState(false);
   const [phaseB, setPhaseB] = useState(false);
+  const [intentLoop, setIntentLoop] = useState(false);
 
   useEffect(() => {
-    setPhaseB(new URLSearchParams(window.location.search).get('flow') === 'phase-b');
-    const stored = loadZeroBaseProgress();
-    const storedStep = STEP_ORDER.includes(stored.currentStep as Step) ? stored.currentStep as Step : 'arrival';
+    const params = new URLSearchParams(window.location.search);
+    const flow = params.get('flow');
+    const restartIntentLoop = flow === 'intent-loop' && params.get('restart') === '1';
+    setPhaseB(flow === 'phase-b');
+    setIntentLoop(flow === 'intent-loop');
+    if (restartIntentLoop) {
+      resetZeroBaseProgress();
+      params.delete('restart');
+      const cleanQuery = params.toString();
+      const cleanPath = cleanQuery ? `${window.location.pathname}?${cleanQuery}` : window.location.pathname;
+      window.history.replaceState(null, '', `${cleanPath}${window.location.hash}`);
+    }
+    const stored = restartIntentLoop ? createZeroBaseProgress() : loadZeroBaseProgress();
+    const storedStep = restartIntentLoop
+      ? 'arrival'
+      : (STEP_ORDER.includes(stored.currentStep as Step) ? stored.currentStep as Step : 'arrival');
     setProgress(stored);
     setStep(storedStep);
     setReady(true);
@@ -162,8 +176,8 @@ export default function ZeroBaseTeachingPrototypePage() {
 
   return <main className="zb-shell">
     <header className="zb-topbar">
-      <div>{!phaseB && <span>独立教学母版 · V1</span>}<b>水桶边的小事</b></div>
-      {!phaseB && <div className="zb-tools"><small>{completedCount}/5 已用于行动</small><button onClick={reset}>重新开始</button></div>}
+      <div>{!phaseB && !intentLoop && <span>独立教学母版 · V1</span>}<b>水桶边的小事</b></div>
+      {!phaseB && !intentLoop && <div className="zb-tools"><small>{completedCount}/5 已用于行动</small><button onClick={reset}>重新开始</button></div>}
     </header>
 
     <section className="zb-stage" aria-live="polite">
@@ -211,11 +225,13 @@ export default function ZeroBaseTeachingPrototypePage() {
 
         {step === 'complete' && (phaseB
           ? <><h1>事情做完了。</h1><a className="zb-primary" href="/prototype/fusion-slice?flow=phase-b">继续</a></>
+          : intentLoop
+            ? <><h1>事情做完了。</h1><a className="zb-primary" href="/prototype/learning-intent">继续</a></>
           : <><span className="zb-kicker">事情做完了</span><h1>你刚刚读懂了三句英语。</h1><div className="zb-complete-lines"><b>People need water.</b><b>choose water</b><b>help people</b></div><p>没有单词卡结算。你看懂它们，然后让场景继续了。</p><div className="zb-complete-actions"><a className="zb-primary" href="/prototype/fusion-slice">带着已学词进入测试战斗</a><button className="zb-help" onClick={reset}>从头再玩一次</button></div></>)}
       </div>
     </section>
 
-    {!phaseB && <footer className="zb-dev-progress">
+    {!phaseB && !intentLoop && <footer className="zb-dev-progress">
       <span>本地过程记录</span>
       {ZERO_BASE_WORDS.map(word => <b key={word.wordId}>{word.word}<em>{progress.stages[word.wordId]}</em></b>)}
     </footer>}

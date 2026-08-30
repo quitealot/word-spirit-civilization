@@ -27,7 +27,8 @@
     "validate:phase-b-combat-pressure-b": "node --experimental-strip-types scripts/validate-phase-b-combat-pressure-b.ts",
     "validate:phase-b-combat-feedback-c": "node --experimental-strip-types scripts/validate-phase-b-combat-feedback-c.ts",
     "validate:intent-combat-v1": "node --experimental-strip-types scripts/validate-intent-combat-v1.ts",
-    "validate:intent-combat-xstate": "node --experimental-strip-types scripts/validate-intent-combat-xstate.ts"
+    "validate:intent-combat-xstate": "node --experimental-strip-types scripts/validate-intent-combat-xstate.ts",
+    "validate:learning-intent-loop": "node --experimental-strip-types scripts/validate-learning-intent-loop.ts"
   },
   "dependencies": {
     "@xstate/react": "6.1.0",

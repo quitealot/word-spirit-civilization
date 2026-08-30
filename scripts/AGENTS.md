@@ -16,4 +16,6 @@ V2 规格优先于 Review A 与旧 V1 代码。校验脚本必须验证冻结规
 - 九个初始技能 V2 原型效果；
 - “技能决定做什么，英语决定发挥多少”的核心契约。
 
+连续闭环专项以 `scripts/validate-learning-intent-loop.ts` 和 `docs/LEARNING_INTENT_REPAIR_LOOP_V1_TASK.md` 为准，不得为了保留旧页面状态实现而放宽证据门、真实weakness、两步repair或自动再战断言。
+
 发现规格与实现不一致时，应让实现失败并报告，不得在 validator 中偷偷兼容错误行为。

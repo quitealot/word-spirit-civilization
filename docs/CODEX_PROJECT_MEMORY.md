@@ -144,3 +144,9 @@ Candidate C 正在等待用户/Sol 产品实机裁决。Codex 不得自行：
 2026-08-30，GitHub先验研究后采用XState v5只负责跨阶段流程编排，战斗领域结算继续使用纯TypeScript；boardgame.io只借鉴纯动作、阶段、日志和无界面模拟测试模式，不引入完整运行时。
 
 Intent Combat独立等价迁移已通过Sol Review：`PASS AS ISOLATED FLOW FOUNDATION / FUSION NOT YET AUTHORIZED`。权威Review为 `docs/INTENT_COMBAT_XSTATE_FOUNDATION_SOL_REVIEW.md`。下一步须另立独立融合任务单，才能接“教学证据→战斗→weakness→repair→再战”；主线迁移仍未授权。
+
+## 13. 教学—新战斗—补弱连续闭环
+
+独立入口 `/prototype/zero-base?flow=intent-loop&restart=1` 已完成：世界教学后一次继续直达Intent Combat，failed产生真实weakness，meaning/retrieve两步repair后自动再战，修复词在前2次调用内出现；全independent无假repair。首页已有“新战斗闭环测试”入口。
+
+状态：`PASS AS INDEPENDENT CONTINUOUS LOOP / MAINLINE MIGRATION NOT AUTHORIZED`。权威Review：`docs/LEARNING_INTENT_REPAIR_LOOP_V1_SOL_REVIEW.md`。下一步只能先做主线迁移影响清单与明确解冻任务，不得直接修改EP03。

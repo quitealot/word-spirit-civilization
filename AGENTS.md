@@ -119,6 +119,10 @@ Intent Combat V1当前状态：`PASS AS NEW COMBAT BASELINE / MAINLINE MIGRATION
 
 GitHub底座研究与隔离迁移已经通过，权威Review为 `docs/INTENT_COMBAT_XSTATE_FOUNDATION_SOL_REVIEW.md`。XState只负责跨阶段流程编排，`intent-combat-v1.ts`纯函数仍是战斗结算真源。状态：`PASS AS ISOLATED FLOW FOUNDATION / FUSION NOT YET AUTHORIZED`。在新融合任务单冻结前，不得接教学、repair或主线。
 
+### Learning Intent Repair Loop V1
+
+独立连续闭环已通过，权威Review为 `docs/LEARNING_INTENT_REPAIR_LOOP_V1_SOL_REVIEW.md`。状态：`PASS AS INDEPENDENT CONTINUOUS LOOP / MAINLINE MIGRATION NOT AUTHORIZED`。首页测试入口与 `/prototype/zero-base?flow=intent-loop&restart=1` 仅用于独立验证；不得据此直接修改EP03或主线战斗。
+
 ## 9. 完成标准
 
 任何获授权工程任务都必须按任务单运行 validator，并至少保证：
