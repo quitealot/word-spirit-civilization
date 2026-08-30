@@ -25,7 +25,8 @@
     "validate:phase-b-flow": "node --experimental-strip-types scripts/validate-phase-b-flow.ts",
     "validate:phase-b-combat-pressure": "node --experimental-strip-types scripts/validate-phase-b-combat-pressure.ts",
     "validate:phase-b-combat-pressure-b": "node --experimental-strip-types scripts/validate-phase-b-combat-pressure-b.ts",
-    "validate:phase-b-combat-feedback-c": "node --experimental-strip-types scripts/validate-phase-b-combat-feedback-c.ts"
+    "validate:phase-b-combat-feedback-c": "node --experimental-strip-types scripts/validate-phase-b-combat-feedback-c.ts",
+    "validate:intent-combat-v1": "node --experimental-strip-types scripts/validate-intent-combat-v1.ts"
   },
   "dependencies": {
     "next": "16.2.6",
