@@ -76,3 +76,7 @@ Candidate C 的25/25不是正式 V2 全局值。默认 Phase A 与历史 Candida
 - 扩九技能、成长、正式动画、新词、新敌人、新关卡、新剧情或大型系统。
 
 若没有新的明确任务单，停下等待。
+
+## 5. Intent Combat V1 独立例外
+
+用户/Sol已授权 `docs/INTENT_COMBAT_PROTOTYPE_V1_TASK.md`。只可按任务单新增 `/prototype/intent-combat`、独立结算模块、对应验证与 `.intent-` 样式。不得借此修改既有Phase A/B/C、主线或V2正式基线。
