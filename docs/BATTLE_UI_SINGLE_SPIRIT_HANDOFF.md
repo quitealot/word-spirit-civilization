@@ -2,6 +2,8 @@
 
 2026-08-31。入口 `/prototype/battle-ui`。状态：工程检查通过（全库lint有既有错误），待用户视觉/交互体验确认。不是新的战斗平衡基线，不是微信原生小游戏。
 
+私有发布已成功：Sites版本27；运行源码 `acdce5176928856252a03c4fc0f6d3d4ea2fe20a`。试玩：https://word-spirit-civilization-demo.eeevan137.chatgpt.site/prototype/battle-ui 。仅所有者可见，未改变站点访问权限。
+
 ## 本轮结果
 
 - 同屏只显示澜歌及一个敌方目标，旧背景的三只烘焙角色已在副本移除；原构图、墨绿/旧金气氛保留。敌方沿用“魔”占位，立绘PENDING_K3。
