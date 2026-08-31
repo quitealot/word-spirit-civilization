@@ -4,11 +4,29 @@
 .bu-ultimate-depth { position:absolute; inset:-30%; background:radial-gradient(ellipse at 49% 46%,#238aaa70,transparent 52%),repeating-linear-gradient(155deg,transparent 0 90px,#72cee60c 91px 93px,transparent 94px 150px); animation:bu-ultimate-depth var(--bu-player-duration) ease-out both; }
 .bu-ultimate-close { position:absolute; inset:0; overflow:hidden; animation:bu-ultimate-close var(--bu-player-duration) linear both; }
 .bu-ultimate-face { position:absolute; height:190%; aspect-ratio:1; left:12%; top:-10%; background:url('/battle-ui/lange-ultimate-poses-v1.png') 0 0 / 200% 100% no-repeat; transform:scaleX(-1); mask-image:radial-gradient(ellipse,#000 40%,transparent 71%); }
-.bu-ultimate-pose { position:absolute; height:110%; aspect-ratio:1; left:16%; bottom:-6%; background:url('/battle-ui/lange-ultimate-poses-v1.png') 0 0 / 200% 100% no-repeat; mask-image:radial-gradient(ellipse,#000 52%,transparent 73%); transform:scaleX(-1); }
+.bu-ultimate-actor { position:absolute; height:110%; aspect-ratio:1; left:16%; bottom:-6%; }
+.bu-ultimate-pose { position:absolute; inset:0; background:url('/battle-ui/lange-ultimate-poses-v1.png') 0 0 / 200% 100% no-repeat; mask-image:radial-gradient(ellipse,#000 52%,transparent 73%); transform:scaleX(-1); }
 .bu-ultimate-charge { animation:bu-ultimate-charge var(--bu-player-duration) linear both; }
 .bu-ultimate-release { background-position:100% 0; animation:bu-ultimate-release var(--bu-player-duration) linear both; }
-.bu-ultimate-focus { position:absolute; width:12%; aspect-ratio:1; left:46%; top:31%; border-radius:50%; background:radial-gradient(circle,#effffd 0 9%,#9cf4fa 17%,#29c9ef8c 35%,transparent 70%); box-shadow:0 0 45px #3fe2f54d; animation:bu-ultimate-focus var(--bu-player-duration) linear both; }
-.bu-ultimate-current { position:absolute; left:41%; top:12%; width:69%; height:68%; object-fit:fill; transform-origin:left center; mix-blend-mode:screen; animation:bu-ultimate-current var(--bu-player-duration) linear both; }
+/* One square coordinate system keeps gathering centered on the cupped hands on phones too. */
+.bu-ultimate-chant { position:absolute; left:70%; top:40%; width:0; height:0; mix-blend-mode:screen; animation:bu-ultimate-chant var(--bu-player-duration) linear both; }
+.bu-ultimate-focus { position:absolute; width:96px; aspect-ratio:1; left:-48px; top:-48px; border-radius:50%; background:radial-gradient(circle,#ecffff 0 7%,#a2f1ef 14%,#1bd5e5b3 32%,#1689bf40 54%,transparent 71%); animation:bu-ultimate-focus var(--bu-player-duration) linear both; }
+.bu-ultimate-chant-ring { position:absolute; width:146px; aspect-ratio:1; left:-73px; top:-73px; border:2px solid #82e9efa1; border-left-color:transparent; border-bottom-color:#38aec733; border-radius:50%; box-shadow:0 0 12px #29cfef55,inset 0 0 12px #2dbed744; animation:bu-ultimate-ring var(--bu-player-duration) linear both; }
+.bu-ultimate-ring-inner { width:116px; left:-58px; top:-58px; border-right-color:transparent; animation-name:bu-ultimate-ring-inner; }
+.bu-ultimate-gather-stream { position:absolute; width:174px; height:112px; left:-138px; top:-3px; background:url('/battle-ui/water-surge.png') center / contain no-repeat; opacity:.48; transform-origin:80% 25%; animation:bu-ultimate-gather var(--bu-player-duration) linear both; }
+.bu-ultimate-charge-motes { position:absolute; inset:0; }
+.bu-ultimate-charge-motes i { position:absolute; width:6px; height:6px; left:-3px; top:-3px; border-radius:50%; background:#bffbf6; box-shadow:0 0 10px #49dff2; animation:bu-ultimate-mote var(--bu-player-duration) linear both; --charge-x:-82px; --charge-y:54px; }
+.bu-ultimate-charge-motes i:nth-child(2) { --charge-x:74px; --charge-y:39px; }
+.bu-ultimate-charge-motes i:nth-child(3) { --charge-x:14px; --charge-y:93px; }
+.bu-ultimate-charge-motes i:nth-child(4) { --charge-x:-65px; --charge-y:-54px; }
+.bu-ultimate-charge-motes i:nth-child(5) { --charge-x:88px; --charge-y:-27px; }
+.bu-ultimate-charge-motes i:nth-child(6) { --charge-x:30px; --charge-y:-84px; }
+.bu-ultimate-streams { position:absolute; left:83%; top:20%; width:180%; height:66%; mix-blend-mode:screen; }
+.bu-ultimate-current, .bu-ultimate-undertow, .bu-ultimate-crest { position:absolute; inset:0; width:100%; height:100%; object-fit:fill; transform-origin:left center; }
+.bu-ultimate-current { animation:bu-ultimate-current var(--bu-player-duration) linear both; }
+.bu-ultimate-undertow, .bu-ultimate-crest { background:url('/battle-ui/water-surge.png') center / 100% 100% no-repeat; }
+.bu-ultimate-undertow { animation:bu-ultimate-undertow var(--bu-player-duration) linear both; }
+.bu-ultimate-crest { animation:bu-ultimate-crest var(--bu-player-duration) linear both; }
 .bu-ultimate-wipe { position:absolute; inset:0; background:linear-gradient(105deg,transparent 20%,#67ddec9c 50%,#d3f7f7cc 58%,#176185a1 72%,transparent); transform:translateX(-125%); animation:bu-ultimate-wipe var(--bu-player-duration) linear both; }
 .bu-ultimate-title { position:absolute; right:8%; top:22%; color:#efffff; text-shadow:0 3px 15px #1b738a; animation:bu-ultimate-title var(--bu-player-duration) linear both; }
 .bu-ultimate-title small { display:block; letter-spacing:.35em; font-size:13px; color:#a9e1e9; }
@@ -20,26 +38,38 @@
 .bu-field[data-ultimate="true"] .bu-ally .bu-sprite { animation:none; }
 .bu-field[data-phase="player"][data-ultimate="true"] .bu-enemy { animation:none; }
 .bu-field[data-phase="player"][data-ultimate="true"][data-impact="shown"] .bu-enemy { animation:bu-v3-hit-right 720ms ease-out both; }
+/* One hit remains one hit: widen its existing atlas and add a fading water wake only. */
+.bu-field[data-ultimate="true"] .bu-impact-water { --bu-hit-size:clamp(190px,34vw,360px); }
+.bu-field[data-ultimate="true"] .bu-impact-water::after { content:''; position:absolute; z-index:-1; left:40%; top:35%; width:58%; height:48%; background:url('/battle-ui/water-surge.png') center / contain no-repeat; transform-origin:60% 50%; animation:bu-ultimate-wake 1100ms ease-out both; }
+.bu-field[data-ultimate="true"] .bu-impact-water .bu-impact-halo { border-width:3px; }
+@keyframes bu-ultimate-wake { 0% { opacity:.65; transform:scale(.85,.45); } 25% { opacity:.44; transform:translate(4%,8%) scale(1.05,.7); } 100% { opacity:0; transform:translate(13%,25%) scale(1.18,.35); } }
 .bu-ultimate-control { display:flex; align-items:center; gap:9px; padding:10px 2px 0; color:#b7d6d0; font-size:12px; }
 .bu-ultimate-control input { accent-color:#80d2d8; width:17px; height:17px; margin:0; }
 .bu-ultimate-control small { color:#91aaa5; }
 @keyframes bu-ultimate-out { 0%,50% { opacity:1; } 57.8%,100% { opacity:0; visibility:hidden; } }
 @keyframes bu-ultimate-depth { 0% { transform:scale(1.2) translateX(-3%); } 50%,100% { transform:scale(1) translateX(5%); } }
 @keyframes bu-ultimate-close { 0% { opacity:0; transform:translateX(-4%) scale(1.06); } 5%,13% { opacity:1; } 18%,100% { opacity:0; transform:translateX(2%) scale(1.14); } }
-@keyframes bu-ultimate-charge { 0%,12% { opacity:0; transform:translateX(-5%) scaleX(-1) scale(1.08); } 19%,36% { opacity:1; transform:translateX(0) scaleX(-1) scale(1); } 39%,100% { opacity:0; transform:translateX(1%) scaleX(-1); } }
+@keyframes bu-ultimate-charge { 0%,10% { opacity:0; transform:translate(-2%,2%) scaleX(-1); } 17% { opacity:1; transform:translate(0,0) scaleX(-1); } 30%,37% { opacity:1; transform:translate(-1%,-2%) scaleX(-1) rotate(-2deg); } 40%,100% { opacity:0; transform:translateX(1%) scaleX(-1); } }
 @keyframes bu-ultimate-release { 0%,36% { opacity:0; transform:translateX(-3%) scaleX(-1); } 39%,48% { opacity:1; transform:translateX(2%) scaleX(-1); } 55%,100% { opacity:0; transform:translateX(5%) scaleX(-1); } }
-@keyframes bu-ultimate-focus { 0%,17% { opacity:0; transform:scale(.1); } 24% { opacity:.6; transform:scale(.5); } 34%,37% { opacity:1; transform:scale(1.1); } 42%,100% { opacity:0; transform:scale(.3) translateX(70%); } }
-@keyframes bu-ultimate-current { 0%,37% { opacity:0; transform:scaleX(.1) scaleY(.25); } 40% { opacity:1; transform:scaleX(.5) scaleY(.65); } 47%,50% { opacity:1; transform:scaleX(1.2) scaleY(1.3); } 56%,100% { opacity:0; transform:translateX(32%) scaleX(1.4) scaleY(1.4); } }
+@keyframes bu-ultimate-chant { 0%,13% { opacity:0; } 18%,37% { opacity:1; } 41%,100% { opacity:0; } }
+@keyframes bu-ultimate-focus { 0%,13% { opacity:0; transform:scale(.18); } 22% { opacity:.72; transform:scale(.6); } 30%,34% { opacity:.88; transform:scale(1.05); } 37% { opacity:1; transform:scale(.82); } 40%,100% { opacity:0; transform:scale(1.3); } }
+@keyframes bu-ultimate-ring { 0%,13% { transform:rotate(-60deg) scale(1.5); opacity:0; } 20% { opacity:.5; } 32%,36% { transform:rotate(65deg) scale(.6); opacity:.85; } 40%,100% { transform:rotate(90deg) scale(.25); opacity:0; } }
+@keyframes bu-ultimate-ring-inner { 0%,14% { transform:rotate(90deg) scale(1.3); opacity:0; } 21% { opacity:.65; } 32%,36% { transform:rotate(-70deg) scale(.5); opacity:.9; } 40%,100% { transform:rotate(-90deg) scale(.2); opacity:0; } }
+@keyframes bu-ultimate-gather { 0%,13% { opacity:0; transform:translate(-24px,26px) rotate(-35deg) scale(1.25); } 22% { opacity:.42; } 34% { opacity:.7; transform:translate(9px,-12px) rotate(8deg) scale(.62); } 39%,100% { opacity:0; transform:translate(18px,-17px) rotate(20deg) scale(.2); } }
+@keyframes bu-ultimate-mote { 0%,15% { opacity:0; transform:translate(var(--charge-x),var(--charge-y)) scale(.5); } 23% { opacity:.85; transform:translate(calc(var(--charge-x) * .7),calc(var(--charge-y) * .7)) scale(1); } 33% { opacity:.95; transform:translate(0,0) scale(.45); } 36%,100% { opacity:0; transform:translate(0,0) scale(0); } }
+@keyframes bu-ultimate-current { 0%,38% { opacity:0; transform:scale(.12,.3); } 41% { opacity:.95; transform:scale(.8,.85); } 46%,50% { opacity:1; transform:scale(1.18,1.25); } 57%,100% { opacity:0; transform:translateX(27%) scale(1.35,1.32); } }
+@keyframes bu-ultimate-undertow { 0%,37% { opacity:0; transform:rotate(10deg) scale(.1,.45); } 42% { opacity:.5; transform:translateY(10%) rotate(10deg) scale(.83,1.15); } 48%,51% { opacity:.64; transform:translateY(14%) rotate(8deg) scale(1.15,1.35); } 57%,100% { opacity:0; transform:translate(32%,20%) rotate(6deg) scale(1.3,1.4); } }
+@keyframes bu-ultimate-crest { 0%,39% { opacity:0; transform:rotate(-9deg) scale(.1,.35); } 44%,48% { opacity:.6; transform:translateY(-14%) rotate(-9deg) scale(.95,.7); } 53% { opacity:.4; transform:translateY(-12%) rotate(-5deg) scale(1.3,.9); } 57%,100% { opacity:0; transform:translate(30%,-10%) scale(1.4,.7); } }
 @keyframes bu-ultimate-wipe { 0%,46% { transform:translateX(-125%); opacity:0; } 48% { opacity:1; } 56%,100% { transform:translateX(125%); opacity:0; } }
 @keyframes bu-ultimate-title { 0% { opacity:0; transform:translateX(16px); } 6%,27% { opacity:1; transform:none; } 36%,100% { opacity:0; transform:translateX(-8px); } }
 @keyframes bu-ultimate-contact { 0%,14% { transform:translateX(5px) scale(1.055); } 29% { transform:translateX(-3px) scale(1.03); } 57% { transform:scale(1.015); } 100% { transform:none; } }
 @media (max-width:680px) {
   .bu-ultimate-face { left:-30%; height:182%; top:0; }
-  .bu-ultimate-pose { left:-16%; height:108%; bottom:-3%; }
-  .bu-ultimate-focus { left:48%; top:32%; width:19%; }
-  .bu-ultimate-current { left:44%; width:91%; top:20%; height:56%; }
+  .bu-ultimate-actor { left:-16%; height:108%; bottom:-3%; }
+  .bu-ultimate-chant { scale:.8; }
   .bu-ultimate-title { right:7%; top:20%; }
   .bu-ultimate-control { flex-wrap:wrap; gap:7px; }
+  .bu-field[data-ultimate="true"] .bu-impact-water { --bu-hit-size:clamp(190px,62vw,250px); }
 }
 @media (prefers-reduced-motion:reduce) {
   .bu-ultimate { display:none; }
