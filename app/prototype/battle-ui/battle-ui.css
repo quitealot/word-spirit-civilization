@@ -100,6 +100,40 @@
 @keyframes bu-guard { 0% { opacity:0; transform:scale(.75); } 25%,70% { opacity:.85; transform:scale(1); } 100% { opacity:0; transform:scale(1.04); } }
 @keyframes bu-strike { 0% { opacity:0; transform:translate(12px,-6px) rotate(-35deg) scaleX(.3); } 30% { opacity:1; transform:rotate(-35deg) scaleX(1); } 100% { opacity:0; transform:translate(-8px,5px) rotate(-35deg) scaleX(1.15); } }
 .bu-effect-label { position:absolute; left:50%; bottom:42px; transform:translateX(-50%); color:#ebe4ae; background:#173c31dd; border:1px solid #b9c48b77; border-radius:20px; padding:6px 12px; font-size:12px; }
+/* Water sample: original bitmap layers, one shoulder joint, no character redraw. */
+.bu-caster-art { position:relative; width:100%; height:100%; }
+.bu-caster-rest, .bu-caster-rig { position:absolute; inset:0; width:100%; height:100%; }
+.bu-caster-rig { visibility:hidden; transform:scaleX(-1); overflow:visible; filter:drop-shadow(0 7px 9px #001f2d88); }
+.bu-caster-art[data-casting="true"] .bu-caster-rest { visibility:hidden; }
+.bu-caster-art[data-casting="true"] .bu-caster-rig { visibility:visible; }
+.bu-caster-art[data-casting="true"] .bu-caster-arm { transform-origin:478px 565px; animation:bu-arm-cast var(--bu-water-duration) ease-in-out both; }
+.bu-caster-art[data-casting="true"] .bu-caster-body { transform-origin:540px 750px; animation:bu-body-cast var(--bu-water-duration) ease-in-out both; }
+.bu-field[data-phase="player"][data-skill="water"] .bu-ally { animation:none; }
+.bu-field[data-phase="player"][data-skill="water"] .bu-ally .bu-sprite { animation-play-state:paused; }
+.bu-field[data-phase="player"][data-skill="water"] .bu-enemy { animation:bu-hit-enemy 600ms var(--bu-water-impact) ease-out both; }
+.bu-vfx-water > .bu-projectile, .bu-vfx-water > .bu-impact { display:none; }
+.bu-vfx-water > .bu-cast-ring { animation-duration:var(--bu-water-duration); }
+@keyframes bu-arm-cast { 0%,100% { transform:rotate(0deg); } 12% { transform:rotate(-7deg); } 26%,34% { transform:rotate(68deg); } 42%,58% { transform:rotate(88deg); } 76% { transform:rotate(30deg); } }
+@keyframes bu-body-cast { 0%,100% { transform:none; } 16%,30% { transform:translate(8px,0) rotate(2deg); } 42%,54% { transform:translate(-13px,-3px) rotate(-2deg); } 78% { transform:translate(2px,0); } }
+.bu-water-show { position:absolute; inset:0; z-index:3; pointer-events:none; }
+.bu-water-show > span, .bu-water-show > img { position:absolute; opacity:0; }
+.bu-water-gather { left:29%; top:31%; width:6%; aspect-ratio:1; border-radius:50%; background:radial-gradient(circle,#efffff 0,#98eff8 18%,#409dcc77 44%,transparent 70%); box-shadow:0 0 20px #5cd8e522; animation:bu-gather var(--bu-water-duration) ease-out both; }
+.bu-water-orbit { left:27%; top:25%; width:10%; aspect-ratio:1; border:2px solid #89e4ee99; border-left-color:transparent; border-bottom-color:transparent; border-radius:50%; animation:bu-orbit var(--bu-water-duration) ease-in-out both; }
+.bu-water-surge { left:30%; top:15%; width:48%; height:46%; object-fit:fill; transform-origin:0 54%; animation:bu-surge var(--bu-water-duration) linear both; }
+.bu-water-contact { left:65%; top:21%; width:11%; aspect-ratio:1; border:2px solid #d3ffff; border-radius:50%; box-shadow:0 0 16px #a4eef577,inset 0 0 20px #92e5ee44; animation:bu-contact var(--bu-water-duration) ease-out both; }
+.bu-water-motes { left:71%; top:38%; width:1px; height:1px; animation:bu-motes var(--bu-water-duration) linear both; }
+.bu-water-motes i { position:absolute; width:4px; height:7px; border-radius:50%; background:#b2f8ff; box-shadow:0 0 5px #6ae3ff; --dx:28px; --dy:-30px; transform:translate(0,0); animation:bu-droplet var(--bu-water-duration) ease-out both; }
+.bu-water-motes i:nth-child(2) { --dx:-22px; --dy:-34px; }
+.bu-water-motes i:nth-child(3) { --dx:42px; --dy:-2px; }
+.bu-water-motes i:nth-child(4) { --dx:32px; --dy:29px; }
+.bu-water-motes i:nth-child(5) { --dx:-26px; --dy:24px; }
+.bu-water-motes i:nth-child(6) { --dx:2px; --dy:-42px; }
+@keyframes bu-gather { 0%,12%,47%,100% { opacity:0; transform:scale(.25); } 26%,34% { opacity:1; transform:scale(1); } 39% { opacity:.8; transform:scale(.7); } }
+@keyframes bu-orbit { 0%,14% { opacity:0; transform:scale(.4) rotate(-90deg); } 28%,33% { opacity:.8; transform:scale(1) rotate(50deg); } 42%,100% { opacity:0; transform:scale(1.4) rotate(140deg); } }
+@keyframes bu-surge { 0%,30% { opacity:0; transform:scale(.08,.25); } 34% { opacity:.95; transform:scale(.25,.5); } 40% { opacity:1; transform:scale(1,1); } 54% { opacity:.85; transform:scale(1.08,1.06); } 69%,100% { opacity:0; transform:scale(1.13,1.15); } }
+@keyframes bu-contact { 0%,39% { opacity:0; transform:scale(.2); } 43% { opacity:.95; transform:scale(.8); } 70%,100% { opacity:0; transform:scale(1.9); } }
+@keyframes bu-motes { 0%,39% { opacity:0; } 42%,57% { opacity:1; } 76%,100% { opacity:0; } }
+@keyframes bu-droplet { 0%,39% { transform:translate(0,0) scale(.3); } 70%,100% { transform:translate(var(--dx),var(--dy)) scale(.7); } }
 .bu-end { position:absolute; inset:0; background:#061e24dc; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; z-index:5; }
 .bu-end > span { font:64px SimSun,serif; color:#e5d392; }
 .bu-end > strong { font-size:23px; letter-spacing:5px; }
@@ -184,6 +218,8 @@
   }
   .bu-shell *, .bu-shell *::before, .bu-shell *::after { animation:none !important; transition:none !important; }
   .bu-hp-trail { width:var(--bu-final) !important; }
+  .bu-caster-art[data-casting="true"] .bu-caster-rest { visibility:visible; }
+  .bu-caster-art[data-casting="true"] .bu-caster-rig { visibility:hidden; }
 }
 @media (max-width:680px) {
   .bu-shell { padding:18px 14px 24px; }
@@ -205,6 +241,11 @@
   .bu-enemy { right:2%; }
   .bu-vfx .bu-cast-ring, .bu-vfx .bu-recovery { left:8%; width:29%; }
   .bu-vfx .bu-guard { left:6%; width:33%; }
+  .bu-water-gather { left:29%; top:35%; width:8%; }
+  .bu-water-orbit { left:26%; top:31%; width:14%; }
+  .bu-water-surge { left:30%; top:20%; width:49%; height:40%; }
+  .bu-water-contact { left:65%; top:31%; width:14%; }
+  .bu-water-motes { top:41%; }
   .bu-nameplate small { display:none; }
   .bu-enemy-intent { font-size:10px; padding:6px 8px; }
   .bu-field-tag { font-size:10px; left:12px; }

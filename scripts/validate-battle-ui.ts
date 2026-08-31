@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { DEMO_RULES, DEMO_SKILLS, demoReducer, initialDemo, skillDescription, type DemoState, type SkillId } from '../app/prototype/battle-ui/demo-model.ts';
+import { WATER_MOTION, waterIsCasting, presentedEnemyHp } from '../app/prototype/battle-ui/water-motion.ts';
 let checks = 0;
 function check(name: string, test: () => void) { test(); checks++; console.log(`PASS ${name}`); }
 const cast = (state: DemoState, id: SkillId) => demoReducer(demoReducer(state, { type: 'select', id }), { type: 'cast' });
@@ -39,4 +40,14 @@ check('Idle animation is layered separately from cast movement', () => { assert.
 check('Three skills have distinct, non-interactive effect layers', () => { assert.match(page,/className=\{`bu-vfx bu-vfx-\$\{state.selected\}`\} aria-hidden="true"/); assert.match(css,/pointer-events:none; z-index:3/); for(const effect of ['bu-projectile','bu-recovery','bu-guard']) assert.ok(page.includes(effect)); assert.match(page,/state.damage > 0 &&/); assert.match(page,/state.mitigation > 0 &&/); });
 check('Animation never dispatches combat outcomes', () => assert.doesNotMatch(page,/onAnimationEnd|onTransitionEnd|requestAnimationFrame/));
 check('Cast shows an offscreen arena before starting results', () => { assert.match(page,/bounds.top < 0 \|\| bounds.bottom > window.innerHeight/); assert.match(page,/scrollIntoView\(\{ behavior: 'instant'/); assert.match(page,/onClick=\{confirmCast\}/); });
+const rig = readFileSync(new URL('../app/prototype/battle-ui/water-caster.tsx',import.meta.url),'utf8');
+check('Water impact is inside its presentation and synchronized to 40% frame', () => { assert.equal(WATER_MOTION.impactMs / WATER_MOTION.durationMs,.4); assert.ok(WATER_MOTION.durationMs-WATER_MOTION.impactMs >= 1200); });
+check('Windup hides only the presented loss, never modifies settled HP', () => { const s=cast(initialDemo(),'water'); assert.equal(presentedEnemyHp(s,true),60); assert.equal(presentedEnemyHp(s,false),42); assert.equal(s.enemyHp,42); });
+check('Stale pending state cannot hide enemy HP outside water cast', () => { for(const s of [advance(cast(initialDemo(),'water')),cast(initialDemo(),'tide'),initialDemo()]) { assert.equal(presentedEnemyHp(s,true),s.enemyHp); assert.equal(waterIsCasting(s),false); } });
+check('Water kill waits for visible impact but still skips retaliation', () => { const s=cast({...initialDemo(),enemyHp:10},'water'); assert.equal(presentedEnemyHp(s,true),10); assert.equal(presentedEnemyHp(s,false),0); assert.equal(advance(s).phase,'won'); assert.equal(advance(s).playerHp,48); });
+check('Water delay is presentation-only with cleanup and reduced-motion bypass', () => { assert.match(page,/waterCasting \? WATER_MOTION.durationMs : PHASE_DURATION\[state.phase\]/); assert.match(page,/setTimeout\(\(\) => setImpactPending\(false\), WATER_MOTION.impactMs\)/); assert.match(page,/window.matchMedia\('\(prefers-reduced-motion: reduce\)'\)/); assert.match(page,/!awaitingImpact && state.damage > 0/); });
+check('Arm is separately masked from original source and pivoted at shoulder', () => { assert.match(rig,/mask=\{`url\(#\$\{id\}-body\)`\}/); assert.match(rig,/className="bu-caster-arm"/); assert.match(rig,/const SOURCE = '\/battle-ui\/lange-cutout.png'/); assert.match(css,/transform-origin:478px 565px/); assert.match(css,/rotate\(88deg\)/); });
+check('Rest pose, other skills and reduced motion retain the original full illustration', () => { assert.match(page,/<WaterCaster active=\{waterCasting\}/); assert.match(css,/bu-caster-art\[data-casting="true"\] \.bu-caster-rest \{ visibility:visible/); assert.match(css,/bu-caster-art\[data-casting="true"\] \.bu-caster-rig \{ visibility:hidden/); });
+check('Generated shoulder background is restricted to an interior patch', () => { assert.match(rig,/lange-shoulder-source.png" width="1254" height="1254" clipPath=/); assert.match(rig,/-shoulder/); });
+check('Water surge has true PNG alpha and no input handling', () => { const png=readFileSync(new URL('../public/battle-ui/water-surge.png',import.meta.url)); assert.equal(png[25],6); assert.match(css,/bu-water-show \{[^}]*pointer-events:none/); assert.match(rig,/className="bu-water-show" aria-hidden="true"/); });
 console.log(`${checks}/${checks} battle UI checks PASS`);
