@@ -9,8 +9,8 @@
 .jf-pose-run-a { animation:jf-melee-run-a var(--bu-player-duration) steps(1,end) both; }
 .jf-pose-run-b { animation:jf-melee-run-b var(--bu-player-duration) steps(1,end) both; }
 .jf-pose-swipe { transform-origin:48% 72%; animation:jf-melee-swipe-visible var(--bu-player-duration) steps(1,end) both,jf-melee-swipe var(--bu-player-duration) linear both; }
-/* The atlas jump faces left: mirror this pose only, so retreat keeps eyes on the enemy. */
-.jf-pose-jump { transform:scaleX(-1); transform-origin:50% 50%; animation:jf-melee-jump-visible var(--bu-player-duration) steps(1,end) both; }
+/* Jump faces home (left), matching return travel. At 86%, the right-facing rest pose resumes after landing. */
+.jf-pose-jump { transform:none; animation:jf-melee-jump-visible var(--bu-player-duration) steps(1,end) both; }
 .jf-shell .jf-fx-tail .jf-hit { left:64%; top:42%; width:16%; height:30%; border-width:2px; }
 @keyframes jf-melee-travel {
   0%,5% { left:var(--jf-home); transform:translateY(0); }
