@@ -3,7 +3,7 @@
 更新时间：2026-08-31
 状态：`CURRENT / AUTHORITATIVE`
 
-当前新增（覆盖下方V3“最新进展”）：用户同意水音大招镜头样板，现已在同一 /prototype/battle-ui 接入约3.8秒近景→双手蓄力→前伸释放→回场命中；2.2秒显示HP结果。专用两姿势插画只用于切镜，不替换常驻原立绘。默认开，可关闭对比原短版；素材未就绪/失败和减少动态有短版回退。无新正式技能/伤害/规则，demo-model/旧时间表/主线均零修改。125项专项、strict类型、构建、核心回归通过；本轮未做浏览器/手机动态验收。交接 docs/WATER_ULTIMATE_V1_HANDOFF.md；素材精确生成提示词 docs/WATER_ULTIMATE_V1_ASSETS.md。状态 ENGINEERING PASS / DYNAMIC PLAYTEST PENDING，发布记录稍后补记。
+当前新增（覆盖下方V3“最新进展”）：用户同意水音大招镜头样板，现已在同一 /prototype/battle-ui 接入约3.8秒近景→双手蓄力→前伸释放→回场命中；2.2秒显示HP结果。专用两姿势插画只用于切镜，不替换常驻原立绘。默认开，可关闭对比原短版；素材未就绪/失败和减少动态有短版回退。无新正式技能/伤害/规则，demo-model/旧时间表/主线均零修改。125项专项、strict类型、构建、核心回归通过；本轮未做浏览器/手机动态验收。交接 docs/WATER_ULTIMATE_V1_HANDOFF.md；素材精确生成提示词 docs/WATER_ULTIMATE_V1_ASSETS.md。状态 ENGINEERING PASS / DYNAMIC PLAYTEST PENDING。最新私有Site33部署succeeded，发布源0835500（实现315bf83），原链接和权限不变；下方Site32为历史版本。
 
 最新进展：用户要求参考赛尔号、口袋觉醒、龙珠改赛亚人来袭继续强化演出。独立 `/prototype/battle-ui` 已完成演出V3：原画短特写、战场镜头/压暗/速度提示、原创八帧水花与碎石、命中停顿与受击回弹、三招差异化；不重画角色，不改48/60、BOSS14/28或玩家技能。107项专项与类型/构建/核心回归通过，未做本轮浏览器/手机动态验收。三作来源与观看限制如实记录（赛尔号完整视频被登录阻断），不宣称逐帧完整复核。交接 `docs/BATTLE_UI_CINEMATIC_V3_HANDOFF.md`，状态ENGINEERING PASS / DYNAMIC PLAYTEST PENDING；旧主线/词源/存档继续不动。
 
