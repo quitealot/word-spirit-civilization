@@ -34,6 +34,8 @@ export function BossIcon({ id }: { id: BossSkillId }) {
 export function BossEffect({ skill }: { skill: BossSkillId }) {
   return <div className={`bu-boss-show bu-boss-show-${skill}`} aria-hidden="true">
     <span className="bu-boss-charge"/><span className="bu-boss-path"/>
+    <img className="bu-boss-burst" src="/battle-ui/guardian-impact.png" alt="" draggable={false}/>
+    {skill === 'quake' && <><span className="bu-quake-front"/><span className="bu-quake-aftershock"/></>}
     <span className="bu-boss-hit"/><span className="bu-boss-ground"/>
     <span className="bu-boss-sparks"><i/><i/><i/><i/><i/><i/></span>
   </div>;

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useReducer, useRef, useState, type CSSProperties } from 'react';
-import { BOSS_SKILLS, DEMO_RULES, DEMO_SKILLS, PHASE_DURATION, demoReducer, getEnemySkill, getSkill, initialDemo, previewIncoming, skillDescription, type SkillId } from './demo-model';
+import { BOSS_SKILLS_V2, DEMO_RULES, DEMO_SKILLS, PHASE_DURATION, demoReducer, getEnemySkill, getSkill, initialDemo, previewIncoming, skillDescription, type SkillId } from './demo-model';
 import { WATER_MOTION, waterIsCasting } from './water-motion';
 import { activeMotion, BOSS_MOTION, displayedHp, motionKey, PLAYER_MOTION } from './battle-motion';
 import { StillWave, TideReturn, WaterCaster, WaterSurge } from './water-caster';
@@ -33,7 +33,7 @@ function HpBar({ enemy = false, hp, previous, max }: { enemy?: boolean; hp: numb
 }
 
 export default function BattleUiPage() {
-  const [state, dispatch] = useReducer(demoReducer, 'gatekeeper-v1', initialDemo);
+  const [state, dispatch] = useReducer(demoReducer, 'gatekeeper-v2', initialDemo);
   const [paused, setPaused] = useState(false);
   const [roster, setRoster] = useState(false);
   const [shownImpact, setShownImpact] = useState<string | null>(null);
@@ -101,6 +101,7 @@ export default function BattleUiPage() {
 
   return <main className="bu-shell" style={{ '--bu-water-duration': `${WATER_MOTION.durationMs}ms`, '--bu-water-impact': `${WATER_MOTION.impactMs}ms`, '--bu-player-duration': `${PLAYER_MOTION[state.selected ?? 'water'].durationMs}ms`, '--bu-player-impact': `${PLAYER_MOTION[state.selected ?? 'water'].impactMs}ms`, '--bu-boss-duration': `${BOSS_MOTION.durationMs}ms`, '--bu-boss-impact': `${BOSS_MOTION.impactMs}ms` } as CSSProperties}>
     <link rel="preload" as="image" href="/battle-ui/water-surge.png"/>
+    <link rel="preload" as="image" href="/battle-ui/guardian-impact.png"/>
     <header className="bu-header"><div><div className="bu-eyebrow">语灵 · 雾港遗迹 <i /> 第 {state.turn} 回合</div><h1>雾港守门人</h1></div><span className={`bu-phase bu-phase-${state.phase}`}><i />{phaseLabel}</span></header>
     <div ref={arenaRef} className="bu-arena">
     <HpBar enemy hp={visibleHp.enemy} previous={state.previousEnemyHp} max={DEMO_RULES.enemyMaxHp}/>
@@ -127,7 +128,7 @@ export default function BattleUiPage() {
     <HpBar hp={visibleHp.player} previous={state.previousPlayerHp} max={DEMO_RULES.playerMaxHp}/>
     </div>
     <div className="bu-feedback" role="status" aria-live="polite"><span className="bu-feedback-step">{phaseLabel}</span><p>{resultText}</p></div>
-    <details className="bu-boss-skills"><summary><BossIcon id={enemySkill.id}/><span>敌方技能 · {enemySkill.name}</span><b>{choosing && skill ? (skill.damage >= state.enemyHp ? '可击杀 · 不反击' : `本招后预计承伤 ${previewIncoming(state)}`) : '石拳 → 震击 · 交替出手'}</b></summary><div>{BOSS_SKILLS.map(item => <p key={item.id}><BossIcon id={item.id}/><strong>{item.name}</strong><span>{item.description}</span></p>)}</div></details>
+    <details className="bu-boss-skills"><summary><BossIcon id={enemySkill.id}/><span>敌方技能 · {enemySkill.name}</span><b>{choosing && skill ? (skill.damage >= state.enemyHp ? '可击杀 · 不反击' : `本招后预计承伤 ${previewIncoming(state)}`) : '石拳 → 震击 · 交替出手'}</b></summary><div>{BOSS_SKILLS_V2.map(item => <p key={item.id}><BossIcon id={item.id}/><strong>{item.name}</strong><span>{item.description}</span></p>)}</div></details>
 
     <section className="bu-commands" aria-label="技能操作">
       <div className="bu-command-heading"><span><b>澜歌</b> 的技能</span><button className="bu-subtle" disabled={!choosing} aria-expanded={roster} aria-controls="bu-roster" onClick={() => setRoster(!roster)}>换灵 <span aria-hidden="true">⇄</span></button></div>
@@ -146,6 +147,6 @@ export default function BattleUiPage() {
     </section>
 
     <footer className="bu-footer"><span>独立界面样机 · BOSS技能测试 · 不写入存档</span><div><button onClick={() => setPaused(!paused)} aria-pressed={paused}>{paused ? '恢复自动' : '暂停自动'}</button>{paused && !choosing && !finished && <button onClick={advanceManually}>下一步</button>}<button disabled={!choosing && !finished} onClick={resetBattle}>重开</button></div></footer>
-    <details className="bu-scope"><summary>样机范围与素材说明</summary><p>不是微信小游戏正式版。澜歌三技能保持原演示数值；当前BOSS独立测试：48 / 60 HP，石拳16、震击36伤害，固定交替。名称仅为原型系统标签，正式设定仍为 PENDING_K3。旧48/60/8夹具与其他原型未改。三招和BOSS使用原画手臂分层与局部接缝补图，不是全身骨骼。暂停自动只停止回合推进，不冻结当前动画。</p></details>
+    <details className="bu-scope"><summary>样机范围与素材说明</summary><p>不是微信小游戏正式版。澜歌三技能保持原演示数值；当前BOSS独立测试V2：48 / 60 HP，石拳14、震击28伤害，固定交替。名称仅为原型系统标签，正式设定仍为 PENDING_K3。旧48/60/8夹具、BOSS V1的16/36与其他原型均保留。沿用原立绘分层、局部接缝补图与独立冲击素材，不是全身骨骼。暂停自动只停止回合推进，不冻结当前动画。</p></details>
   </main>;
 }

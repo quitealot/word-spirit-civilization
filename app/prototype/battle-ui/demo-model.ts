@@ -5,8 +5,13 @@ export const BOSS_SKILLS = [
   { id: 'fist', name: '石拳', damage: 16, description: '抬臂向前出拳，造成16点伤害。' },
   { id: 'quake', name: '震击', damage: 36, description: '举臂蓄力后重击，造成36点伤害；可用削弱或减伤应对。' },
 ] as const;
+// User playtest: V1 felt too punishing. Retain it above for reproducible comparison.
+export const BOSS_SKILLS_V2 = [
+  { id: 'fist', name: '石拳', damage: 14, description: '前冲出拳，造成14点伤害。' },
+  { id: 'quake', name: '震击', damage: 28, description: '举臂下砸，地面冲击造成28点伤害；削弱与减伤均有效。' },
+] as const;
 export type BossSkillId = typeof BOSS_SKILLS[number]['id'];
-export type DemoProfile = 'fixture' | 'gatekeeper-v1';
+export type DemoProfile = 'fixture' | 'gatekeeper-v1' | 'gatekeeper-v2';
 export const DEMO_SKILLS = [
   { id: 'water', name: '水音', role: '攻击 · 压制', damage: 18, healing: 0, weaken: 0.2, mitigation: 0 },
   { id: 'tide', name: '回潮', role: '攻击 · 回复', damage: 10, healing: 22, weaken: 0, mitigation: 0 },
@@ -29,6 +34,7 @@ export function initialDemo(profile: DemoProfile = 'fixture'): DemoState {
 }
 export function getSkill(id: SkillId | null) { return DEMO_SKILLS.find(skill => skill.id === id); }
 export function getEnemySkill(state: Pick<DemoState, 'profile' | 'turn'>) {
+  if (state.profile === 'gatekeeper-v2') return BOSS_SKILLS_V2[(state.turn - 1) % BOSS_SKILLS_V2.length];
   return state.profile === 'gatekeeper-v1' ? BOSS_SKILLS[(state.turn - 1) % BOSS_SKILLS.length]
     : { id: 'fist' as const, name: '攻击', damage: DEMO_RULES.enemyDamage, description: '历史界面夹具：8伤害。' };
 }
