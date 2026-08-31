@@ -1,0 +1,60 @@
+/* Name-led choreography: tide returns; still water settles. No combat values here. */
+.bu-caster-art[data-casting="true"][data-motion="tide"] .bu-caster-arm { animation-name:bu-support-reel; }
+.bu-caster-art[data-casting="true"][data-motion="tide"] .bu-caster-body { animation-name:bu-support-lean; }
+.bu-caster-art[data-casting="true"][data-motion="wave"] .bu-caster-arm { animation-name:bu-support-press; }
+.bu-caster-art[data-casting="true"][data-motion="wave"] .bu-caster-body { animation-name:bu-support-settle; }
+@keyframes bu-support-reel { 0%,100% { transform:rotate(0deg); } 15% { transform:rotate(-12deg); } 29%,40% { transform:rotate(91deg); } 50%,64% { transform:rotate(28deg); } 82% { transform:rotate(12deg); } }
+@keyframes bu-support-lean { 0%,100% { transform:none; } 15% { transform:translate(6px,3px) rotate(2deg); } 30%,40% { transform:translate(-13px,-5px) rotate(-3deg); } 51%,63% { transform:translate(7px,-4px) rotate(2deg); } 84% { transform:translate(1px,-1px); } }
+@keyframes bu-support-press { 0%,100% { transform:rotate(0deg); } 22% { transform:rotate(104deg); } 40%,64% { transform:rotate(42deg); } 83% { transform:rotate(16deg); } }
+@keyframes bu-support-settle { 0%,100% { transform:none; } 22% { transform:translate(0,-12px); } 40%,64% { transform:translate(-2px,5px) rotate(-1deg); } 86% { transform:translate(0,1px); } }
+
+/* Outward contact at40%=960ms, returning water/heal at50%=1200ms. */
+.bu-tide-show .bu-tide-out { left:30%; top:32%; width:47%; height:36%; animation-name:bu-support-out; }
+.bu-tide-show .bu-tide-return { left:20%; top:41%; width:55%; height:31%; animation-name:bu-support-return; animation-timing-function:linear; filter:hue-rotate(-16deg); }
+.bu-tide-show .bu-tide-echo { left:30%; top:43%; width:49%; height:28%; background:url('/battle-ui/water-surge.png') center / 100% 100% no-repeat; mix-blend-mode:screen; animation:bu-support-out var(--bu-player-duration) linear both; rotate:8deg; }
+.bu-tide-show .bu-tide-coil { left:12%; top:39%; width:29%; height:42%; background:url('/battle-ui/water-surge.png') center / contain no-repeat; mix-blend-mode:screen; animation:bu-support-coil var(--bu-player-duration) linear both; }
+.bu-tide-show :is(.bu-tide-halo,.bu-tide-ripple,.bu-heal-lights) { animation:none; opacity:0; }
+.bu-field[data-recovery="shown"] .bu-tide-show .bu-tide-halo { animation:bu-support-bloom 1200ms ease-out both; }
+.bu-field[data-recovery="shown"] .bu-tide-show .bu-tide-ripple { animation:bu-support-ring 1100ms ease-out both; }
+.bu-field[data-recovery="shown"] .bu-tide-show .bu-heal-lights { animation:bu-support-lights 1150ms linear both; }
+.bu-tide-show .bu-heal-lights i { animation:none; }
+.bu-field[data-recovery="shown"] .bu-tide-show .bu-heal-lights i { animation:bu-support-rise 1100ms ease-out both; }
+@keyframes bu-support-out { 0%,22% { opacity:0; transform:scale(.05,.25); } 31% { opacity:.65; transform:scale(.55,.7); } 40% { opacity:.95; transform:scale(1,1); } 46%,100% { opacity:0; transform:translateX(8%) scale(1.08,.8); } }
+@keyframes bu-support-return { 0%,39% { opacity:0; transform:translateX(47%) scale(-.2,.4); } 42% { opacity:.8; transform:translateX(30%) scale(-.45,.7); } 47% { opacity:.95; transform:translateX(4%) scale(-.9,1); } 50% { opacity:.9; transform:translateX(-15%) scale(-.6,1.1); } 59%,100% { opacity:0; transform:translateX(-30%) scale(-.1,.6); } }
+@keyframes bu-support-coil { 0%,46% { opacity:0; transform:rotate(38deg) scale(.4); } 50%,57% { opacity:.7; transform:rotate(4deg) scale(1); } 73%,100% { opacity:0; transform:rotate(-35deg) scale(.8); } }
+@keyframes bu-support-bloom { 0% { opacity:.8; transform:scale(.7); } 24%,55% { opacity:1; transform:scale(1.05); } 100% { opacity:0; transform:scale(1.3); } }
+@keyframes bu-support-ring { 0% { opacity:.9; transform:scale(.55); } 100% { opacity:0; transform:scale(1.6); } }
+@keyframes bu-support-lights { 0%,70% { opacity:1; } 100% { opacity:0; } }
+@keyframes bu-support-rise { 0% { opacity:0; transform:translate(var(--lx),12px) scale(.45); } 18% { opacity:1; } 100% { opacity:0; transform:translate(var(--lx),var(--ly)) scale(.85); } }
+
+/* Ripples start raised and irregular, then flatten while the casting hand presses down. */
+.bu-wave-show .bu-wave-flow { left:10%; top:39%; width:33%; height:39%; animation-name:bu-support-still-flow; filter:saturate(.7); }
+.bu-wave-show .bu-wave-seal { display:none; }
+.bu-wave-show .bu-still-surface { left:7%; top:60%; width:39%; height:20%; opacity:1; }
+.bu-still-surface i { position:absolute; inset:0; border:2px solid #b9f1f5aa; border-radius:50%; box-shadow:0 0 10px #89d8e433; animation:bu-support-surface var(--bu-player-duration) ease-out both; }
+.bu-still-surface i:nth-child(2) { inset:18% 12%; rotate:-5deg; }
+.bu-still-surface i:nth-child(3) { inset:32% 23%; rotate:5deg; }
+.bu-wave-show .bu-wave-dome { border-width:1px; background:radial-gradient(ellipse at 75% 40%,#c4f4f42e,transparent 67%); animation-name:bu-support-curtain; }
+.bu-wave-show .bu-wave-orbit { animation-name:bu-support-surface; }
+@keyframes bu-support-still-flow { 0%,8% { opacity:0; transform:rotate(-25deg) scale(.7,1.1); } 22% { opacity:.65; transform:rotate(-10deg) scale(1,1); } 40% { opacity:.35; transform:rotate(0) scale(1.2,.22); } 65%,100% { opacity:0; transform:scale(1.35,.08); } }
+@keyframes bu-support-surface { 0%,8% { opacity:0; transform:translateY(-15px) rotate(-9deg) scale(.45,1.6); } 24% { opacity:.7; transform:translateY(-5px) rotate(5deg) scale(.85,1.2); } 40%,65% { opacity:.85; transform:translateY(0) rotate(0) scale(1,.55); } 100% { opacity:.25; transform:scale(1.12,.5); } }
+@keyframes bu-support-curtain { 0%,23% { opacity:0; transform:translateY(-12px) scale(.65,.4); } 40%,75% { opacity:.75; transform:none; } 100% { opacity:.55; transform:none; } }
+/* Retain actual mitigation through enemy anticipation; ripple once at actual enemy contact. */
+.bu-held-ward { border-width:1px; background:radial-gradient(ellipse at 85% 45%,#c3f7f333,transparent 64%); }
+.bu-ward-reaction { position:absolute; inset:0; pointer-events:none; z-index:4; }
+.bu-ward-skin { position:absolute; left:12%; top:20%; width:27%; height:66%; border:1px solid #d9fcff; border-radius:50% 50% 43% 43%; background:radial-gradient(ellipse at 87% 48%,#b4f6ff77,transparent 65%); animation:bu-support-ward-hit 850ms ease-out both; }
+.bu-ward-contact { position:absolute; left:36%; top:46%; width:1px; height:1px; }
+.bu-ward-contact i { position:absolute; left:-38px; top:-38px; width:76px; height:76px; border:2px solid #c9f5ff; border-radius:50%; animation:bu-support-deflect 700ms ease-out both; }
+.bu-ward-contact i:nth-child(2) { animation-delay:90ms; }
+.bu-ward-contact i:nth-child(3) { animation-delay:180ms; }
+@keyframes bu-support-ward-hit { 0% { opacity:.85; transform:scale(.94,1.03); } 22% { opacity:.7; transform:scale(1.02,.98); } 100% { opacity:0; transform:scale(1.06,1); } }
+@keyframes bu-support-deflect { 0% { opacity:.9; transform:scale(.2,.35); } 100% { opacity:0; transform:translateX(-16px) scale(1,1.65); } }
+@media (max-width:680px) {
+  .bu-tide-show .bu-tide-coil { left:0; width:43%; }
+  .bu-wave-show .bu-wave-flow { left:1%; width:44%; }
+  .bu-wave-show .bu-still-surface { left:1%; width:44%; }
+  .bu-ward-skin { left:4%; top:24%; width:37%; height:60%; }
+  .bu-ward-contact { left:36%; top:50%; }
+  .bu-ward-contact i { width:60px; height:60px; left:-30px; top:-30px; }
+}
+@media (prefers-reduced-motion:reduce) { .bu-ward-reaction, .bu-tide-show, .bu-wave-show { display:none; } }

@@ -4,7 +4,8 @@ import { useEffect, useReducer, useRef, useState, type CSSProperties } from 'rea
 import { BOSS_SKILLS_V2, DEMO_RULES, DEMO_SKILLS, PHASE_DURATION, demoReducer, getEnemySkill, getSkill, initialDemo, previewIncoming, skillDescription, type SkillId } from './demo-model';
 import { WATER_MOTION, waterIsCasting } from './water-motion';
 import { BOSS_MOTION, displayedHp, motionKey, PLAYER_MOTION } from './battle-motion';
-import { StillWave, TideReturn, WaterCaster, WaterSurge } from './water-caster';
+import { StillWave, TideReturn, WaterCaster, WaterSurge, WardReaction } from './water-caster';
+import { TIDE_RECOVERY_MS, tideRecoveryPending } from './support-motion';
 import { BossCaster, BossEffect, BossIcon } from './boss-caster';
 import { CastCinematic, ImpactFrames } from './cinematic-effects';
 import { WaterUltimate } from './water-ultimate';
@@ -13,6 +14,7 @@ import './battle-ui.css';
 import './boss-motion.css';
 import './cinematic-v3.css';
 import './water-ultimate.css';
+import './support-skills.css';
 
 function SkillIcon({ id }: { id: SkillId }) {
   return <svg viewBox="0 0 64 64" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
@@ -42,6 +44,7 @@ export default function BattleUiPage() {
   const [paused, setPaused] = useState(false);
   const [roster, setRoster] = useState(false);
   const [shownImpact, setShownImpact] = useState<string | null>(null);
+  const [shownRecovery, setShownRecovery] = useState<string | null>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [ultimateEnabled, setUltimateEnabled] = useState(true);
   const [ultimateReady, setUltimateReady] = useState(false);
@@ -52,7 +55,10 @@ export default function BattleUiPage() {
   const currentMotionKey = motionKey(state);
   const waterCasting = waterIsCasting(state);
   const awaitingImpact = Boolean(motion) && !reducedMotion && shownImpact !== currentMotionKey;
+  const awaitingRecovery = tideRecoveryPending(state, reducedMotion, shownRecovery, currentMotionKey);
   const visibleHp = displayedHp(state, awaitingImpact);
+  // Delay only the presented recovery, never enemy HP or the actual settled state.
+  if (awaitingRecovery) visibleHp.player = state.previousPlayerHp;
   const enemySkill = getEnemySkill(state);
   const skill = getSkill(state.selected);
   const choosing = state.phase === 'choose';
@@ -93,6 +99,12 @@ export default function BattleUiPage() {
   }, [motion, awaitingImpact, currentMotionKey]);
   useEffect(() => { if (finished) resetRef.current?.focus(); }, [finished]);
 
+  useEffect(() => {
+    if (!awaitingRecovery) return;
+    const recoveryTimer = window.setTimeout(() => setShownRecovery(currentMotionKey), TIDE_RECOVERY_MS);
+    return () => window.clearTimeout(recoveryTimer);
+  }, [state.phase, state.selected, currentMotionKey, reducedMotion, awaitingRecovery]);
+
   function confirmCast() {
     if (!choosing || !skill) return;
     // On phones the detail button may be below the arena. Show the result before it plays.
@@ -106,16 +118,17 @@ export default function BattleUiPage() {
     dispatch({ type: 'cast' });
   }
 
-  function resetBattle() { setShownImpact(null); dispatch({ type: 'reset' }); setRoster(false); setUltimateThisCast(false); }
+  function resetBattle() { setShownImpact(null); setShownRecovery(null); dispatch({ type: 'reset' }); setRoster(false); setUltimateThisCast(false); }
   function advanceManually() {
     // A manual step reveals the result first; it cannot silently skip an impact.
     if (awaitingImpact) setShownImpact(currentMotionKey);
+    else if (awaitingRecovery) setShownRecovery(currentMotionKey);
     else dispatch({ type: 'advance' });
   }
 
   const resultText = awaitingImpact ? (state.phase === 'enemy' ? `守门人 · ${enemySkill.name} · 抬臂出手` : `${skill?.name} · ${state.selected === 'water' ? '聚水施法' : state.selected === 'tide' ? '引水回流' : '撑起防护'}`)
     : state.phase === 'player'
-    ? `${skill?.name} · ${state.damage ? `造成 ${state.damage} 伤害` : '防护生效'}${skill?.healing ? ` · 实际回复 ${state.healing} HP${state.healing === 0 ? '（生命已满）' : ''}` : ''}${state.weaken ? ` · 敌方下一击削弱${Math.round(state.weaken * 100)}%` : ''}${state.mitigation ? ` · 下一击减伤${Math.round(state.mitigation * 100)}%` : ''}`
+    ? `${skill?.name} · ${state.damage ? `造成 ${state.damage} 伤害` : '防护生效'}${skill?.healing ? awaitingRecovery ? ' · 引水回流' : ` · 实际回复 ${state.healing} HP${state.healing === 0 ? '（生命已满）' : ''}` : ''}${state.weaken ? ` · 敌方下一击削弱${Math.round(state.weaken * 100)}%` : ''}${state.mitigation ? ` · 下一击减伤${Math.round(state.mitigation * 100)}%` : ''}`
     : state.phase === 'enemyReady' ? `守门人准备「${enemySkill.name}」 · ${enemySkill.damage}点基础伤害`
     : state.phase === 'enemy' ? `守门人 · ${enemySkill.name} · 澜歌受到 ${state.incoming} 点伤害`
     : state.phase === 'won' ? '敌方 HP 归零 · 战斗胜利'
@@ -133,7 +146,7 @@ export default function BattleUiPage() {
     <div ref={arenaRef} className="bu-arena">
     <HpBar enemy hp={visibleHp.enemy} previous={state.previousEnemyHp} max={DEMO_RULES.enemyMaxHp}/>
 
-    <section className="bu-field" aria-label="单语灵战场" data-phase={state.phase} data-skill={state.selected ?? ''} data-boss-skill={enemySkill.id} data-impact={awaitingImpact ? 'pending' : 'shown'} data-ultimate={ultimateActive}>
+    <section className="bu-field" aria-label="单语灵战场" data-phase={state.phase} data-skill={state.selected ?? ''} data-boss-skill={enemySkill.id} data-impact={awaitingImpact ? 'pending' : 'shown'} data-recovery={awaitingRecovery ? 'pending' : 'shown'} data-ultimate={ultimateActive}>
       <div key={currentMotionKey} className="bu-stage" data-action={Boolean(motion)}>
       <div className="bu-scene" />
       {motion && !ultimateActive && <CastCinematic enemy={state.phase === 'enemy'} name={state.phase === 'enemy' ? enemySkill.name : skill?.name ?? ''}/>}
@@ -146,8 +159,9 @@ export default function BattleUiPage() {
       {state.phase === 'enemy' && <BossEffect key={`${state.turn}-boss`} skill={enemySkill.id}/>}
       {motion && !awaitingImpact && !reducedMotion && <ImpactFrames enemy={state.phase === 'enemy'} skill={state.phase === 'enemy' ? enemySkill.id : state.selected ?? 'water'}/>}
       {state.selected === 'wave' && (state.phase === 'enemyReady' || (state.phase === 'enemy' && awaitingImpact)) && <span className="bu-held-ward" aria-hidden="true"/>}
+      {state.selected === 'wave' && state.phase === 'enemy' && !awaitingImpact && !reducedMotion && <WardReaction/>}
       {state.phase === 'player' && !awaitingImpact && state.damage > 0 && <div key={`${state.turn}-damage`} className="bu-float bu-damage bu-float-enemy">−{state.damage}<small>伤害</small></div>}
-      {state.phase === 'player' && !awaitingImpact && skill?.healing !== 0 && <div key={`${state.turn}-heal`} className="bu-float bu-healing bu-float-player">+{state.healing}<small>{state.healing ? 'HP' : '已满血'}</small></div>}
+      {state.phase === 'player' && !awaitingImpact && !awaitingRecovery && skill?.healing !== 0 && <div key={`${state.turn}-heal`} className="bu-float bu-healing bu-float-player">+{state.healing}<small>{state.healing ? 'HP' : '已满血'}</small></div>}
       {state.phase === 'enemy' && !awaitingImpact && <div key={`${state.turn}-enemy`} className="bu-float bu-damage bu-float-player">−{state.incoming}<small>HP</small></div>}
       {state.phase === 'player' && !awaitingImpact && (state.weaken > 0 || state.mitigation > 0) && <div className="bu-effect-label">{state.weaken ? `下一击削弱 ${Math.round(state.weaken * 100)}%` : `下一击减伤 ${Math.round(state.mitigation * 100)}%`}</div>}
       </div>

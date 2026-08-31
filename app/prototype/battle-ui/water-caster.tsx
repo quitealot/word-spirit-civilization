@@ -30,6 +30,7 @@ export function TideReturn() {
   return <div className="bu-tide-show" aria-hidden="true">
     <img className="bu-tide-out" src="/battle-ui/water-surge.png" alt="" draggable={false}/>
     <img className="bu-tide-return" src="/battle-ui/water-surge.png" alt="" draggable={false}/>
+    <span className="bu-tide-echo"/><span className="bu-tide-coil"/>
     <span className="bu-tide-halo"/><span className="bu-tide-ripple"/>
     <span className="bu-heal-lights"><i/><i/><i/><i/><i/></span>
   </div>;
@@ -40,7 +41,12 @@ export function StillWave() {
     <span className="bu-wave-dome"/><span className="bu-wave-orbit"/>
     <img className="bu-wave-flow" src="/battle-ui/water-surge.png" alt="" draggable={false}/>
     <span className="bu-wave-seal"/><span className="bu-heal-lights"><i/><i/><i/><i/><i/></span>
+    <span className="bu-still-surface"><i/><i/><i/></span>
   </div>;
+}
+
+export function WardReaction() {
+  return <div className="bu-ward-reaction" aria-hidden="true"><span className="bu-ward-skin"/><span className="bu-ward-contact"><i/><i/><i/></span></div>;
 }
 
 export function WaterSurge() {

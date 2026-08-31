@@ -3,6 +3,8 @@
 更新时间：2026-08-31
 状态：`CURRENT / AUTHORITATIVE`
 
+当前新增（2026-08-31）：用户已自行录制视频，本轮不继续录制。独立battle-ui打磨回潮往返与静波平息/受击涟漪：回潮960ms命中、1200ms回流展示实际回血、总长2400ms；静波维持原2200/880与30%减伤，仅新增水幕受击反馈。原立绘、单臂裁片和贴图复用，不重画，不改水音/BOSS/任何数值。148项专项、核心回归、strict类型和构建通过；范围lint零错误，全仓仍4条既有CJS错误。交接docs/SUPPORT_SKILLS_MOTION_V1_HANDOFF.md。ENGINEERING PASS / DYNAMIC PLAYTEST PENDING；本轮未做浏览器动态验收。发布完成后补充版本。
+
 最新小幅优化（2026-08-31）：用户要求水音吟唱更明显、攻击特效更饱满。沿用现有造型与素材，增加手部汇聚/收缩光环/六点水光、三层水流与命中水花余势；保持3800/2200时间与所有伤害不变。只改water-ultimate组件/CSS及新增8项检查，旧125项全部原样通过；strict类型/构建/核心回归通过。交接 docs/WATER_ULTIMATE_POLISH_V1_1_HANDOFF.md。无新素材/对白/声音/玩法，未做本轮浏览器动态实测。最新私有Site34已succeeded，发布源2cfe0a948ffa6f1ad29d021ef4498cf84e107c6e；下方33/32为历史版本，原试玩链接和权限不变。
 
 当前新增（覆盖下方V3“最新进展”）：用户同意水音大招镜头样板，现已在同一 /prototype/battle-ui 接入约3.8秒近景→双手蓄力→前伸释放→回场命中；2.2秒显示HP结果。专用两姿势插画只用于切镜，不替换常驻原立绘。默认开，可关闭对比原短版；素材未就绪/失败和减少动态有短版回退。无新正式技能/伤害/规则，demo-model/旧时间表/主线均零修改。125项专项、strict类型、构建、核心回归通过；本轮未做浏览器/手机动态验收。交接 docs/WATER_ULTIMATE_V1_HANDOFF.md；素材精确生成提示词 docs/WATER_ULTIMATE_V1_ASSETS.md。状态 ENGINEERING PASS / DYNAMIC PLAYTEST PENDING。最新私有Site33部署succeeded，发布源0835500（实现315bf83），原链接和权限不变；下方Site32为历史版本。

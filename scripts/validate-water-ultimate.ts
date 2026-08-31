@@ -78,7 +78,7 @@ check('Old cut-in, arm and projectile disabled only for cinematic water', () => 
   assert.match(page,/ultimateActive && <WaterUltimate key=\{`\$\{state.turn\}-ultimate`\}/);
 });
 check('Manual next reveals before advancing; cutaway immediately hides', () => {
-  assert.match(page,/if \(awaitingImpact\) setShownImpact\(currentMotionKey\);\s*else dispatch/);
+  assert.match(page,/if \(awaitingImpact\) setShownImpact\(currentMotionKey\);\s*else if \(awaitingRecovery\) setShownRecovery\(currentMotionKey\);\s*else dispatch/);
   assert.match(css,/\[data-impact="shown"\] \.bu-ultimate \{ visibility:hidden/);
   assert.match(page,/setUltimateThisCast\(false\)/);
 });
