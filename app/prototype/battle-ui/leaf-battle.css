@@ -1,0 +1,39 @@
+.yl-shell .bu-skill-icon { color:#d2ed92; background:#426a343d; }
+.yl-shell .bu-skill[aria-pressed=true] { background:#46653377; border-color:#c6dd92; }
+.yl-shell .bu-ally { left:7%; width:34%; }
+.yl-sprite { position:relative; }
+.yl-shell .bu-ally .yl-sprite { animation:none; }
+.yl-shell .bu-ally .yl-sprite img { transform:none; }
+.yl-sprite>svg { position:absolute; inset:0; width:100%; height:100%; }
+.yl-windup,.yl-release { opacity:0; }
+.yl-shell .yl-field[data-phase=choose] .yl-sprite { animation:yl-breathe 4s ease-in-out infinite; }
+.yl-field[data-phase=player]:not([data-reduced=true]) .yl-idle { animation:yl-idle var(--yl-duration) steps(1,end) both; }
+.yl-windup { animation:yl-windup var(--yl-duration) steps(1,end) both; }
+.yl-release { transform-origin:50% 85%; animation:yl-release var(--yl-duration) steps(1,end) both,yl-cast var(--yl-duration) ease-in-out both; }
+.yl-field[data-skill=root] .yl-release { animation-name:yl-release,yl-ground; }
+.yl-fx { position:absolute; inset:0; pointer-events:none; z-index:4; }
+.yl-charge { position:absolute; left:25%; top:24%; width:45px; height:45px; border-radius:50%; background:radial-gradient(#efffbc,#b1eb6677,transparent 70%); box-shadow:0 0 30px #dcfa8b55; animation:yl-gather var(--yl-duration) ease-in-out both; }
+.yl-ring { position:absolute; left:13%; top:68%; width:26%; height:20%; border:2px solid #d0f389; border-radius:50%; box-shadow:0 0 20px #b7eb6855; animation:yl-ring var(--yl-duration) ease-out both; }
+.yl-fx-slap .yl-ring { left:62%; top:35%; width:18%; height:32%; }
+.yl-leaf { position:absolute; left:28%; top:calc(30% + var(--i)*5%); width:5%; height:15%; overflow:hidden; animation:yl-leaf var(--yl-duration) ease-in-out both; }
+.yl-fx-ward .yl-leaf { animation-name:yl-leaf-ward; }
+.yl-shield-aura { position:absolute; left:10%; top:12%; width:29%; height:76%; border:2px solid #b7de8466; border-radius:48% 48% 35% 35%; box-shadow:inset 0 0 30px #b3e67b22; pointer-events:none; }
+.yl-field[data-phase=enemy][data-impact=shown] .yl-shield-aura { animation:yl-ward-hit 500ms ease-out both; }
+.yl-field[data-phase=player][data-impact=shown]:not([data-skill=root]) .bu-enemy { animation:bu-hit-enemy 500ms ease-out both; }
+.yl-status { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; padding:12px 16px; margin:8px 0; border:1px solid #c5de8755; border-radius:12px; background:#46633644; color:#d8edb0; }
+.yl-positive { color:#d4f59b; }
+.yl-roots { position:absolute; left:10%; top:68%; width:30%; height:22%; overflow:hidden; transform:rotate(180deg); animation:yl-root-grow var(--yl-duration) ease-out both; }
+@keyframes yl-root-grow { 0%,32% { opacity:0; transform:rotate(180deg) scaleY(.1); } 44%,65% { opacity:1; transform:rotate(180deg) scaleY(1); } 90%,100% { opacity:0; transform:rotate(180deg) scaleY(1.1); } }
+@keyframes yl-breathe { 50% { transform:translateY(-2px); } }
+@keyframes yl-idle { 0% { opacity:1; } 8% { opacity:0; } 82%,100% { opacity:1; } }
+@keyframes yl-windup { 0% { opacity:0; } 8% { opacity:1; } 40%,100% { opacity:0; } }
+@keyframes yl-release { 0% { opacity:0; } 40% { opacity:1; } 82%,100% { opacity:0; } }
+@keyframes yl-cast { 0%,35% { transform:translateX(-3px) rotate(-2deg); } 44% { transform:translateX(8px) rotate(2deg); } 70%,100% { transform:none; } }
+@keyframes yl-ground { 0%,35% { transform:translateY(-3px); } 44%,55% { transform:translateY(4px) scaleY(.98); } 80%,100% { transform:none; } }
+@keyframes yl-gather { 0%,8%,60%,100% { opacity:0; transform:scale(.4); } 28% { opacity:1; transform:scale(1.7); } 40% { opacity:1; transform:scale(.6); } }
+@keyframes yl-ring { 0%,38% { opacity:0; transform:scale(.5); } 44% { opacity:1; transform:scale(1); } 80%,100% { opacity:0; transform:scale(1.5); } }
+@keyframes yl-leaf { 0%,25% { opacity:0; transform:translateX(0) rotate(-35deg); } 33% { opacity:1; } 44% { opacity:1; transform:translateX(760%) rotate(35deg); } 58%,100% { opacity:0; transform:translateX(820%) rotate(60deg); } }
+@keyframes yl-leaf-ward { 0%,20% { opacity:0; transform:translate(100%,-100%) rotate(-60deg); } 36% { opacity:1; } 44%,60% { opacity:1; transform:translate(calc(var(--i)*-65%),100%) rotate(45deg); } 80%,100% { opacity:0; } }
+@keyframes yl-ward-hit { 0% { border-color:#f5ffc9; box-shadow:inset 0 0 60px #dbffab77; } 100% { border-color:#b7de8466; } }
+@media(max-width:680px) { .yl-shell .bu-ally { left:2%; width:42%; }.yl-shield-aura { left:4%; width:35%; }.yl-leaf { width:6%; } }
+@media(prefers-reduced-motion:reduce) { .yl-shell * { animation:none!important; transition:none!important; }.yl-fx,.yl-windup,.yl-release { display:none!important; }.yl-idle { opacity:1!important; } }

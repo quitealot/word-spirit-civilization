@@ -24,7 +24,7 @@ test('all motions reserve >=1200ms result',()=>{for(const m of Object.values(FIR
 const page=readFileSync('app/prototype/battle-ui/page.tsx','utf8');
 const fire=readFileSync('app/prototype/battle-ui/fire-battle.tsx','utf8');
 const css=readFileSync('app/prototype/battle-ui/fire-battle.css','utf8');
-test('same route defaults preserved water and explicit fresh battle',()=>{assert.match(page,/useState<'lange' \| 'jinwei'>\('lange'\)/);assert.ok(page.includes('切换将新开一场'));assert.ok(page.includes('<LangeBattle/> : <FireBattle/>'));});
+test('same route defaults preserved water and explicit fresh battle',()=>{assert.match(page,/useState<'lange' \| 'jinwei' \| 'yayu'>\('lange'\)/);assert.ok(page.includes('切换将新开一场'));assert.ok(page.includes('<LangeBattle/> : <FireBattle/>'));});
 test('no saves or learning dependency',()=>{assert.doesNotMatch(fire,/localStorage|sessionStorage|fsrs|battleEligible/);assert.doesNotMatch(readFileSync('app/prototype/battle-ui/fire-model.ts','utf8'),/app\/game|zero-base|qualityMultiplier/);});
 test('timers clean up; manual first reveals impact',()=>{assert.match(fire,/clearTimeout\(timer\)/);assert.ok(fire.includes("pending ? setShown(key) : dispatch({ type: 'advance' })"));assert.ok(fire.includes("pending && state.phase === 'player' ? state.previousEnemyHp"));});
 test('original asset scoped fire animation mobile reduced',()=>{assert.ok(fire.includes('jinwei-cutout-v1.png'));assert.ok(css.includes('prefers-reduced-motion:reduce'));assert.ok(css.includes('max-width:680px'));assert.ok(css.includes('.jf-shell .bu-field[data-phase=player]'));});
