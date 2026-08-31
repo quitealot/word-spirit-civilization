@@ -48,4 +48,13 @@
 
 依次看水音、回潮、静波；第二回合能看见BOSS重砸。观察是否能看清抬手→命中→掉血、特写是否太频繁、碎石/水花是否遮住角色、手机帧率是否稳定。这些是待实玩判断，不以静态断言替代。
 
-本轮完成后停止，不扩主线/角色/收集系统。素材生成提示词见 `BATTLE_UI_CINEMATIC_V3_ASSETS.md`。发布信息将在成功后补记。
+本轮完成后停止，不扩主线/角色/收集系统。素材生成提示词见 `BATTLE_UI_CINEMATIC_V3_ASSETS.md`。
+
+## 发布
+
+- 私有站点版本32，2026-08-31发布成功；访问权限不变，未新增访问者。
+- 运行代码：`4749e450e83e9cd30fd308dccdf9c9f31fe114a3`，已推送GitHub main。
+- 地址：https://word-spirit-civilization-demo.eeevan137.chatgpt.site/prototype/battle-ui
+- 保存版本：`appgprj_6a8b08d481fc819185986f60235ed2d1~appgver_991f252797cc81918807958f0c40b1b6`。
+- 发布：`appgdep_6a94f8f15fcc8191a7d40ffb320f5038`，succeeded。
+- 本段为发布后文档补记，不改变已验证运行代码。用户刷新原试玩页，底部「演出 V3」可辨识当前界面。
