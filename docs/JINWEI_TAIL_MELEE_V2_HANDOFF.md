@@ -25,4 +25,4 @@
 原图/动作造型/配色不逐像素相同，属于同角色派生动作。精确提示词见JINWEI_TAIL_MELEE_V2_ASSETS.md。
 
 只完成此招即停；后续由用户评价动作是否自然，不继续扩技能、数值或语灵。
-发布完成后补回执。
+发布回执：私有Site37 succeeded，源91ef018c9c32fac952f1c9e4aa6941950611592f；版本appgprj_6a8b08d481fc819185986f60235ed2d1~appgver_17e3be27ce3c819191642cf54bc9d20c，部署appgdep_6a952e95e0288191aa15a0591071f939。原battle-ui链接与仅所有者权限不变，GitHub实现已同步。

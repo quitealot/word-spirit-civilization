@@ -3,6 +3,8 @@
 更新时间：2026-08-31
 状态：`CURRENT / AUTHORITATIVE`
 
+最新发布：私有Site37焰尾近身动作V2已succeeded，源91ef018c9c32fac952f1c9e4aa6941950611592f，原battle-ui地址与权限不变；下方36及更早版本为历史。
+
 当前焰尾V2：用户否定站桩尾焰，要求跑近→尾击→跳回。独立tail-melee展示3200ms/1280ms命中/2752ms回位，四姿势只用于施放，原站立图保留；远程尾片不再用于焰尾。回位前手动不能跳阶段。fire-model/数值/火星蓄火/澜歌/BOSS零改动。原169项+新增13项与透明边缘检查通过，strict/build通过；全仓仍4条既有CJS错误。无本轮浏览器动态验收。交接JINWEI_TAIL_MELEE_V2_HANDOFF.md及ASSETS；动作是四姿势插值，非完整骨骼。发布后补版本，完成此招即停。
 
 最新发布为私有Site36（烬尾可玩预览），源d62af4213684981e4e64f8fdabb7a520cf7c65c1，部署succeeded。原试玩地址与权限保持；下方35/34均为历史版本。
