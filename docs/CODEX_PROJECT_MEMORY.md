@@ -3,6 +3,8 @@
 更新时间：2026-08-31
 状态：`CURRENT / AUTHORITATIVE`
 
+最新发布：私有Site43芽语第三只试玩已succeeded，源b050dba9871ac608b4f4e3c3a4cc6d23f41bb8e9，原battle-ui URL/权限不变。三只入口均可新开一场，正式主线未迁移；动态手感待用户复核。
+
 最新芽语第三只已接同一battle-ui，默认澜歌/切换新开一场；烬尾原样保留。叶拍24、护芽8+24护盾（残余保留）、扎根40%为V2试玩夹具，不宣称最终平衡。独立leaf-model/leaf-battle，四姿势+差异化施法，盾/减伤/HP分开显示。145项/strict/build/diff通过，lint旧4错误14图片警告，无本轮浏览器实机。见YAYU_PLAYABLE_V1_TASK/HANDOFF。发布后补版本；不自动扩冒险/成长/主线。
 
 最新发布：私有Site42动作小修已succeeded，源ec053f8d53268490051687cf91054953b1c0dd0b，原URL权限不变。焰尾17/烬尾21、strict/build/diff通过；lint既有4错误13警告。未测实际FPS，不宣称真实掉帧解决。
