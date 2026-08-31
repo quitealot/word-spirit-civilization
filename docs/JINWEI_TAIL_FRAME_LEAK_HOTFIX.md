@@ -6,4 +6,4 @@
 
 验证：tail专项由13增为14，新增检查要求四格显式硬裁；原烬尾21和旧battle-ui169回归不降标；strict/build/diff审计。截图给出直接产品证据，但修复后未做新的浏览器截图/点击，因此状态ENGINEERING FIX / USER RECHECK REQUIRED。
 
-发布回执待补充。
+发布：私有Site38 succeeded，源5f130cb2763c35b4903877960a8bb2d960e69448；原battle-ui地址与仅所有者权限不变。
