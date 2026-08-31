@@ -53,3 +53,11 @@ Avoid: any edit to the large IMAGE RIGHT arm; extra arms or hands; pose redesign
 ## 风险 / 停止线
 
 这是原画裁切单关节动画，不是全身骨骼；大幅放大可见局部接缝和旧澜歌白边。回潮连续使用仍存在慢速胜利路线，未声称最终平衡通过；它与快攻在回合数/剩余HP间取舍。BOSS名称/技能只作系统样机标签，非新增正式世界观。无声音、元素、资源或新成长系统；不扩主线。发布完成后追加精确SHA和版本。
+
+## 发布记录
+
+- 运行提交：`8f7877d8ba60899181c55fbda9429255af072727`，已推送GitHub main与Sites源码分支。
+- 私有站点版本30，部署状态succeeded，2026-08-31；权限仍owner-only，未改访问范围。
+- 入口：https://word-spirit-civilization-demo.eeevan137.chatgpt.site/prototype/battle-ui
+- 部署：`appgdep_6a94ec61302c8191926e6ea484cf9fe6`。
+- 本文发布记录是部署后纯文档补充，不产生新的运行版本。浏览器打开工具返回queued，不据此宣称用户已经看见新画面。
