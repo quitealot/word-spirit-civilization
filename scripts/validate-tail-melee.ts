@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { TAIL_MELEE_MOTION as M, firePresentationMotion, tailReturnPending } from '../app/prototype/battle-ui/tail-melee-motion.ts';
+import { FIRE_MOTION, initialFire, fireReducer, type FireState } from '../app/prototype/battle-ui/fire-model.ts';
+import { BOSS_MOTION } from '../app/prototype/battle-ui/battle-motion.ts';
+let count=0;function test(name:string,run:()=>void){run();console.log(`PASS ${++count}: ${name}`);}
+const source=readFileSync('app/prototype/battle-ui/fire-battle.tsx','utf8');
+const css=readFileSync('app/prototype/battle-ui/tail-melee.css','utf8');
+const actor=readFileSync('app/prototype/battle-ui/tail-melee.tsx','utf8');
+test('tail contact40%, home86%, 1920ms result',()=>{assert.equal(M.durationMs,3200);assert.equal(M.impactMs,M.durationMs*.4);assert.equal(M.landedMs,M.durationMs*.86);assert.ok(M.durationMs-M.impactMs>=1200);assert.ok(M.impactMs<M.landedMs&&M.landedMs<M.durationMs);});
+test('only tail presentation changes',()=>{assert.equal(firePresentationMotion({phase:'player',selected:'tail'}),M);for(const id of ['spark','charge'] as const)assert.equal(firePresentationMotion({phase:'player',selected:id}),FIRE_MOTION[id]);assert.equal(firePresentationMotion({phase:'enemy',selected:'tail'}),BOSS_MOTION);assert.equal(firePresentationMotion({phase:'choose',selected:'tail'}),null);});
+test('damage remains40 atomic once',()=>{const s=fireReducer(fireReducer(initialFire(),{type:'select',id:'tail'}),{type:'cast'});assert.equal(s.damage,40);assert.equal(s.enemyHp,20);assert.equal(fireReducer(s,{type:'cast'}),s);assert.equal(s.tailReadyTurn,3);});
+test('only running tail waits for home',()=>{for(const phase of ['choose','player','enemyReady','enemy','won','lost'] as const)for(const selected of ['tail','spark','charge'] as const)for(const reduced of [false,true])assert.equal(tailReturnPending({phase,selected},reduced,'old','new'),phase==='player'&&selected==='tail'&&!reduced);});
+test('home completion key cannot leak to next cast',()=>{assert.equal(tailReturnPending({phase:'player',selected:'tail'},false,'t1','t1'),false);assert.equal(tailReturnPending({phase:'player',selected:'tail'},false,'t1','t3'),true);});
+test('manual cannot skip home or show damage before tail contact',()=>{assert.ok(source.includes('disabled={returning}'));assert.ok(source.includes('if (returning) return;'));assert.ok(source.includes('TAIL_MELEE_MOTION.landedMs'));assert.ok(source.includes("setReturned('')"));});
+test('preload captured before cast and guarded on unmount',()=>{assert.ok(source.includes('image.decode()'));assert.ok(source.includes('if (!cancelled) setPosesReady(true)'));assert.ok(source.includes('setPosesThisCast(posesReady)'));assert.ok(source.includes('posesReady={posesThisCast}'));assert.ok(source.includes('动作素材未载入'));});
+test('no detached tail projectile',()=>{assert.ok(source.includes("state.selected === 'spark' && <TailFragment"));assert.ok(source.includes("state.selected !== 'tail' &&"));});
+test('four pose regions reuse one asset and no combat handlers',()=>{assert.ok(actor.includes("['run-a', 'run-b', 'swipe', 'jump']"));assert.ok(actor.includes('width="2048" height="2048"'));assert.doesNotMatch(actor,/dispatch|setTimeout|onAnimationEnd/);});
+test('arena-relative route reaches enemy then lands at home',()=>{assert.ok(css.includes('--jf-contact:40%'));assert.ok(css.includes('--jf-contact:38%'));assert.ok(css.includes('28%,40%,45% { left:var(--jf-contact)'));assert.ok(css.includes('64% { left:22%; transform:translateY(-65px)'));assert.ok(css.includes('86%,100% { left:var(--jf-home); transform:none; }'));});
+test('run leg cycle then tail contact then return pose',()=>{assert.ok(css.includes('@keyframes jf-melee-run-a'));assert.ok(css.includes('@keyframes jf-melee-run-b'));assert.ok(css.includes('28% { opacity:1; } 50%,100% { opacity:0; }'));assert.ok(css.includes('50% { opacity:1; } 86%,100% { opacity:0; }'));});
+test('reduced motion and static rest recovery',()=>{assert.ok(css.includes('prefers-reduced-motion:reduce'));assert.ok(css.includes('86%,100% { opacity:1; }'));assert.ok(source.includes("state.selected === 'tail' && !reduced"));});
+test('lethal tail still skips retaliation after presentation',()=>{let s:FireState={...initialFire(),enemyHp:30};s=fireReducer(fireReducer(s,{type:'select',id:'tail'}),{type:'cast'});assert.equal(s.phase,'player');assert.equal(s.damage,30);assert.equal(fireReducer(s,{type:'advance'}).phase,'won');assert.equal(s.playerHp,48);});
+console.log(`Tail melee: ${count}/${count} PASS (not dynamic playtest)`);

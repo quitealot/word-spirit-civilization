@@ -1,0 +1,35 @@
+/* Tail-only close combat. Travel uses arena-relative left, not a fixed pixel nudge. */
+.jf-shell .jf-field[data-phase=player][data-skill=tail] { --jf-home:4%; --jf-contact:40%; }
+.jf-shell .bu-field.jf-field[data-phase=player][data-skill=tail] .bu-ally { animation:jf-melee-travel var(--bu-player-duration) linear both; z-index:3; }
+.jf-shell .jf-field[data-phase=player][data-skill=tail] .bu-ally .bu-sprite { animation:none; }
+.jf-shell .jf-field[data-phase=player][data-skill=tail] .bu-nameplate { animation:jf-melee-name var(--bu-player-duration) steps(1,end) both; }
+.jf-tail-actor { position:relative; width:100%; height:100%; transform-origin:50% 85%; animation:jf-melee-pose-body var(--bu-player-duration) linear both; }
+.jf-tail-pose { position:absolute; inset:0; width:100%; height:100%; overflow:hidden; opacity:0; pointer-events:none; filter:drop-shadow(0 5px 5px #09191688); }
+.jf-tail-actor[data-poses=true] .jf-tail-rest { animation:jf-melee-rest var(--bu-player-duration) steps(1,end) both; }
+.jf-pose-run-a { animation:jf-melee-run-a var(--bu-player-duration) steps(1,end) both; }
+.jf-pose-run-b { animation:jf-melee-run-b var(--bu-player-duration) steps(1,end) both; }
+.jf-pose-swipe { transform-origin:48% 72%; animation:jf-melee-swipe-visible var(--bu-player-duration) steps(1,end) both,jf-melee-swipe var(--bu-player-duration) linear both; }
+.jf-pose-jump { animation:jf-melee-jump-visible var(--bu-player-duration) steps(1,end) both; }
+.jf-shell .jf-fx-tail .jf-hit { left:64%; top:42%; width:16%; height:30%; border-width:2px; }
+@keyframes jf-melee-travel {
+  0%,5% { left:var(--jf-home); transform:translateY(0); }
+  12% { left:12%; transform:translateY(-5px); }
+  18% { left:22%; transform:translateY(0); }
+  24% { left:32%; transform:translateY(-5px); }
+  28%,40%,45% { left:var(--jf-contact); transform:translateY(0); }
+  50% { left:var(--jf-contact); transform:translateY(3px); animation-timing-function:cubic-bezier(.2,.5,.3,1); }
+  64% { left:22%; transform:translateY(-65px); animation-timing-function:cubic-bezier(.55,0,.8,.5); }
+  78% { left:var(--jf-home); transform:translateY(0); }
+  82% { left:var(--jf-home); transform:translateY(3px); }
+  86%,100% { left:var(--jf-home); transform:none; }
+}
+@keyframes jf-melee-pose-body { 0%,100% { transform:none; } 5% { transform:scaleY(.94) rotate(-3deg); } 12% { transform:rotate(2deg); } 18% { transform:none; } 24% { transform:rotate(2deg); } 28% { transform:none; } 34% { transform:rotate(-7deg); } 40%,45% { transform:rotate(5deg); } 50% { transform:scaleY(.94); } 64% { transform:rotate(-8deg); } 78% { transform:scaleY(.92); } 86% { transform:none; } }
+@keyframes jf-melee-rest { 0% { opacity:1; } 5% { opacity:0; } 86%,100% { opacity:1; } }
+@keyframes jf-melee-name { 0% { opacity:0; } 86%,100% { opacity:1; } }
+@keyframes jf-melee-run-a { 0% { opacity:0; } 5% { opacity:1; } 11% { opacity:0; } 17% { opacity:1; } 23%,100% { opacity:0; } }
+@keyframes jf-melee-run-b { 0% { opacity:0; } 11% { opacity:1; } 17% { opacity:0; } 23% { opacity:1; } 28%,100% { opacity:0; } }
+@keyframes jf-melee-swipe-visible { 0% { opacity:0; } 28% { opacity:1; } 50%,100% { opacity:0; } }
+@keyframes jf-melee-swipe { 0%,28% { transform:rotate(-18deg) scaleX(.75); } 36% { transform:rotate(-12deg) scaleX(.9); } 40%,45% { transform:rotate(8deg) scaleX(1.08); } 50%,100% { transform:none; } }
+@keyframes jf-melee-jump-visible { 0% { opacity:0; } 50% { opacity:1; } 86%,100% { opacity:0; } }
+@media(max-width:680px) { .jf-shell .jf-field[data-phase=player][data-skill=tail] { --jf-home:1%; --jf-contact:38%; } }
+@media(prefers-reduced-motion:reduce) { .jf-shell .jf-field[data-phase=player][data-skill=tail] .bu-ally { animation:none!important; }.jf-tail-pose { display:none!important; }.jf-tail-rest { opacity:1!important; animation:none!important; } }
