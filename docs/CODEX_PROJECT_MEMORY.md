@@ -3,6 +3,8 @@
 更新时间：2026-08-31
 状态：`CURRENT / AUTHORITATIVE`
 
+最新发布：私有Site42动作小修已succeeded，源ec053f8d53268490051687cf91054953b1c0dd0b，原URL权限不变。焰尾17/烬尾21、strict/build/diff通过；lint既有4错误13警告。未测实际FPS，不宣称真实掉帧解决。
+
 当前烬尾卡顿小修：用户认可站姿、反馈有点卡顿。只将焰尾left移动改transform等价路线，去掉每帧阴影，跑步换帧192→128ms；命中/回位/结算/素材不变。不是新增骨骼或中间帧，未做真实帧率采样。见JINWEI_MOTION_SMOOTHING_HANDOFF.md。
 
 最新发布：私有Site41正常站姿/正向跑步已succeeded，源c9da7a041df637041d375c42c07c49068c6ea8e8，原地址/权限不变。104项针对性检查通过，素材透明通过；动态手感待用户复核。下方HOLD为已解决历史记录。
