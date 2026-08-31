@@ -72,4 +72,9 @@ Avoid: characters, creatures, hands, scenery, floor, cast shadow, text, logos, w
 - 未在本轮执行浏览器点击/手机真机测试；不能把上述静态姿势检查称为实机手感验收。完整水音节奏、手机实际表现待用户体验。
 - 保留原图已有细小浅色抠图边缘；本轮不另行重画整只澜歌解决这一旧问题。
 
-发布信息成功后补记。
+## 发布
+
+- 运行SHA：`ec19aaf7d5c0604405793e99d4b13e52d94483c1`，已推送GitHub及Sites源仓库。
+- 私有站点版本29，部署succeeded，原owner-only权限未变。
+- 入口：https://word-spirit-civilization-demo.eeevan137.chatgpt.site/prototype/battle-ui
+- 发布补记为后续docs-only提交，不改变上述运行代码。
