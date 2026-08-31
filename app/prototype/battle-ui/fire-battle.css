@@ -1,0 +1,41 @@
+/* All animation overrides belong to the fire trial, never the preserved water scene. */
+.bu-trial-roster { display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding:12px max(22px,calc((100vw - 1080px)/2)); background:#102d27; color:#c9d7c4; font:13px Arial,'Microsoft YaHei',sans-serif; border-bottom:1px solid #dfcd8b33; }
+.bu-trial-roster span { margin-right:auto; }
+.bu-trial-roster button { border:1px solid #dfcd8b66; border-radius:9px; background:#24463a; color:#e8dfba; padding:10px 16px; cursor:pointer; min-height:44px; }
+.bu-trial-roster button[aria-pressed=true] { background:#ddca85; color:#152b22; }
+.bu-trial-roster button:focus-visible { outline:3px solid #ffde92; outline-offset:3px; }
+.jf-shell .jf-skill .bu-skill-icon { color:#ffcb79; background:radial-gradient(#91502755,#4b342033); border-color:#d9915c66; }
+.jf-shell .jf-skill[aria-pressed=true] { border-color:#edb96c; background:linear-gradient(135deg,#69482377,#31513e); }
+.jf-shell .bu-hp-player .bu-avatar img { height:100%; transform:scale(2.1) translate(13%,16%); object-fit:contain; }
+.jf-shell .bu-ally { left:4%; width:40%; }
+.jf-shell .jf-sprite img { transform:none; }
+.jf-shell .bu-ally .jf-sprite { animation:jf-idle 4.2s ease-in-out infinite; }
+.jf-shell .bu-field[data-phase=player] .bu-ally { animation:jf-spark var(--bu-player-duration) ease-in-out both; }
+.jf-shell .bu-field[data-phase=player][data-skill=tail] .bu-ally { animation-name:jf-tail; }
+.jf-shell .bu-field[data-phase=player][data-skill=charge] .bu-ally { animation-name:jf-charge; }
+.jf-shell .bu-field[data-phase=player] .jf-sprite { animation:none; }
+.jf-shell .bu-field[data-phase=player]:not([data-skill=charge])[data-impact=shown] .bu-enemy { animation:bu-hit-enemy 500ms ease-out both; }
+.jf-state { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; color:#f2cc85; padding:10px 14px; font-size:13px; border:1px solid #d89b5d55; background:#302d1d55; border-radius:8px; margin:8px 0; }
+.jf-fx { position:absolute; inset:0; pointer-events:none; z-index:4; }
+.jf-focus { position:absolute; left:12%; top:24%; width:26%; height:62%; border-radius:50%; border:1px solid #ffb85177; box-shadow:0 0 22px #ff991644,inset 0 0 25px #ffd47733; animation:jf-focus var(--bu-player-duration) ease-out both; }
+.jf-fire-path { position:absolute; left:28%; top:29%; width:20%; height:48%; overflow:hidden; filter:drop-shadow(0 0 6px #f6a22e66); animation:jf-projectile var(--bu-player-duration) linear both; }
+.jf-fx-tail .jf-fire-path { width:38%; height:64%; top:21%; animation-name:jf-tail-arc; }
+.jf-fx-charge .jf-focus { animation-name:jf-gather; }
+.jf-motes { position:absolute; left:25%; top:53%; }
+.jf-motes i { position:absolute; width:5px; height:5px; background:#ffe2a0; box-shadow:0 0 8px #ffa943; border-radius:50%; --jx:55px; --jy:-45px; animation:jf-points var(--bu-player-duration) ease-out both; }
+.jf-motes i:nth-child(2) { --jx:-45px; --jy:-70px; }.jf-motes i:nth-child(3) { --jx:80px; --jy:15px; }.jf-motes i:nth-child(4) { --jx:-65px; --jy:35px; }.jf-motes i:nth-child(5) { --jx:10px; --jy:65px; }.jf-motes i:nth-child(6) { --jx:15px; --jy:-85px; }
+.jf-fx-charge .jf-motes i { animation-name:jf-inward; }
+.jf-hit { position:absolute; left:62%; top:25%; width:23%; height:55%; border:3px solid #ffd89a; border-radius:50%; background:radial-gradient(ellipse,#ffe7b433,transparent 65%); box-shadow:0 0 24px #ffa33f66; animation:jf-impact 700ms ease-out both; }
+@keyframes jf-idle { 50% { transform:translateY(-3px) rotate(.4deg); } }
+@keyframes jf-spark { 0%,100% { transform:none; } 20% { transform:translateX(-8px) rotate(-2deg); } 36%,40% { transform:translateX(18px) rotate(2deg); } 65% { transform:none; } }
+@keyframes jf-tail { 0%,100% { transform:none; } 20% { transform:translate(-15px,3px) rotate(-6deg); } 35%,40% { transform:translate(42px,-10px) rotate(7deg); } 52% { transform:translate(21px,-3px) rotate(3deg); } 75% { transform:none; } }
+@keyframes jf-charge { 0%,100% { transform:none; } 22% { transform:translateY(5px) scaleY(.96); } 40%,66% { transform:translateY(-4px) scale(1.025); } }
+@keyframes jf-focus { 0%,10%,70%,100% { opacity:0; transform:scale(.7); } 24% { opacity:.75; transform:scale(1); } 40% { opacity:.5; transform:scale(.82); } }
+@keyframes jf-gather { 0% { opacity:0; transform:scale(1.4); } 20% { opacity:.6; transform:scale(1.15); } 40%,64% { opacity:.85; transform:scale(.85); } 100% { opacity:0; transform:scale(1); } }
+@keyframes jf-projectile { 0%,24% { opacity:0; transform:translateX(0) scale(.3) rotate(-20deg); } 30% { opacity:1; } 40% { opacity:1; transform:translateX(190%) scale(.65) rotate(15deg); } 53%,100% { opacity:0; transform:translateX(205%) scale(.9) rotate(30deg); } }
+@keyframes jf-tail-arc { 0%,20% { opacity:0; transform:translate(-12%,-10%) scale(.7) rotate(-65deg); } 28% { opacity:.9; } 40% { opacity:1; transform:translate(85%,0) scale(1.1) rotate(25deg); } 60%,100% { opacity:0; transform:translate(98%,15%) scale(1.15) rotate(55deg); } }
+@keyframes jf-points { 0%,15%,80%,100% { opacity:0; } 27% { opacity:.9; transform:translate(0,0); } 55% { opacity:.6; transform:translate(var(--jx),var(--jy)); } }
+@keyframes jf-inward { 0% { opacity:0; transform:translate(var(--jx),var(--jy)); } 20% { opacity:.9; transform:translate(var(--jx),var(--jy)); } 40%,62% { opacity:.8; transform:translate(0,0); } 100% { opacity:0; } }
+@keyframes jf-impact { from { opacity:.9; transform:scale(.4); } 30% { opacity:.8; transform:scale(1); } to { opacity:0; transform:scale(1.35); } }
+@media(max-width:680px) { .bu-trial-roster { padding:10px 14px; }.bu-trial-roster span { flex-basis:100%; font-size:11px; }.jf-shell .bu-ally { left:1%; width:44%; }.jf-state { font-size:11px; }.jf-shell .bu-skill-copy span { white-space:normal; }.jf-shell .bu-detail { flex-wrap:wrap; } }
+@media(prefers-reduced-motion:reduce) { .jf-shell *, .jf-shell *::before, .jf-shell *::after { animation:none!important; transition:none!important; }.jf-fx { display:none; } }

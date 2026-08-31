@@ -15,6 +15,8 @@ import './boss-motion.css';
 import './cinematic-v3.css';
 import './water-ultimate.css';
 import './support-skills.css';
+import { FireBattle } from './fire-battle';
+import './fire-battle.css';
 
 function SkillIcon({ id }: { id: SkillId }) {
   return <svg viewBox="0 0 64 64" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
@@ -40,6 +42,11 @@ function HpBar({ enemy = false, hp, previous, max }: { enemy?: boolean; hp: numb
 }
 
 export default function BattleUiPage() {
+  const [spirit, setSpirit] = useState<'lange' | 'jinwei'>('lange');
+  return <><nav className="bu-trial-roster" aria-label="选择试用语灵"><span>单语灵试用 · 切换将新开一场</span><button aria-pressed={spirit === 'lange'} disabled={spirit === 'lange'} onClick={() => setSpirit('lange')}>澜歌 · 续航</button><button aria-pressed={spirit === 'jinwei'} disabled={spirit === 'jinwei'} onClick={() => setSpirit('jinwei')}>烬尾 · 爆发</button></nav>{spirit === 'lange' ? <LangeBattle/> : <FireBattle/>}</>;
+}
+
+function LangeBattle() {
   const [state, dispatch] = useReducer(demoReducer, 'gatekeeper-v2', initialDemo);
   const [paused, setPaused] = useState(false);
   const [roster, setRoster] = useState(false);
@@ -179,7 +186,7 @@ export default function BattleUiPage() {
     <section className="bu-commands" aria-label="技能操作">
       <div className="bu-command-heading"><span><b>澜歌</b> 的技能</span><button className="bu-subtle" disabled={!choosing} aria-expanded={roster} aria-controls="bu-roster" onClick={() => setRoster(!roster)}>换灵 <span aria-hidden="true">⇄</span></button></div>
       <label className="bu-ultimate-control"><input type="checkbox" checked={ultimateEnabled} disabled={!choosing} onChange={event => setUltimateEnabled(event.target.checked)}/>水音 · 大招演出样板<small>{reducedMotion ? '系统已开启减少动态' : ultimateFailed ? '素材未载入，使用短演出' : !ultimateReady ? '素材准备中，仍可正常出招' : '仅演出变化 · 可关闭对比短版'}</small></label>
-      {roster && <div id="bu-roster" className="bu-roster"><strong>当前样机仅开放澜歌出战</strong><p>芽语、烬尾为后备展示；暂不接入换灵规则与其他技能。</p><button onClick={() => setRoster(false)}>返回技能</button></div>}
+      {roster && <div id="bu-roster" className="bu-roster"><strong>本场由澜歌出战</strong><p>可在页面上方选择烬尾，新开一场试用；当前不做战中换灵。芽语尚未开放。</p><button onClick={() => setRoster(false)}>返回技能</button></div>}
       <div className="bu-skills" role="group" aria-label="选择技能">
         {DEMO_SKILLS.map(item => <button key={item.id} className={`bu-skill bu-skill-${item.id}`} aria-pressed={state.selected === item.id} aria-controls="bu-detail" disabled={!choosing} onClick={() => { dispatch({ type: 'select', id: item.id }); setRoster(false); }}>
           <span className="bu-skill-icon"><SkillIcon id={item.id}/></span><span className="bu-skill-copy"><strong>{item.name}</strong><small>{item.role}</small><span>{item.damage > 0 ? `${item.damage} 伤害` : `${item.healing} 回复`}{item.id === 'tide' ? ` / ${item.healing} 回复` : item.weaken ? ` / ${Math.round(item.weaken * 100)}% 削弱` : ` / ${Math.round(item.mitigation * 100)}% 减伤`}</span></span><span className="bu-selection" aria-hidden="true">{state.selected === item.id ? '◆' : '◇'}</span>
