@@ -49,4 +49,3 @@ Text (verbatim): ""
 Constraints: background-only correction; replace all baked checkerboard/white background with solid #031b29; output intentionally opaque RGB with no alpha required; maintain both poses and all existing artwork exactly; no manual pixel editing, masking artifacts, or invented details.
 Avoid: any checkerboard, grid, white or light pixels in the background, gradients, texture, noise, seams, center divider, border, frame, labels, text, watermark, particles, sparkles, spell projectile, water orb, environment, scenery, shadows, extra objects, extra characters, altered limbs, altered poses, changed scale, crop, resize, transparency, alpha checker pattern, recoloring, repainting, or simplification of either figure.
 ```
-
