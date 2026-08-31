@@ -44,4 +44,9 @@
 
 这是整张立绘的轻量运动与抽象特效，不是角色肢体逐帧动画或骨骼绑定。BOSS外观与手感待用户最终审美裁决。下一轮不自动扩新角色、技能或玩法。
 
-发布SHA与站点版本在发布成功后追加。
+## 发布
+
+- 运行代码：`c413ebf3e12ca8289faf84e9511e8f8729a1e093`，已推送GitHub与Sites源仓库。
+- 私有站点版本28，部署状态succeeded；owner-only权限未改。
+- 地址：https://word-spirit-civilization-demo.eeevan137.chatgpt.site/prototype/battle-ui
+- 本交接发布补记另作docs-only提交，不影响上述运行版本。
