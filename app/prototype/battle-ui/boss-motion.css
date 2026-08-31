@@ -1,0 +1,112 @@
+/* Extend the approved scene with bitmap joints and abstract light accents only. */
+.bu-enemy-intent { display:flex; align-items:center; gap:6px; z-index:4; }
+.bu-enemy-intent svg { width:24px; height:24px; flex:none; }
+.bu-intent-quake { color:#ffccb0; border-color:#efaf7377; background:#3f2e24ed; box-shadow:0 0 16px #e39b2818; }
+.bu-boss-skills { margin:0 0 12px; color:#d9d8bc; border:1px solid #a9945a55; border-radius:9px; background:#102f2880; font-size:12px; }
+.bu-boss-skills summary { display:flex; align-items:center; flex-wrap:wrap; gap:8px; cursor:pointer; padding:10px 12px; }
+.bu-boss-skills summary::after { content:'⌄'; margin-left:4px; }
+.bu-boss-skills summary b { margin-left:auto; font-weight:400; color:#e5c896; font-size:11px; }
+.bu-boss-skills svg { width:22px; height:22px; flex:none; color:#e6bb86; }
+.bu-boss-skills > div { border-top:1px solid #b39b5544; padding:0 12px; }
+.bu-boss-skills p { display:flex; align-items:center; gap:8px; line-height:1.6; }
+.bu-boss-skills p strong { white-space:nowrap; color:#f4d6a3; }
+
+/* Caster motion: all three spells now share the same original shoulder joint. */
+.bu-caster-art[data-casting="true"] .bu-caster-arm,
+.bu-caster-art[data-casting="true"] .bu-caster-body { animation-duration:var(--bu-player-duration); }
+.bu-caster-art[data-casting="true"][data-motion="tide"] .bu-caster-arm { animation-name:bu-arm-return; }
+.bu-caster-art[data-casting="true"][data-motion="wave"] .bu-caster-arm { animation-name:bu-arm-ward; }
+.bu-caster-art[data-casting="true"][data-motion="wave"] .bu-caster-body { animation-name:bu-body-ward; }
+.bu-field[data-phase="player"] .bu-ally { animation:none; }
+.bu-field[data-phase="player"] .bu-ally .bu-sprite { animation-play-state:paused; }
+.bu-field[data-phase="player"][data-skill="tide"] .bu-enemy { animation:bu-hit-enemy 600ms var(--bu-player-impact) ease-out both; }
+@keyframes bu-arm-return { 0%,100% { transform:rotate(0deg); } 12% { transform:rotate(-6deg); } 25% { transform:rotate(68deg); } 38% { transform:rotate(95deg); } 52%,63% { transform:rotate(38deg); } 80% { transform:rotate(22deg); } }
+@keyframes bu-arm-ward { 0%,100% { transform:rotate(0deg); } 14% { transform:rotate(22deg); } 32%,60% { transform:rotate(112deg); } 75% { transform:rotate(75deg); } }
+@keyframes bu-body-ward { 0%,100% { transform:none; } 28%,58% { transform:translate(0,-10px) rotate(1deg); } 77% { transform:translate(0,-3px); } }
+
+.bu-tide-show, .bu-wave-show, .bu-boss-show { position:absolute; inset:0; pointer-events:none; z-index:3; }
+.bu-tide-show > *, .bu-wave-show > *, .bu-boss-show > * { position:absolute; opacity:0; }
+.bu-tide-out { left:31%; top:30%; width:44%; height:28%; transform-origin:left center; object-fit:fill; animation:bu-tide-out var(--bu-player-duration) linear both; }
+.bu-tide-return { left:23%; top:34%; width:49%; height:34%; object-fit:fill; transform-origin:center; filter:hue-rotate(-22deg) brightness(1.15); animation:bu-tide-in var(--bu-player-duration) ease-out both; }
+.bu-tide-halo { left:13%; top:27%; width:24%; height:56%; background:radial-gradient(ellipse,#c7ffe044,transparent 68%); border-radius:50%; animation:bu-heal-halo var(--bu-player-duration) ease-out both; }
+.bu-tide-ripple { left:14%; bottom:14%; width:25%; height:14%; border:2px solid #a0fbd3; border-radius:50%; box-shadow:0 0 18px #97fdd777; animation:bu-heal-ring var(--bu-player-duration) ease-out both; }
+.bu-heal-lights { left:26%; top:68%; width:1px; height:1px; animation:bu-heal-lights var(--bu-player-duration) both; }
+.bu-heal-lights i { display:block; position:absolute; width:5px; height:10px; background:#c1ffe2; border-radius:60%; box-shadow:0 0 12px #87f7c9; --lx:-38px; --ly:-32px; animation:bu-heal-rise var(--bu-player-duration) ease-out both; }
+.bu-heal-lights i:nth-child(2) { --lx:-14px; --ly:-70px; }
+.bu-heal-lights i:nth-child(3) { --lx:21px; --ly:-52px; }
+.bu-heal-lights i:nth-child(4) { --lx:43px; --ly:-27px; }
+.bu-heal-lights i:nth-child(5) { --lx:4px; --ly:-91px; }
+@keyframes bu-tide-out { 0%,18% { opacity:0; transform:scale(.05,.4); } 28% { opacity:.85; transform:scale(.6,.65); } 37% { opacity:.85; transform:scale(1,1); } 47%,100% { opacity:0; transform:scale(1.05,1); } }
+@keyframes bu-tide-in { 0%,29% { opacity:0; transform:translateX(40%) scale(-.15,.4); } 34% { opacity:.85; transform:translateX(20%) scale(-.55,.8); } 40%,47% { opacity:1; transform:translateX(0) scale(-1,1); } 65%,100% { opacity:0; transform:translateX(-6%) scale(-1.1,.4); } }
+@keyframes bu-heal-halo { 0%,39% { opacity:0; transform:scale(.6); } 44%,62% { opacity:1; transform:scale(1); } 86%,100% { opacity:0; transform:scale(1.2); } }
+@keyframes bu-heal-ring { 0%,39% { opacity:0; transform:scale(.4); } 44% { opacity:1; transform:scale(.8); } 80%,100% { opacity:0; transform:scale(1.5); } }
+@keyframes bu-heal-lights { 0%,39% { opacity:0; } 42%,70% { opacity:1; } 88%,100% { opacity:0; } }
+@keyframes bu-heal-rise { 0%,39% { transform:translate(var(--lx),10px) scale(.4); } 72%,100% { transform:translate(var(--lx),var(--ly)) scale(1); } }
+
+.bu-wave-dome, .bu-held-ward { position:absolute; left:12%; top:20%; width:27%; height:66%; border:2px solid #c0efff99; border-radius:50% 50% 43% 43%; background:radial-gradient(ellipse at 85% 38%,#b5edff44,transparent 65%); box-shadow:inset -7px 0 20px #93d9ff44,0 0 16px #9bd3ed33; }
+.bu-wave-dome { animation:bu-ward-dome var(--bu-player-duration) ease-out both; }
+.bu-wave-orbit { left:12%; bottom:16%; width:27%; height:16%; border:2px solid #ade4f2; border-radius:50%; box-shadow:0 0 16px #9ad7ee66; animation:bu-ward-orbit var(--bu-player-duration) ease-out both; }
+.bu-wave-flow { left:18%; top:28%; width:22%; height:53%; object-fit:fill; transform-origin:50% 70%; filter:saturate(.65) brightness(1.2); animation:bu-ward-flow var(--bu-player-duration) ease-out both; }
+.bu-wave-seal { left:32%; top:39%; width:7%; aspect-ratio:1; border:2px solid #d5f5ff99; box-shadow:0 0 14px #b0e0ff; animation:bu-ward-seal var(--bu-player-duration) ease-out both; }
+.bu-held-ward { pointer-events:none; z-index:3; opacity:.55; }
+@keyframes bu-ward-dome { 0%,15% { opacity:0; transform:scale(.45,.3); } 40%,76% { opacity:.85; transform:scale(1); } 100% { opacity:.55; transform:scale(1); } }
+@keyframes bu-ward-orbit { 0%,10% { opacity:0; transform:scale(.45); } 35%,65% { opacity:.9; transform:scale(1); } 100% { opacity:.3; transform:scale(1.1); } }
+@keyframes bu-ward-flow { 0%,15% { opacity:0; transform:rotate(-70deg) scale(.4); } 35%,43% { opacity:.8; transform:rotate(-90deg) scale(1); } 73%,100% { opacity:0; transform:rotate(-115deg) scale(1.1); } }
+@keyframes bu-ward-seal { 0%,38% { opacity:0; transform:rotate(45deg) scale(.3); } 44%,65% { opacity:.85; transform:rotate(45deg) scale(1); } 85%,100% { opacity:0; transform:rotate(45deg) scale(1.25); } }
+
+/* Boss uses the original near fist, turning about its shoulder. */
+.bu-boss-art { position:relative; width:100%; height:100%; }
+.bu-boss-rest, .bu-boss-rig { position:absolute; inset:0; width:100%; height:100%; }
+.bu-boss-rig { visibility:hidden; overflow:visible; filter:drop-shadow(0 7px 9px #001f2d88); }
+.bu-boss-art[data-casting="true"] .bu-boss-rest { visibility:hidden; }
+.bu-boss-art[data-casting="true"] .bu-boss-rig { visibility:visible; }
+.bu-boss-art[data-casting="true"] .bu-boss-arm { transform-origin:184px 643px; animation:bu-boss-punch var(--bu-boss-duration) ease-in-out both; }
+.bu-boss-art[data-casting="true"] .bu-boss-body { transform-origin:485px 1110px; animation:bu-boss-cast var(--bu-boss-duration) ease-in-out both; }
+.bu-boss-art[data-casting="true"][data-motion="quake"] .bu-boss-arm { animation-name:bu-boss-slam; }
+.bu-field[data-phase="enemy"] .bu-enemy { animation:none; }
+.bu-field[data-phase="enemy"] .bu-enemy .bu-sprite { animation-play-state:paused; }
+.bu-field[data-phase="enemy"] .bu-ally { animation:bu-hit-ally 600ms var(--bu-boss-impact) ease-out both; }
+@keyframes bu-boss-punch { 0%,100% { transform:rotate(0deg); } 12% { transform:rotate(-9deg); } 27%,32% { transform:rotate(35deg); } 40%,49% { transform:rotate(80deg); } 67% { transform:rotate(33deg); } }
+@keyframes bu-boss-slam { 0%,100% { transform:rotate(0deg); } 12% { transform:rotate(20deg); } 27%,33% { transform:rotate(135deg); } 40%,48% { transform:rotate(47deg); } 66% { transform:rotate(12deg); } }
+@keyframes bu-boss-cast { 0%,100% { transform:none; } 23%,32% { transform:translate(12px,-6px) rotate(2deg); } 40%,47% { transform:translate(-28px,10px) rotate(-2deg); } 70% { transform:translate(-4px,0); } }
+.bu-boss-charge { left:62%; top:29%; width:10%; aspect-ratio:1; border-radius:50%; border:2px solid #d2eecd77; background:radial-gradient(circle,#ffedb899,transparent 67%); box-shadow:0 0 20px #e5bb6344; animation:bu-boss-charge var(--bu-boss-duration) ease-out both; }
+.bu-boss-path { left:25%; top:45%; width:40%; height:6px; border-radius:50%; background:linear-gradient(90deg,#ffe7b8,#b4d2a7aa,transparent); box-shadow:0 0 16px #e4c27a; transform-origin:right center; animation:bu-boss-path var(--bu-boss-duration) ease-in both; }
+.bu-boss-hit { left:19%; top:34%; width:13%; aspect-ratio:1; border:3px solid #ffdc9e; border-radius:50%; box-shadow:0 0 21px #ecc88288,inset 0 0 17px #e0cc8c44; animation:bu-boss-hit var(--bu-boss-duration) ease-out both; }
+.bu-boss-ground { left:14%; bottom:14%; width:26%; height:10%; border:3px solid #ebc391; border-radius:50%; box-shadow:0 0 15px #d9bc7877; animation:bu-boss-ground var(--bu-boss-duration) ease-out both; }
+.bu-boss-show-fist .bu-boss-ground { display:none; }
+.bu-boss-show-quake .bu-boss-charge { top:18%; left:60%; width:14%; border-color:#ffcc7b; box-shadow:0 0 30px #e4ad4955; }
+.bu-boss-show-quake .bu-boss-path { top:56%; height:12px; transform:rotate(-12deg); filter:brightness(1.3); }
+.bu-boss-show-quake .bu-boss-hit { width:18%; left:17%; top:36%; border-width:4px; }
+.bu-boss-sparks { left:26%; top:47%; width:1px; height:1px; animation:bu-heal-lights var(--bu-boss-duration) both; }
+.bu-boss-sparks i { position:absolute; width:5px; height:5px; background:#f3d19b; box-shadow:0 0 7px #ffd890; --dx:-43px; --dy:-34px; animation:bu-droplet var(--bu-boss-duration) ease-out both; }
+.bu-boss-sparks i:nth-child(2) { --dx:38px; --dy:-30px; }
+.bu-boss-sparks i:nth-child(3) { --dx:57px; --dy:8px; }
+.bu-boss-sparks i:nth-child(4) { --dx:-48px; --dy:18px; }
+.bu-boss-sparks i:nth-child(5) { --dx:-12px; --dy:42px; }
+.bu-boss-sparks i:nth-child(6) { --dx:8px; --dy:-50px; }
+@keyframes bu-boss-charge { 0%,8% { opacity:0; transform:scale(.2); } 28%,32% { opacity:.9; transform:scale(1); } 40%,100% { opacity:0; transform:scale(.5); } }
+@keyframes bu-boss-path { 0%,32% { opacity:0; scale:.05 1; } 39%,43% { opacity:.9; scale:1 1; } 57%,100% { opacity:0; scale:1.1 1; } }
+@keyframes bu-boss-hit { 0%,39% { opacity:0; transform:scale(.2); } 42% { opacity:1; transform:scale(.8); } 67%,100% { opacity:0; transform:scale(1.8); } }
+@keyframes bu-boss-ground { 0%,39% { opacity:0; transform:scale(.4); } 43% { opacity:1; transform:scale(.8); } 72%,100% { opacity:0; transform:scale(1.7); } }
+
+@media (max-width:680px) {
+  .bu-enemy-intent { max-width:78%; right:8px; top:8px; }
+  .bu-enemy-intent svg { width:18px; height:18px; }
+  .bu-field-tag { top:auto; bottom:10px; font-size:9px; }
+  .bu-boss-skills { font-size:11px; }
+  .bu-boss-skills summary b { font-size:10px; }
+  .bu-tide-halo { left:4%; width:37%; }
+  .bu-tide-ripple { left:6%; width:35%; }
+  .bu-heal-lights { left:23%; }
+  .bu-wave-dome, .bu-held-ward { left:4%; width:37%; top:24%; height:60%; }
+  .bu-wave-orbit { left:4%; width:37%; }
+  .bu-wave-flow { left:12%; top:35%; width:29%; height:43%; }
+  .bu-wave-seal { left:31%; top:45%; width:9%; }
+  .bu-boss-charge { left:62%; top:36%; }
+  .bu-boss-show-quake .bu-boss-charge { top:29%; left:60%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bu-boss-art[data-casting="true"] .bu-boss-rest { visibility:visible; }
+  .bu-boss-art[data-casting="true"] .bu-boss-rig { visibility:hidden; }
+  .bu-water-show, .bu-tide-show, .bu-wave-show, .bu-boss-show, .bu-vfx { display:none; }
+}

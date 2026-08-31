@@ -1,10 +1,13 @@
 'use client';
 
 import { useEffect, useReducer, useRef, useState, type CSSProperties } from 'react';
-import { DEMO_RULES, DEMO_SKILLS, PHASE_DURATION, demoReducer, getSkill, initialDemo, skillDescription, type SkillId } from './demo-model';
-import { WATER_MOTION, waterIsCasting, presentedEnemyHp } from './water-motion';
-import { WaterCaster, WaterSurge } from './water-caster';
+import { BOSS_SKILLS, DEMO_RULES, DEMO_SKILLS, PHASE_DURATION, demoReducer, getEnemySkill, getSkill, initialDemo, previewIncoming, skillDescription, type SkillId } from './demo-model';
+import { WATER_MOTION, waterIsCasting } from './water-motion';
+import { activeMotion, BOSS_MOTION, displayedHp, motionKey, PLAYER_MOTION } from './battle-motion';
+import { StillWave, TideReturn, WaterCaster, WaterSurge } from './water-caster';
+import { BossCaster, BossEffect, BossIcon } from './boss-caster';
 import './battle-ui.css';
+import './boss-motion.css';
 
 function SkillIcon({ id }: { id: SkillId }) {
   return <svg viewBox="0 0 64 64" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
@@ -30,31 +33,43 @@ function HpBar({ enemy = false, hp, previous, max }: { enemy?: boolean; hp: numb
 }
 
 export default function BattleUiPage() {
-  const [state, dispatch] = useReducer(demoReducer, undefined, initialDemo);
+  const [state, dispatch] = useReducer(demoReducer, 'gatekeeper-v1', initialDemo);
   const [paused, setPaused] = useState(false);
   const [roster, setRoster] = useState(false);
-  const [impactPending, setImpactPending] = useState(false);
+  const [shownImpact, setShownImpact] = useState<string | null>(null);
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const motion = activeMotion(state);
+  const currentMotionKey = motionKey(state);
   const waterCasting = waterIsCasting(state);
-  const awaitingImpact = waterCasting && impactPending;
+  const awaitingImpact = Boolean(motion) && !reducedMotion && shownImpact !== currentMotionKey;
+  const visibleHp = displayedHp(state, awaitingImpact);
+  const enemySkill = getEnemySkill(state);
   const skill = getSkill(state.selected);
   const choosing = state.phase === 'choose';
   const finished = state.phase === 'won' || state.phase === 'lost';
   const castRef = useRef<HTMLButtonElement>(null);
   const resetRef = useRef<HTMLButtonElement>(null);
   const arenaRef = useRef<HTMLDivElement>(null);
-  const phaseLabel = { choose: '你的回合', player: '语灵行动', enemyReady: '敌方行动', enemy: '敌方结果', won: '战斗胜利', lost: '战斗失利' }[state.phase];
+  const phaseLabel = { choose: '你的回合', player: '语灵行动', enemyReady: '敌方准备', enemy: '敌方行动', won: '战斗胜利', lost: '战斗失利' }[state.phase];
 
   useEffect(() => {
-    const duration = waterCasting ? WATER_MOTION.durationMs : PHASE_DURATION[state.phase];
+    const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const sync = () => setReducedMotion(preference.matches);
+    sync(); preference.addEventListener('change', sync);
+    return () => preference.removeEventListener('change', sync);
+  }, []);
+
+  useEffect(() => {
+    const duration = motion?.durationMs ?? PHASE_DURATION[state.phase];
     if (paused || !duration) return;
     const timer = window.setTimeout(() => dispatch({ type: 'advance' }), duration);
     return () => window.clearTimeout(timer);
-  }, [state.phase, paused, waterCasting]);
+  }, [state.phase, paused, motion]);
   useEffect(() => {
-    if (!waterCasting || !impactPending) return;
-    const timer = window.setTimeout(() => setImpactPending(false), WATER_MOTION.impactMs);
+    if (!motion || !awaitingImpact) return;
+    const timer = window.setTimeout(() => setShownImpact(currentMotionKey), motion.impactMs);
     return () => window.clearTimeout(timer);
-  }, [waterCasting, impactPending]);
+  }, [motion, awaitingImpact, currentMotionKey]);
   useEffect(() => { if (finished) resetRef.current?.focus(); }, [finished]);
 
   function confirmCast() {
@@ -65,44 +80,54 @@ export default function BattleUiPage() {
     if (bounds && (bounds.top < 0 || bounds.bottom > window.innerHeight)) {
       arena?.scrollIntoView({ behavior: 'instant', block: 'start' });
     }
-    setImpactPending(skill.id === 'water' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     dispatch({ type: 'cast' });
   }
 
-  const resultText = awaitingImpact ? '水音 · 聚水施法'
+  function resetBattle() { setShownImpact(null); dispatch({ type: 'reset' }); setRoster(false); }
+  function advanceManually() {
+    // A manual step reveals the result first; it cannot silently skip an impact.
+    if (awaitingImpact) setShownImpact(currentMotionKey);
+    else dispatch({ type: 'advance' });
+  }
+
+  const resultText = awaitingImpact ? (state.phase === 'enemy' ? `守门人 · ${enemySkill.name} · 抬臂出手` : `${skill?.name} · ${state.selected === 'water' ? '聚水施法' : state.selected === 'tide' ? '引水回流' : '撑起防护'}`)
     : state.phase === 'player'
     ? `${skill?.name} · ${state.damage ? `造成 ${state.damage} 伤害` : '防护生效'}${skill?.healing ? ` · 实际回复 ${state.healing} HP${state.healing === 0 ? '（生命已满）' : ''}` : ''}${state.weaken ? ` · 敌方下一击削弱${Math.round(state.weaken * 100)}%` : ''}${state.mitigation ? ` · 下一击减伤${Math.round(state.mitigation * 100)}%` : ''}`
-    : state.phase === 'enemyReady' ? '守门人准备攻击 · 即将显示敌方结果'
-    : state.phase === 'enemy' ? `守门人攻击 · 澜歌受到 ${state.incoming} 点伤害`
+    : state.phase === 'enemyReady' ? `守门人准备「${enemySkill.name}」 · ${enemySkill.damage}点基础伤害`
+    : state.phase === 'enemy' ? `守门人 · ${enemySkill.name} · 澜歌受到 ${state.incoming} 点伤害`
     : state.phase === 'won' ? '敌方 HP 归零 · 战斗胜利'
     : state.phase === 'lost' ? '澜歌 HP 归零 · 战斗失利'
     : skill ? skillDescription(skill) : '选择一个技能，查看效果后确认施放。';
 
-  return <main className="bu-shell" style={{ '--bu-water-duration': `${WATER_MOTION.durationMs}ms`, '--bu-water-impact': `${WATER_MOTION.impactMs}ms` } as CSSProperties}>
+  return <main className="bu-shell" style={{ '--bu-water-duration': `${WATER_MOTION.durationMs}ms`, '--bu-water-impact': `${WATER_MOTION.impactMs}ms`, '--bu-player-duration': `${PLAYER_MOTION[state.selected ?? 'water'].durationMs}ms`, '--bu-player-impact': `${PLAYER_MOTION[state.selected ?? 'water'].impactMs}ms`, '--bu-boss-duration': `${BOSS_MOTION.durationMs}ms`, '--bu-boss-impact': `${BOSS_MOTION.impactMs}ms` } as CSSProperties}>
     <link rel="preload" as="image" href="/battle-ui/water-surge.png"/>
     <header className="bu-header"><div><div className="bu-eyebrow">语灵 · 雾港遗迹 <i /> 第 {state.turn} 回合</div><h1>雾港守门人</h1></div><span className={`bu-phase bu-phase-${state.phase}`}><i />{phaseLabel}</span></header>
     <div ref={arenaRef} className="bu-arena">
-    <HpBar enemy hp={presentedEnemyHp(state, impactPending)} previous={state.previousEnemyHp} max={DEMO_RULES.enemyMaxHp}/>
+    <HpBar enemy hp={visibleHp.enemy} previous={state.previousEnemyHp} max={DEMO_RULES.enemyMaxHp}/>
 
-    <section className="bu-field" aria-label="单语灵战场" data-phase={state.phase} data-skill={state.selected ?? ''}>
+    <section className="bu-field" aria-label="单语灵战场" data-phase={state.phase} data-skill={state.selected ?? ''} data-boss-skill={enemySkill.id} data-impact={awaitingImpact ? 'pending' : 'shown'}>
       <div className="bu-scene" />
       <span className="bu-field-tag">单语灵出战</span>
-      <span className="bu-enemy-intent">敌方下一击 <b>{DEMO_RULES.enemyDamage}</b> 伤害</span>
-      <div className="bu-combatant bu-ally" data-testid="active-spirit"><div className="bu-sprite"><WaterCaster active={waterCasting}/></div><div className="bu-nameplate"><span>澜歌</span><small>出战中</small></div></div>
-      <div className="bu-combatant bu-enemy" data-testid="enemy-target"><div className="bu-sprite"><img src="/battle-ui/gatekeeper.png" alt="敌方：雾港守门人" draggable={false}/></div><div className="bu-nameplate"><span>守门人</span><small>BOSS</small></div></div>
-      {state.phase === 'player' && <div key={`${state.turn}-cast`} className={`bu-vfx bu-vfx-${state.selected}`} aria-hidden="true"><i className="bu-cast-ring"/>{state.damage > 0 && <><i className="bu-projectile"/><i className="bu-impact"/></>}{skill?.healing !== 0 && <i className="bu-recovery"/>}{state.mitigation > 0 && <i className="bu-guard"/>}</div>}
+      <span className={`bu-enemy-intent bu-intent-${enemySkill.id}`}><BossIcon id={enemySkill.id}/><span>{finished ? '本场结束' : '本回合敌技'} · {enemySkill.name} <b>{enemySkill.damage}</b>伤害</span></span>
+      <div className="bu-combatant bu-ally" data-testid="active-spirit"><div className="bu-sprite"><WaterCaster active={state.phase === 'player'} skill={state.selected ?? 'water'}/></div><div className="bu-nameplate"><span>澜歌</span><small>出战中</small></div></div>
+      <div className="bu-combatant bu-enemy" data-testid="enemy-target"><div className="bu-sprite"><BossCaster active={state.phase === 'enemy'} skill={enemySkill.id}/></div><div className="bu-nameplate"><span>守门人</span><small>BOSS</small></div></div>
+      {waterCasting && <div key={`${state.turn}-cast`} className="bu-vfx bu-vfx-water" aria-hidden="true"><i className="bu-cast-ring"/></div>}
       {waterCasting && <WaterSurge key={`${state.turn}-surge`}/>}
-      {state.phase === 'enemy' && <div key={`${state.turn}-strike`} className="bu-vfx bu-vfx-strike" aria-hidden="true"><i className="bu-strike"/><i className="bu-impact"/></div>}
+      {state.phase === 'player' && state.selected === 'tide' && <TideReturn key={`${state.turn}-tide`}/>}
+      {state.phase === 'player' && state.selected === 'wave' && <StillWave key={`${state.turn}-wave`}/>}
+      {state.phase === 'enemy' && <BossEffect key={`${state.turn}-boss`} skill={enemySkill.id}/>}
+      {state.selected === 'wave' && (state.phase === 'enemyReady' || (state.phase === 'enemy' && awaitingImpact)) && <span className="bu-held-ward" aria-hidden="true"/>}
       {state.phase === 'player' && !awaitingImpact && state.damage > 0 && <div key={`${state.turn}-damage`} className="bu-float bu-damage bu-float-enemy">−{state.damage}<small>伤害</small></div>}
-      {state.phase === 'player' && skill?.healing !== 0 && <div key={`${state.turn}-heal`} className="bu-float bu-healing bu-float-player">+{state.healing}<small>{state.healing ? 'HP' : '已满血'}</small></div>}
-      {state.phase === 'enemy' && <div key={`${state.turn}-enemy`} className="bu-float bu-damage bu-float-player">−{state.incoming}<small>HP</small></div>}
+      {state.phase === 'player' && !awaitingImpact && skill?.healing !== 0 && <div key={`${state.turn}-heal`} className="bu-float bu-healing bu-float-player">+{state.healing}<small>{state.healing ? 'HP' : '已满血'}</small></div>}
+      {state.phase === 'enemy' && !awaitingImpact && <div key={`${state.turn}-enemy`} className="bu-float bu-damage bu-float-player">−{state.incoming}<small>HP</small></div>}
       {state.phase === 'player' && !awaitingImpact && (state.weaken > 0 || state.mitigation > 0) && <div className="bu-effect-label">{state.weaken ? `下一击削弱 ${Math.round(state.weaken * 100)}%` : `下一击减伤 ${Math.round(state.mitigation * 100)}%`}</div>}
-      {finished && <div className="bu-end"><span>{state.phase === 'won' ? '胜' : '败'}</span><strong>{phaseLabel}</strong><button ref={resetRef} onClick={() => { dispatch({ type: 'reset' }); setRoster(false); }}>重新演示</button></div>}
+      {finished && <div className="bu-end"><span>{state.phase === 'won' ? '胜' : '败'}</span><strong>{phaseLabel}</strong><button ref={resetRef} onClick={resetBattle}>重新演示</button></div>}
     </section>
 
-    <HpBar hp={state.playerHp} previous={state.previousPlayerHp} max={DEMO_RULES.playerMaxHp}/>
+    <HpBar hp={visibleHp.player} previous={state.previousPlayerHp} max={DEMO_RULES.playerMaxHp}/>
     </div>
     <div className="bu-feedback" role="status" aria-live="polite"><span className="bu-feedback-step">{phaseLabel}</span><p>{resultText}</p></div>
+    <details className="bu-boss-skills"><summary><BossIcon id={enemySkill.id}/><span>敌方技能 · {enemySkill.name}</span><b>{choosing && skill ? (skill.damage >= state.enemyHp ? '可击杀 · 不反击' : `本招后预计承伤 ${previewIncoming(state)}`) : '石拳 → 震击 · 交替出手'}</b></summary><div>{BOSS_SKILLS.map(item => <p key={item.id}><BossIcon id={item.id}/><strong>{item.name}</strong><span>{item.description}</span></p>)}</div></details>
 
     <section className="bu-commands" aria-label="技能操作">
       <div className="bu-command-heading"><span><b>澜歌</b> 的技能</span><button className="bu-subtle" disabled={!choosing} aria-expanded={roster} aria-controls="bu-roster" onClick={() => setRoster(!roster)}>换灵 <span aria-hidden="true">⇄</span></button></div>
@@ -120,7 +145,7 @@ export default function BattleUiPage() {
       {!skill && <p className="bu-select-hint">点选技能看介绍，再确认施放 · 不会误触直接攻击</p>}
     </section>
 
-    <footer className="bu-footer"><span>独立界面样机 · 原技能数值演示 · 不写入存档</span><div><button onClick={() => setPaused(!paused)} aria-pressed={paused}>{paused ? '恢复自动' : '暂停自动'}</button>{paused && !choosing && !finished && <button onClick={() => dispatch({ type: 'advance' })}>下一步</button>}<button disabled={!choosing && !finished} onClick={() => { dispatch({ type: 'reset' }); setRoster(false); }}>重开</button></div></footer>
-    <details className="bu-scope"><summary>样机范围与素材说明</summary><p>这里用于体验单语灵、血条、技能详情和回合反馈，不是微信小游戏正式版。技能演示沿用 V2 的澜歌三技能；生命和敌伤沿用 Phase A 的 48 / 60 / 8，仅作为界面验证数据，不代表正式平衡。守门人为本样机新制立绘，正式设定仍为 PENDING_K3。背景与澜歌原文件保留；水音使用原画手臂分层、局部肩部补图及水流特效，非全身骨骼绑定。另两招保留轻量演出。</p></details>
+    <footer className="bu-footer"><span>独立界面样机 · BOSS技能测试 · 不写入存档</span><div><button onClick={() => setPaused(!paused)} aria-pressed={paused}>{paused ? '恢复自动' : '暂停自动'}</button>{paused && !choosing && !finished && <button onClick={advanceManually}>下一步</button>}<button disabled={!choosing && !finished} onClick={resetBattle}>重开</button></div></footer>
+    <details className="bu-scope"><summary>样机范围与素材说明</summary><p>不是微信小游戏正式版。澜歌三技能保持原演示数值；当前BOSS独立测试：48 / 60 HP，石拳16、震击36伤害，固定交替。名称仅为原型系统标签，正式设定仍为 PENDING_K3。旧48/60/8夹具与其他原型未改。三招和BOSS使用原画手臂分层与局部接缝补图，不是全身骨骼。暂停自动只停止回合推进，不冻结当前动画。</p></details>
   </main>;
 }
