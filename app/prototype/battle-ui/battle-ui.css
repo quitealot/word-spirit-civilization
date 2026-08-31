@@ -18,8 +18,10 @@
 .bu-phase i { width: 6px; height: 6px; background: #dece89; border-radius: 50%; box-shadow: 0 0 10px #dece8977; }
 .bu-phase-enemy, .bu-phase-enemyReady, .bu-phase-lost { color: #ffb5a1; border-color: #d8a08588; }
 .bu-hp { display: flex; align-items: center; gap: 13px; padding: 9px 0; }
+.bu-arena { scroll-margin-top:12px; }
 .bu-avatar { width: 54px; height: 54px; flex: 0 0 54px; overflow: hidden; border-radius: 50%; background: radial-gradient(#526454,#122b2d); border: 2px solid #aaa274; box-shadow: 0 2px 6px #051b24, inset 0 0 0 3px #132d2b; text-align: center; }
 .bu-avatar img { width: 100%; height: 150%; object-fit: cover; object-position: 50% 10%; transform: scale(1.8) translateY(12%); }
+.bu-hp-enemy .bu-avatar img { height:100%; object-fit:contain; transform:scale(3.1) translate(5%,26%); }
 .bu-avatar span { font: 30px/50px SimSun,serif; color: #dad0db; }
 .bu-hp-main { flex: 1; min-width: 0; }
 .bu-hp-caption { display: flex; gap: 12px; align-items: baseline; margin-bottom: 7px; font-size: 12px; }
@@ -44,9 +46,12 @@
 .bu-combatant { position: absolute; bottom: 18px; width: 30%; height: 83%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
 .bu-combatant::before { content:''; position:absolute; width:70%; height:13%; bottom:29px; border-radius:50%; background:radial-gradient(ellipse,#071c21aa,transparent 70%); z-index:-1; }
 .bu-ally { left: 10%; }
-.bu-ally > img { width: 100%; height: calc(100% - 28px); object-fit: contain; transform: scaleX(-1); filter: drop-shadow(0 7px 9px #001f2d88); }
+.bu-sprite { width:100%; height:calc(100% - 28px); transform-origin:50% 90%; }
+.bu-sprite img { width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 7px 9px #001f2d88); }
+.bu-ally .bu-sprite img { transform:scaleX(-1); }
+.bu-ally .bu-sprite { animation:bu-idle-water 4.8s ease-in-out infinite; }
+.bu-enemy .bu-sprite { animation:bu-idle-stone 6s ease-in-out infinite; }
 .bu-enemy { right: 9%; }
-.bu-enemy-token { width: 46%; height: 68%; min-width: 90px; max-width: 135px; border-radius: 49% 49% 40% 40%; border: 3px solid #8e7c9899; background: linear-gradient(145deg,#75657d,#382f43 65%); box-shadow: inset 8px 10px 16px #d8c1d118,inset -7px -9px #17182544, 0 14px 25px #08202b99; color:#e0d1e5; display:grid; place-items:center; font: clamp(38px,5vw,64px) SimSun,serif; }
 .bu-nameplate { margin-top: 8px; display: flex; align-items: center; gap: 9px; font-size: 13px; text-shadow: 0 2px 3px #011d18; }
 .bu-nameplate span { font-weight:700; color:#e8e6cc; letter-spacing:2px; }
 .bu-nameplate small { color:#b6cbbb; font-size:10px; }
@@ -57,14 +62,43 @@
 .bu-damage { color:#ffd3b5; }
 .bu-healing { color:#99ffd0; }
 @keyframes bu-number { 0% { opacity:0; transform:translateY(12px) scale(.9); } 15%,80% { opacity:1; transform:translateY(0) scale(1); } 100% { opacity:0; transform:translateY(-16px); } }
-.bu-field[data-phase="player"] .bu-ally { animation: bu-lunge 450ms ease-out; }
-.bu-field[data-phase="enemy"] .bu-ally { animation: bu-hit 350ms ease-out; }
-.bu-field[data-phase="player"][data-skill="wave"] .bu-ally { animation: bu-protect 800ms ease-out; }
-.bu-field[data-phase="enemy"] .bu-enemy { animation: bu-lunge-enemy 450ms ease-out; }
-@keyframes bu-lunge { 45% { translate: 18px 0; } }
-@keyframes bu-lunge-enemy { 45% { translate: -18px 0; } }
-@keyframes bu-hit { 20% { translate:-6px 0; filter:brightness(1.5); } 50% { translate:4px 0; } }
-@keyframes bu-protect { 50% { filter:drop-shadow(0 0 12px #9fdeeb); } }
+/* Nested sprite idle never overwrites the action transform or mirrored artwork. */
+@keyframes bu-idle-water { 50% { transform:translateY(-4px) rotate(-.5deg); } }
+@keyframes bu-idle-stone { 50% { transform:translateY(-1px) scaleY(1.008); } }
+.bu-field[data-phase="player"] .bu-ally { animation:bu-cast-step 900ms ease-out both; }
+.bu-field[data-phase="player"][data-skill="water"] .bu-enemy,
+.bu-field[data-phase="player"][data-skill="tide"] .bu-enemy { animation:bu-hit-enemy 600ms 180ms ease-out both; }
+.bu-field[data-phase="player"][data-skill="wave"] .bu-ally,
+.bu-field[data-phase="player"][data-skill="tide"] .bu-ally { animation:bu-cast-rise 1s ease-in-out both; }
+.bu-field[data-phase="enemyReady"] .bu-enemy { animation:bu-windup 1s ease-in-out both; }
+.bu-field[data-phase="enemy"] .bu-enemy { animation:bu-enemy-step 850ms ease-out both; }
+.bu-field[data-phase="enemy"] .bu-ally { animation:bu-hit-ally 600ms 140ms ease-out both; }
+.bu-field:is([data-phase="won"],[data-phase="lost"]) .bu-sprite { animation-play-state:paused; }
+@keyframes bu-cast-step { 12% { transform:translateX(-5px) rotate(-1deg); } 32% { transform:translateX(15px) rotate(1deg); } 70%,100% { transform:none; } }
+@keyframes bu-cast-rise { 25% { transform:translateY(-5px); } 75%,100% { transform:none; } }
+@keyframes bu-windup { 65%,100% { transform:translateX(5px) rotate(1deg); } }
+@keyframes bu-enemy-step { 0% { transform:translateX(5px) rotate(1deg); } 24% { transform:translateX(-16px) rotate(-1.5deg); } 75%,100% { transform:none; } }
+@keyframes bu-hit-enemy { 20% { transform:translateX(7px) rotate(1deg); } 38% { transform:translateX(3px); } 55% { transform:translateX(5px); } 100% { transform:none; } }
+@keyframes bu-hit-ally { 20% { transform:translateX(-7px) rotate(-1deg); } 38% { transform:translateX(-3px); } 55% { transform:translateX(-5px); } 100% { transform:none; } }
+/* Abstract, restrained effects. No extra mechanics and no full-screen flash. */
+.bu-vfx { position:absolute; inset:0; pointer-events:none; z-index:3; --fx-water:#96eced; }
+.bu-vfx i { position:absolute; display:block; opacity:0; }
+.bu-cast-ring { left:16%; bottom:16%; width:19%; height:9%; border:2px solid #a4e7dfaa; border-radius:50%; box-shadow:0 0 16px #a4e7df55,inset 0 0 12px #a4e7df44; animation:bu-ring 1s ease-out both; }
+.bu-projectile { left:25%; top:49%; width:41%; height:4px; transform-origin:left; border-radius:50%; background:linear-gradient(90deg,transparent,#83d4eaaa,#e3fffc); box-shadow:0 0 10px #8fe8f2; animation:bu-stream 650ms 80ms ease-out both; }
+.bu-impact { left:66%; top:37%; width:10%; aspect-ratio:1; border:2px solid #c5f6ef; border-radius:50%; box-shadow:0 0 16px #7ddeeb88,inset 0 0 15px #c5f6ef44; animation:bu-impact 700ms 170ms ease-out both; }
+.bu-recovery { left:16%; bottom:20%; width:19%; height:50%; border-radius:50% 50% 20% 20%; background:radial-gradient(ellipse at 50% 95%,#b6ffdb66,transparent 70%); border-bottom:2px solid #b2f5d4; animation:bu-recover 1150ms ease-out both; }
+.bu-vfx-tide .bu-projectile { height:2px; opacity:0; box-shadow:0 0 6px #8fe8f2; }
+.bu-vfx-tide .bu-impact { width:7%; left:68%; }
+.bu-vfx-tide .bu-cast-ring { border-color:#b2f5d4; }
+.bu-guard { left:14%; bottom:18%; width:22%; height:61%; border:2px solid #b9eaff99; border-radius:50%; background:linear-gradient(100deg,#91d8ed05,#b0e4f51c,#91d8ed05); box-shadow:inset 0 0 14px #b7e8f133,0 0 12px #b7e8f122; animation:bu-guard 1.35s ease-out both; }
+.bu-strike { left:23%; top:40%; width:10%; height:3px; background:#ffe1b0; border-radius:50%; box-shadow:0 0 10px #deb573; animation:bu-strike 600ms 120ms ease-out both; }
+.bu-vfx-strike .bu-impact { left:20%; width:9%; border-color:#e4c792; box-shadow:0 0 12px #e4c79266; animation-delay:160ms; }
+@keyframes bu-ring { 0% { opacity:0; transform:scale(.65); } 20% { opacity:.85; } 100% { opacity:0; transform:scale(1.25); } }
+@keyframes bu-stream { 0% { opacity:0; transform:scaleX(.05); } 25% { opacity:.95; transform:scaleX(1); } 70%,100% { opacity:0; transform:scaleX(1.15); } }
+@keyframes bu-impact { 0% { opacity:0; transform:scale(.25); } 18% { opacity:.9; } 100% { opacity:0; transform:scale(1.65); } }
+@keyframes bu-recover { 0% { opacity:0; transform:translateY(8px) scaleY(.6); } 35%,65% { opacity:.9; } 100% { opacity:0; transform:translateY(-12px) scaleY(1); } }
+@keyframes bu-guard { 0% { opacity:0; transform:scale(.75); } 25%,70% { opacity:.85; transform:scale(1); } 100% { opacity:0; transform:scale(1.04); } }
+@keyframes bu-strike { 0% { opacity:0; transform:translate(12px,-6px) rotate(-35deg) scaleX(.3); } 30% { opacity:1; transform:rotate(-35deg) scaleX(1); } 100% { opacity:0; transform:translate(-8px,5px) rotate(-35deg) scaleX(1.15); } }
 .bu-effect-label { position:absolute; left:50%; bottom:42px; transform:translateX(-50%); color:#ebe4ae; background:#173c31dd; border:1px solid #b9c48b77; border-radius:20px; padding:6px 12px; font-size:12px; }
 .bu-end { position:absolute; inset:0; background:#061e24dc; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; z-index:5; }
 .bu-end > span { font:64px SimSun,serif; color:#e5d392; }
@@ -169,7 +203,8 @@
   .bu-combatant { width:43%; height:76%; bottom:17px; }
   .bu-ally { left:1%; }
   .bu-enemy { right:2%; }
-  .bu-enemy-token { height:66%; min-width:82px; }
+  .bu-vfx .bu-cast-ring, .bu-vfx .bu-recovery { left:8%; width:29%; }
+  .bu-vfx .bu-guard { left:6%; width:33%; }
   .bu-nameplate small { display:none; }
   .bu-enemy-intent { font-size:10px; padding:6px 8px; }
   .bu-field-tag { font-size:10px; left:12px; }
