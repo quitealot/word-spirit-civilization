@@ -46,3 +46,10 @@ Avoid: rainbow palette, red explosion, flames, fireball, smoke cloud hiding the 
 ```
 
 不新增技能或正式世界观；当前数值是独立样机调整，等待用户体验判断。提交和私有发布信息在完成后追加。
+
+## 发布完成
+
+- 运行提交：`b0667091a30ebe1a2b27b480a5b9c5b4d02a9a33`，已推GitHub与Sites源码分支。
+- 私有站点版本31，部署 `appgdep_6a94f1d758248191a19332f2746dcf97`，状态succeeded。保持owner-only权限。
+- 入口：https://word-spirit-civilization-demo.eeevan137.chatgpt.site/prototype/battle-ui
+- 打开原标签工具返回queued；不据此宣称用户已经看到新版。本节为部署后纯文档记录，不重建运行版本。
