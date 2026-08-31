@@ -5,7 +5,7 @@ import { DEMO_RULES } from './demo-model';
 import { BossCaster, BossEffect, BossIcon } from './boss-caster';
 import { CastCinematic, ImpactFrames } from './cinematic-effects';
 import { FIRE_SKILLS, initialFire, fireReducer, fireSkill, fireEnemy, fireBlocked, fireDamage, type FireId } from './fire-model';
-import { TAIL_POSE_ASSET, TAIL_MELEE_MOTION, firePresentationMotion, tailReturnPending } from './tail-melee-motion';
+import { BATTLE_IDLE_ASSET, RUN_POSE_ASSET, TAIL_POSE_ASSET, TAIL_MELEE_MOTION, firePresentationMotion, tailReturnPending } from './tail-melee-motion';
 import { TailMeleeActor } from './tail-melee';
 import './tail-melee.css';
 
@@ -45,7 +45,7 @@ export function FireBattle() {
   const enemyHp = pending && state.phase === 'player' ? state.previousEnemyHp : state.enemyHp;
   const label = { choose: '你的回合', player: '语灵行动', enemyReady: '敌方准备', enemy: '敌方行动', won: '战斗胜利', lost: '战斗失利' }[state.phase];
   useEffect(() => { const q = window.matchMedia('(prefers-reduced-motion: reduce)'); const sync = () => setReduced(q.matches); sync(); q.addEventListener('change', sync); return () => q.removeEventListener('change', sync); }, []);
-  useEffect(() => { let cancelled = false; const image = new Image(); image.src = TAIL_POSE_ASSET; image.decode().then(() => { if (!cancelled) setPosesReady(true); }).catch(() => { if (!cancelled) setPosesFailed(true); }); return () => { cancelled = true; }; }, []);
+  useEffect(() => { let cancelled = false; Promise.all([TAIL_POSE_ASSET, RUN_POSE_ASSET, BATTLE_IDLE_ASSET].map(src => { const image = new Image(); image.src = src; return image.decode(); })).then(() => { if (!cancelled) setPosesReady(true); }).catch(() => { if (!cancelled) setPosesFailed(true); }); return () => { cancelled = true; }; }, []);
   useEffect(() => { if (!returning) return; const timer = setTimeout(() => setReturned(key), TAIL_MELEE_MOTION.landedMs); return () => clearTimeout(timer); }, [key, returning]);
   useEffect(() => { if (!pending || !motion) return; const timer = setTimeout(() => setShown(key), motion.impactMs); return () => clearTimeout(timer); }, [key, pending, motion]);
   useEffect(() => { if (paused || choosing || finished) return; const timer = setTimeout(() => dispatch({ type: 'advance' }), motion?.durationMs ?? 1000); return () => clearTimeout(timer); }, [key, paused, choosing, finished, motion]);
@@ -61,7 +61,7 @@ export function FireBattle() {
     <div ref={arena} className="bu-arena"><FireHp enemy hp={enemyHp} previous={state.previousEnemyHp}/>
       <section className="bu-field jf-field" aria-label="烬尾单语灵战场" data-phase={state.phase} data-skill={state.selected ?? ''} data-boss-skill={enemy.id} data-impact={pending ? 'pending' : 'shown'} data-reduced={reduced}>
         <div className="bu-stage" key={key} data-action={!!motion}><div className="bu-scene"/>
-          <div className="bu-combatant bu-ally"><div className="bu-sprite jf-sprite">{tailActive ? <TailMeleeActor posesReady={posesThisCast}/> : <img src={ART} alt="出战语灵：烬尾" draggable={false}/>}</div><div className="bu-nameplate"><span>烬尾</span><small>出战中</small></div></div>
+          <div className="bu-combatant bu-ally"><div className="bu-sprite jf-sprite">{tailActive ? <TailMeleeActor posesReady={posesThisCast}/> : <img src={BATTLE_IDLE_ASSET} alt="出战语灵：烬尾" draggable={false}/>}</div><div className="bu-nameplate"><span>烬尾</span><small>出战中</small></div></div>
           <div className="bu-combatant bu-enemy"><div className="bu-sprite"><BossCaster active={state.phase === 'enemy'} skill={enemy.id}/></div><div className="bu-nameplate"><span>守门人</span><small>BOSS</small></div></div>
           {state.phase === 'player' && !reduced && <div className={`jf-fx jf-fx-${state.selected}`} aria-hidden="true">{state.selected !== 'tail' && <><span className="jf-focus"/>{state.selected === 'spark' && <TailFragment className="jf-fire-path"/>}<span className="jf-motes"><i/><i/><i/><i/><i/><i/></span></>}{!pending && state.selected !== 'charge' && <span className="jf-hit"/>}</div>}
           {state.phase === 'enemy' && <><CastCinematic enemy name={enemy.name}/><BossEffect skill={enemy.id}/>{!pending && !reduced && <ImpactFrames enemy skill={enemy.id}/>}</>}

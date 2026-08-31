@@ -2,6 +2,8 @@ import { FIRE_MOTION, type FireState } from './fire-model.ts';
 import { BOSS_MOTION } from './battle-motion.ts';
 
 export const TAIL_POSE_ASSET = '/battle-ui/jinwei-melee-poses-v1.png';
+export const RUN_POSE_ASSET = '/battle-ui/jinwei-forward-run-v1.png';
+export const BATTLE_IDLE_ASSET = '/battle-ui/jinwei-battle-idle-v1.png';
 // Presentation only: 40% contact, 86% home and settled, then enemy may prepare.
 export const TAIL_MELEE_MOTION = { durationMs: 3200, impactMs: 1280, landedMs: 2752 } as const;
 export function firePresentationMotion(state: Pick<FireState, 'phase' | 'selected'>) {
