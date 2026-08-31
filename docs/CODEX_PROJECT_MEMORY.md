@@ -3,6 +3,8 @@
 更新时间：2026-08-31
 状态：`CURRENT / AUTHORITATIVE`
 
+最新发布：私有Site41正常站姿/正向跑步已succeeded，源c9da7a041df637041d375c42c07c49068c6ea8e8，原地址/权限不变。104项针对性检查通过，素材透明通过；动态手感待用户复核。下方HOLD为已解决历史记录。
+
 最新：用户认可正常站姿并批准独立抠图/排帧，已解除下方素材HOLD。新增正常战斗idle和正确前跑两帧；头像/展示原图保留，扫尾回跳/数值不变。三图decode后启用动作。见JINWEI_NORMAL_BATTLE_ART_HANDOFF.md；素材静态/透明验证通过，动态未实测，发布后补版本。
 
 当前素材HOLD：正常战斗待机和两帧正向跑已生成，身体方向检查通过；但均不透明RGB棋盘格，run首帧越界，未接入/未发布。等待用户授权独立去底/排帧处理，见JINWEI_BATTLE_POSTURE_ASSET_HOLD.md（候选图/完整提示词）。新长期规范BATTLE_CHARACTER_POSE_RULES.md。线上仍Site40，不得宣称已修复在线站姿。
