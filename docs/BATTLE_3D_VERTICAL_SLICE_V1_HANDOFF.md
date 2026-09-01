@@ -2,6 +2,8 @@
 
 用户授权：2026-09-01“我想看到上限，第一步升级为3d”。实现为独立 `/prototype/battle-3d`，没有覆盖现有 2D battle-ui。
 
+发布：私有 Site44 succeeded，运行源 `74334df88aab6014975c802b36b76b3ef6a01bd3`。入口：`https://word-spirit-civilization-demo.eeevan137.chatgpt.site/prototype/battle-3d`。原站点与 owner-only 权限不变。
+
 ## 已实现
 
 - Three.js `0.180.0` + React Three Fiber `9.6.1`，匹配当前 React 19。
