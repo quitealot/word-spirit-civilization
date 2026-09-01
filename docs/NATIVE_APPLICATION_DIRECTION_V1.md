@@ -12,7 +12,7 @@
 
 ## 推荐技术方向
 
-当前推荐：`Unity 6 + URP`，第一目标平台按既有移动产品语境暂定 `iOS + Android`，未来可评估 PC。
+当前冻结：`Unity 6 + URP`。用户已于2026-09-01确认本机有Unity 6并授权直接制作。新工程位于 `C:/Users/孟誉/Documents/ChatGPT/语灵游戏/YulingUnity`，使用 Unity `6000.3.22f1` + URP `17.3.0`。第一目标平台按既有移动产品语境暂定 `iOS + Android`，首个上限样片先构建 Windows 版本便于直接验收，未来可评估 PC 正式发行。
 
 原因：
 

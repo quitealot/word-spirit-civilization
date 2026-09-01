@@ -5,6 +5,8 @@
 
 最新平台裁决（2026-09-01）：用户不再要微信小游戏，改为真正可安装的独立 application，愿意接受更复杂的开发和发行手续，以便把美术、动作、特效发挥到更高水平。现有网页/Three.js样片降为历史验证与构图参考，不作为正式客户端底座。推荐候选为 Unity 6 + URP，面向 iOS/Android 原生应用；引擎尚未获准实际迁移或创建工程。下一步应先冻结平台与引擎，再制作一只真正还原原立绘的澜歌3D精模上限样片，不继续打磨程序块模。见 `NATIVE_APPLICATION_DIRECTION_V1.md`。
 
+后续授权（2026-09-01）：用户确认本机有Unity 6并授权直接制作上限效果。新Unity工程已建立于 `C:/Users/孟誉/Documents/ChatGPT/语灵游戏/YulingUnity`，Unity `6000.3.22f1` + URP `17.3.0`，编辑器包解析/批处理导入成功；独立于本网页仓库。本机RTX 4050 Laptop GPU只有6GB VRAM，Hunyuan3D 2.1官方高质量流程需形体约10GB、贴图约21GB，无法本地完成精模全流程。当前等待用户明确授权是否把原立绘上传商业云端图生3D服务；未用块模或通用人偶冒充精模。
+
 最新方向（2026-09-01）：用户要求“我想看到上限，第一步升级为3d”。已新增隔离 `/prototype/battle-3d` 真 3D 上限样片：Three.js + React Three Fiber，风格化澜歌与守门人块模、透视镜头、空间遗迹、动态光影/投影/雾、水音 gather→release→impact→recover 演出，命中时60→42。块模用于验证 3D 构图与演出，不是最终精模/骨骼；后续可替换 glTF。旧 `/prototype/battle-ui`、主线、学习、成长、存档不改。私有 Site44 已发布运行源 `74334df88aab6014975c802b36b76b3ef6a01bd3`，原权限不变。工程验证与动态审美仍分开；见 `BATTLE_3D_VERTICAL_SLICE_V1_TASK.md` / `HANDOFF.md`。
 
 最新发布：私有Site43芽语第三只试玩已succeeded，源b050dba9871ac608b4f4e3c3a4cc6d23f41bb8e9，原battle-ui URL/权限不变。三只入口均可新开一场，正式主线未迁移；动态手感待用户复核。
