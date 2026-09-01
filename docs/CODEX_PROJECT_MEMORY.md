@@ -3,6 +3,8 @@
 更新时间：2026-08-31
 状态：`CURRENT / AUTHORITATIVE`
 
+最新方向（2026-09-01）：用户要求“我想看到上限，第一步升级为3d”。已新增隔离 `/prototype/battle-3d` 真 3D 上限样片：Three.js + React Three Fiber，风格化澜歌与守门人块模、透视镜头、空间遗迹、动态光影/投影/雾、水音 gather→release→impact→recover 演出，命中时60→42。块模用于验证 3D 构图与演出，不是最终精模/骨骼；后续可替换 glTF。旧 `/prototype/battle-ui`、主线、学习、成长、存档不改。工程验证与动态审美仍分开；见 `BATTLE_3D_VERTICAL_SLICE_V1_TASK.md` / `HANDOFF.md`。
+
 最新发布：私有Site43芽语第三只试玩已succeeded，源b050dba9871ac608b4f4e3c3a4cc6d23f41bb8e9，原battle-ui URL/权限不变。三只入口均可新开一场，正式主线未迁移；动态手感待用户复核。
 
 最新芽语第三只已接同一battle-ui，默认澜歌/切换新开一场；烬尾原样保留。叶拍24、护芽8+24护盾（残余保留）、扎根40%为V2试玩夹具，不宣称最终平衡。独立leaf-model/leaf-battle，四姿势+差异化施法，盾/减伤/HP分开显示。145项/strict/build/diff通过，lint旧4错误14图片警告，无本轮浏览器实机。见YAYU_PLAYABLE_V1_TASK/HANDOFF。发布后补版本；不自动扩冒险/成长/主线。

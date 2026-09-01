@@ -28,13 +28,16 @@
     "validate:phase-b-combat-feedback-c": "node --experimental-strip-types scripts/validate-phase-b-combat-feedback-c.ts",
     "validate:intent-combat-v1": "node --experimental-strip-types scripts/validate-intent-combat-v1.ts",
     "validate:intent-combat-xstate": "node --experimental-strip-types scripts/validate-intent-combat-xstate.ts",
-    "validate:learning-intent-loop": "node --experimental-strip-types scripts/validate-learning-intent-loop.ts"
+    "validate:learning-intent-loop": "node --experimental-strip-types scripts/validate-learning-intent-loop.ts",
+    "validate:battle-3d": "node --experimental-strip-types scripts/validate-battle-3d.ts"
   },
   "dependencies": {
+    "@react-three/fiber": "^9.6.1",
     "@xstate/react": "6.1.0",
     "next": "16.2.6",
     "react": "19.2.6",
     "react-dom": "19.2.6",
+    "three": "^0.180.0",
     "ts-fsrs": "^5.4.1",
     "xstate": "5.32.6"
   },
@@ -46,6 +49,7 @@
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
+    "@types/three": "^0.180.0",
     "@vitejs/plugin-react": "6.0.2",
     "@vitejs/plugin-rsc": "0.5.26",
     "eslint": "9.39.4",
